@@ -912,7 +912,8 @@ body.locked .v-fab,body.locked .cv-thx,body.locked .cv-addph,body.locked .v-cl .
 .cv-cres-d ul{margin:4px 0 0 16px}
 a.v-btn.cv-escale{display:block;text-align:center;text-decoration:none}
 .cv-demo-bar{background:#FFF4D6;border:1.5px solid #F5C451;color:#5a4200;border-radius:14px;padding:10px 12px;margin:4px 0 12px;font-size:.8rem;line-height:1.4}
-.cv-demo-bar button{display:block;margin-top:7px;background:#fff;border:1px solid #E0B23C;color:#7a5600;font:inherit;font-weight:700;border-radius:20px;padding:5px 12px}
+.cv-demo-btns{display:flex;gap:8px;margin-top:7px}
+.cv-demo-bar button{display:block;background:#fff;border:1px solid #E0B23C;color:#7a5600;font:inherit;font-weight:700;border-radius:20px;padding:5px 12px}
 .cv-disc-card{background:#fff;border:2px solid #E9D5FF;border-radius:18px;padding:13px 14px;margin:4px 0 14px;box-shadow:0 4px 14px rgba(91,33,182,.10)}
 .cv-disc-card .dt{font-weight:800;font-size:1rem;color:#4C1D95}
 .cv-disc-card .dd{font-size:.8rem;color:var(--gray);margin:4px 0 2px;line-height:1.35}
@@ -922,6 +923,7 @@ a.v-btn.cv-escale{display:block;text-align:center;text-decoration:none}
 .cv-souv-grp{margin:16px 2px 8px;font-weight:800;font-size:.86rem;color:var(--ink);display:flex;gap:8px;align-items:baseline}
 .cv-souv-grp small{font-weight:600;color:var(--gray);font-size:.75rem}
 .cv-tuto video{width:100%;max-height:68vh;border-radius:14px;background:#000;display:block}
+.cv-escale-tuto{display:block;width:100%;margin:-6px 0 14px;background:#F3EAFF;border:1.5px dashed #C4A5F5;color:#4C1D95;font:inherit;font-weight:700;font-size:.82rem;padding:9px 12px;border-radius:14px;text-align:center}
 .cv-escale-card{display:block;text-decoration:none;color:#fff;background:linear-gradient(135deg,#5B21B6 0%,#7C3AED 55%,#DB2777 100%);border-radius:18px;padding:16px 16px 14px;margin:4px 0 14px;box-shadow:0 6px 18px rgba(91,33,182,.28);position:relative;overflow:hidden}
 .cv-escale-card::after{content:'✈️';position:absolute;right:-6px;top:-10px;font-size:4.6rem;opacity:.18;transform:rotate(-12deg)}
 .cv-escale-card .ek{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
@@ -1340,7 +1342,7 @@ const CV = (function(){
       ${demoBtn()}
       <button class="v-btn sec" onclick="CV.psPick()">📥 Importer des voyages Polarsteps</button>
       ${!PUBLIC && !(R.t2025 && !R.t2025.deleted) ? `<button class="v-btn sec" onclick="CV.seedUSA2025()">📦 Ajouter l’archive USA 2025</button>` : ''}
-      ${ESCALE ? `<a class="v-btn sec cv-escale" href="${ESCALE}" target="_blank" rel="noopener">✈️ Chercher des vols avec Escale</a>` : ''}
+      ${ESCALE ? `<a class="v-btn sec cv-escale" href="${ESCALE}" target="_blank" rel="noopener">✈️ Chercher des vols avec Escale</a><button class="v-btn sec" onclick="CV.escaleTuto()">🎓 Tuto Escale premium</button>` : ''}
       ${trip() ? `<button class="v-btn sec" onclick="CV.editTrip('${M.trip}')">✏️ Modifier « ${esc(trip().titre)} »</button>` : ''}`);
   }
   function buildTabs(){
@@ -1400,8 +1402,14 @@ const CV = (function(){
     if(!trip()){ const t = trips()[0]; M.trip = t ? t.id : null; }
     persist(); closeSheet(true); M.tab = 'prog'; applyMode(); toast('🗑 Démo supprimée');
   }
+  function demoReset(){
+    if(demoTrip() && !confirm('Relancer le voyage de démo ?\n\nIl est remis à neuf : tes essais dans la démo sont effacés. Tes propres voyages ne sont pas touchés.')) return;
+    Object.keys(R).forEach(id=>{ if(R[id].demo) delete R[id]; });
+    persist(); demoLoad();
+  }
   const demoBtn = () => PUBLIC ? (demoTrip()
-      ? `<button class="v-btn sec" onclick="CV.demoDel()">🗑 Supprimer le voyage de démo</button>`
+      ? `<button class="v-btn sec" onclick="CV.demoReset()">↺ Relancer le voyage de démo (remis à neuf)</button>
+         <button class="v-btn sec" onclick="CV.demoDel()">🗑 Supprimer le voyage de démo</button>`
       : `<button class="v-btn sec" onclick="CV.demoLoad()">👀 Voir un voyage de démo (Japon, 3 semaines)</button>`) : '';
   function go(id){ M.trip = id; M.who = 'all'; persist(); applyMode(); window.scrollTo({top:0}); }
   function tab(id){
@@ -1529,6 +1537,7 @@ const CV = (function(){
       <div class="v-sum-row"><div class="v-sum-big">${eur(proj)}</div><div class="v-sum-small">${paid+booked}/${n} réservés · ${paid} payés</div></div>
       <div class="v-sum-small">${M.who!=='all' ? 'Part de '+esc(pname(M.who)) : nv>1 ? 'Total pour '+nv+' · soit ≈ '+eur(proj/nv)+' par personne' : 'Projection'} · réel saisi : ${eur(reel)}</div>
       <div class="v-bar"><span class="b-paid" style="width:${n?paid/n*100:0}%"></span><span class="b-booked" style="width:${n?booked/n*100:0}%"></span></div>
+      ${cat==='transport' && ESCALE ? `<button type="button" class="cv-escale-tuto" style="margin:10px 0 0" onclick="CV.escaleTuto()">🎓 Tuto Escale premium</button>` : ''}
       ${cat==='transport' && ESCALE ? `<a class="cv-escale-mini" href="${ESCALE}" target="_blank" rel="noopener">🛫 Chercher les meilleurs prix de vols avec <b>Escale</b> ↗${PUBLIC ? '<small>Mode soft : prix indicatifs en cache (Travelpayouts). Tarifs en direct, Booking, voitures et attractions : mode premium sur code d’accès.</small>' : ''}</a>` : ''}
     </div>
     <div class="v-filters">${[['all','Tous'],['todo','À réserver'],['booked','Réservé'],['paid','Payé']].map(([k,l])=>
@@ -1698,7 +1707,7 @@ const CV = (function(){
     let h = whoBar() + pinBoard();
     const tt = trip();
     if(tt && tt.demo) h = `<div class="cv-demo-bar">👀 <b>Voyage de démo</b> : touche à tout, modifie, supprime. Il reste sur ce téléphone et n’est jamais partagé.
-        <button type="button" onclick="CV.demoDel()">Supprimer la démo</button></div>` + h;
+        <span class="cv-demo-btns"><button type="button" onclick="CV.demoReset()">↺ Recommencer</button><button type="button" onclick="CV.demoDel()">Supprimer la démo</button></span></div>` + h;
     if(tt && !tt.archived) h += discoverCard(true);
     if(ESCALE && tt && !tt.archived) h += `<a class="cv-escale-card" href="${ESCALE}" target="_blank" rel="noopener">
         <span class="ek">Escale · comparateur</span>
@@ -1706,7 +1715,7 @@ const CV = (function(){
         <span class="ed">Compare les prix des compagnies en quelques secondes, puis ajoute ton vol ici.</span>
         <span class="eb">Chercher avec Escale ↗</span>
         ${PUBLIC ? '<small>Prix indicatifs : vérifie toujours le tarif final chez la compagnie.</small>' : ''}
-      </a>`;
+      </a><button type="button" class="cv-escale-tuto" onclick="CV.escaleTuto()">🎓 Tuto : utiliser Escale en mode premium</button>`;
     if(!ds.length) h += '<div class="v-empty">Aucun jour. Ajoute des dates au voyage (⚙️ Partage → Modifier le voyage) ou un trajet daté.</div>';
     h += ds.map((d,idx)=>{
       const info = dayInfo(d);
@@ -2190,7 +2199,7 @@ const CV = (function(){
         <button class="v-btn sec" onclick="CV.pdfSheet()">🖨️ Carnet de route à imprimer (PDF)</button>
         <button class="v-btn sec" onclick="CV.wizard()">＋ Nouveau voyage</button></div>`;
     }
-    h += `<div class="v-box"><h3>🎬 Tuto vidéo</h3><p>Toutes les fonctions de l’appli en 5 minutes.</p>${tutoBtn()}</div>`;
+    h += `<div class="v-box"><h3>🎬 Tutos</h3><p>Toutes les fonctions de l’appli en 5 minutes, et comment chercher tes vols avec Escale.</p>${tutoBtn()}${ESCALE ? `<button type="button" class="v-btn sec" onclick="CV.escaleTuto()">🎓 Tuto Escale premium</button>` : ''}</div>`;
     h += `<div class="v-box"><h3>🕘 Activité récente</h3>${activity()}</div>
       <div class="v-box"><h3>💾 Sauvegarde</h3>
         <p>Tout est enregistré sur ce téléphone (${Math.round(size/1024)} Ko)${s.on?' et sur le serveur':''}. L’export reste ta copie de secours, et il contient aussi l’archive 2026.</p>
@@ -3654,6 +3663,27 @@ const CV = (function(){
       <div class="cv-tuto"><video src="${TUTO}" controls playsinline preload="metadata"></video></div>
       <div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.close()">Fermer</button></div>`);
   }
+  function escaleTuto(){
+    openSheet(`<h2>🎓 Escale en mode premium</h2>
+      <div class="cv-info">
+      <p>Escale cherche les vols les moins chers. En <b>mode soft</b> (par défaut), les prix viennent d’un cache gratuit : ce sont des <b>prix indicatifs</b>. Le <b>mode premium</b> interroge les sources en direct.</p>
+      <h3>1. Passer en premium</h3>
+      <p>Ouvre Escale, puis touche le bouton <b>« ◐ Mode SOFT · appuyer pour PREMIUM »</b> sous le titre (ou menu <b>☰ → Réglages → Changer de mode</b>). Saisis la phrase d’accès : l’appli se recharge et affiche <b>« ● Mode PREMIUM »</b>.</p>
+      <p>La <b>phrase d’accès</b> au premium t’est donnée par la personne qui t’a invité sur l’appli. Elle ne se trouve pas dans le carnet.</p>
+      <h3>2. Ce que le premium débloque</h3>
+      <p>⚡ <b>Prix réel pour tes dates</b> : le bouton ⚡ sur une destination, ou « ⚡ Prix live » dans son calendrier.<br>
+      🏨 <b>Hôtels</b> avec photos, notes et prix (Booking).<br>
+      🚗 <b>Voiture de location</b> à l’arrivée.<br>
+      🎟️ <b>Activités</b> à réserver sur place.<br>
+      🛫 <b>Départs voisins</b> : dans le calendrier d’un mois, le prix depuis les aéroports proches de chez toi.</p>
+      <h3>3. Trouver le bon vol</h3>
+      <p>Choisis ton aéroport de départ et tes dates (ou « N’importe où »). Touche une destination : le <b>calendrier couleur</b> montre chaque jour, du moins cher (vert) au plus cher (rouge). Un jour vert entouré = vol direct. Puis touche <b>⚡</b> pour le prix réel du jour choisi.</p>
+      <h3>4. Revenir au carnet</h3>
+      <p>Réserve chez la compagnie, puis dans le carnet : <b>Résas → Trajets</b>, ouvre le vol et remplis la compagnie, les horaires, le prix et le lien de réservation. Le budget et « qui doit quoi » se mettent à jour tout seuls.</p>
+      <p class="cv-warn">💡 Le premium utilise des services payants à quota : garde-le pour tes vraies dates, et repasse en soft pour flâner.</p>
+      </div>
+      <div class="v-actions">${ESCALE ? `<a class="v-btn" href="${ESCALE}" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">✈️ Ouvrir Escale</a>` : ''}<button type="button" class="v-btn sec cv-sq" onclick="CV.close()">✕</button></div>`);
+  }
   function infoHTML(){
     return `<div class="cv-info">
       ${tutoBtn()}
@@ -3731,7 +3761,7 @@ const CV = (function(){
     envF:setEnvF, envP:setEnvP, like, editWish, saveWish, delWish, wishToTrip,
     editTrip, saveTrip, delTrip, closeTrip, reopenTrip,
     live, one, echAdd, echDel, echSpread, echToggle, lisser, echReset, echRange, echRangeReset,
-    planDay, plCfg, plAdd, plDel, plOpt, wizard, tutoSheet, demoLoad, demoDel, wzGo, wzDates, wzEt, wzSum, wzTpl, wzCreate,
+    planDay, plCfg, plAdd, plDel, plOpt, wizard, tutoSheet, escaleTuto, demoLoad, demoDel, demoReset, wzGo, wzDates, wzEt, wzSum, wzTpl, wzCreate,
     pickColor, newProfile, editProfile, saveProfile, delProfile, whoSheet, setMe,
     genCode, syncOn, syncOff, syncNow, shareCode, exportShare, exportDownload, importPick, wipe, obCreate, obJoin,
     _R:()=>R, _M:()=>M};
