@@ -911,6 +911,13 @@ body.locked .v-fab,body.locked .cv-thx,body.locked .cv-addph,body.locked .v-cl .
 .cv-cres-d{background:#FFF7F4;border-radius:12px;padding:9px 11px;margin-bottom:6px;font-size:.8rem;line-height:1.45}
 .cv-cres-d ul{margin:4px 0 0 16px}
 a.v-btn.cv-escale{display:block;text-align:center;text-decoration:none}
+.cv-escale-card{display:block;text-decoration:none;color:#fff;background:linear-gradient(135deg,#5B21B6 0%,#7C3AED 55%,#DB2777 100%);border-radius:18px;padding:16px 16px 14px;margin:4px 0 14px;box-shadow:0 6px 18px rgba(91,33,182,.28);position:relative;overflow:hidden}
+.cv-escale-card::after{content:'✈️';position:absolute;right:-6px;top:-10px;font-size:4.6rem;opacity:.18;transform:rotate(-12deg)}
+.cv-escale-card .ek{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
+.cv-escale-card .et{display:block;font-size:1.12rem;font-weight:800;margin:3px 0 4px;line-height:1.25}
+.cv-escale-card .ed{display:block;font-size:.84rem;opacity:.92;line-height:1.35}
+.cv-escale-card .eb{display:inline-block;margin-top:11px;background:#fff;color:#5B21B6;font-weight:800;font-size:.86rem;padding:8px 14px;border-radius:30px}
+.cv-escale-card small{display:block;font-size:.68rem;opacity:.75;margin-top:8px}
 .cv-escale-mini{display:block;margin-top:10px;font-size:.8rem;color:var(--ink);text-decoration:none;background:#F3EAFF;border-radius:12px;padding:8px 10px}
 .cv-info h3{font-family:var(--display);font-style:italic;font-size:1.15rem;margin:12px 0 4px;color:var(--ink)}
 .cv-info p{font-size:.86rem;line-height:1.5;color:#4d3b50;margin-bottom:6px}
@@ -1635,6 +1642,14 @@ const CV = (function(){
   function renderProg(){
     const ds = dayList();
     let h = whoBar() + pinBoard();
+    const tt = trip();
+    if(ESCALE && tt && !tt.archived) h += `<a class="cv-escale-card" href="${ESCALE}" target="_blank" rel="noopener">
+        <span class="ek">Escale · comparateur</span>
+        <span class="et">Trouve les vols les moins chers pour ce voyage</span>
+        <span class="ed">Compare les prix des compagnies en quelques secondes, puis ajoute ton vol ici.</span>
+        <span class="eb">Chercher avec Escale ↗</span>
+        ${PUBLIC ? '<small>Prix indicatifs : vérifie toujours le tarif final chez la compagnie.</small>' : ''}
+      </a>`;
     if(!ds.length) h += '<div class="v-empty">Aucun jour. Ajoute des dates au voyage (⚙️ Partage → Modifier le voyage) ou un trajet daté.</div>';
     h += ds.map((d,idx)=>{
       const info = dayInfo(d);
