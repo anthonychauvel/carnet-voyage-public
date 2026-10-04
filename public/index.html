@@ -911,6 +911,8 @@ body.locked .v-fab,body.locked .cv-thx,body.locked .cv-addph,body.locked .v-cl .
 .cv-cres-d{background:#FFF7F4;border-radius:12px;padding:9px 11px;margin-bottom:6px;font-size:.8rem;line-height:1.45}
 .cv-cres-d ul{margin:4px 0 0 16px}
 a.v-btn.cv-escale{display:block;text-align:center;text-decoration:none}
+.cv-demo-bar{background:#FFF4D6;border:1.5px solid #F5C451;color:#5a4200;border-radius:14px;padding:10px 12px;margin:4px 0 12px;font-size:.8rem;line-height:1.4}
+.cv-demo-bar button{display:block;margin-top:7px;background:#fff;border:1px solid #E0B23C;color:#7a5600;font:inherit;font-weight:700;border-radius:20px;padding:5px 12px}
 .cv-escale-card{display:block;text-decoration:none;color:#fff;background:linear-gradient(135deg,#5B21B6 0%,#7C3AED 55%,#DB2777 100%);border-radius:18px;padding:16px 16px 14px;margin:4px 0 14px;box-shadow:0 6px 18px rgba(91,33,182,.28);position:relative;overflow:hidden}
 .cv-escale-card::after{content:'✈️';position:absolute;right:-6px;top:-10px;font-size:4.6rem;opacity:.18;transform:rotate(-12deg)}
 .cv-escale-card .ek{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
@@ -1042,7 +1044,7 @@ const CV = (function(){
     r.updatedAt = Math.max(n, (r.updatedAt||0) + 1);
     r.updatedBy = M.me;
   }
-  function markDirty(id){ if(!M.dirty.includes(id)) M.dirty.push(id); }
+  function markDirty(id){ if(R[id] && R[id].demo) return; if(!M.dirty.includes(id)) M.dirty.push(id); }   // le voyage de démo reste sur ce téléphone
   function put(r, msg){ stamp(r); R[r.id] = r; markDirty(r.id); persist(); toast(msg); queueSync(); return r; }
   function putMany(arr, msg){ arr.forEach(r=>{ stamp(r); R[r.id] = r; markDirty(r.id); }); persist(); toast(msg); queueSync(); }
   function drop(id, msg){ const r = R[id]; if(!r) return; r.deleted = true; put(r, msg || '🗑 Supprimé'); }
@@ -1326,6 +1328,7 @@ const CV = (function(){
         ${!PUBLIC && !(R.t2026 && !R.t2026.deleted) ? `<button class="cv-tripcard legacy" onclick="CV.convert2026()"><span class="tt">Road trip Europe</span><span class="td">juillet 2026 · touche pour le passer au nouveau format</span></button>` : ''}
       </div>
       <button class="v-btn" onclick="CV.wizard()">＋ Préparer un nouveau voyage</button>
+      ${demoBtn()}
       <button class="v-btn sec" onclick="CV.psPick()">📥 Importer des voyages Polarsteps</button>
       ${!PUBLIC && !(R.t2025 && !R.t2025.deleted) ? `<button class="v-btn sec" onclick="CV.seedUSA2025()">📦 Ajouter l’archive USA 2025</button>` : ''}
       ${ESCALE ? `<a class="v-btn sec cv-escale" href="${ESCALE}" target="_blank" rel="noopener">✈️ Chercher des vols avec Escale</a>` : ''}
@@ -1359,6 +1362,38 @@ const CV = (function(){
     if(!legacy){ buildTabs(); render(); }
     else document.getElementById('cv-fab').style.display = 'none';
   }
+  /* ══════════ 👀 Voyage de démo (version grand public) ══════════ */
+  const DEMO_TPL = [{"id":"__P1__","type":"profile","nom":"Léo","couleur":"#2e9e6a"},{"id":"__P2__","type":"profile","nom":"Inès","couleur":"#e8862e"},{"id":"__T__","type":"trip","titre":"Japon · 3 semaines","sous":"Tokyo → Hakone → Kyoto → Hiroshima → Osaka → Tokyo","debut":"@0","fin":"@20","voyageurs":["__P1__","__P2__","__ME__"],"objectif":3500,"createdBy":"__ME__","updatedBy":"__ME__"},{"id":"~0","type":"item","trip":"__T__","cat":"hotel","titre":"Tokyo","date":"@0","dateFin":"@5","statut":"booked","partage":"grp","qui":[],"createdBy":"__ME__","updatedBy":"__ME__","echeances":[{"id":"emutz7gp7i3a1q0","date":"@-149","montant":273.33,"fait":false},{"id":"emutz7gp76i6j51","date":"@-119","montant":273.33,"fait":false},{"id":"emutz7gp7cah962","date":"@-88","montant":273.34,"fait":false}],"nom":"Hotel Gracery Shinjuku","adresse":"","heure":"","tel":"","prix":"820","estime":"","ref":"","lien":"","payeur":"__P1__"},{"id":"~1","type":"item","trip":"__T__","cat":"hotel","titre":"Hakone","date":"@5","dateFin":"@7","statut":"paid","partage":"grp","qui":[],"createdBy":"__ME__","updatedBy":"__ME__","nom":"Ryokan Fujiya","adresse":"Miyanoshita, Hakone","heure":"15:00","prix":"540","payeur":"__P2__"},{"id":"~2","type":"item","trip":"__T__","cat":"transport","statut":"booked","partage":"pp","qui":[],"mode":"Train","titre":"Tokyo → Hakone","from":"Tokyo","to":"Hakone","date":"@5","createdBy":"__ME__","updatedBy":"__ME__","compagnie":"Odakyu Romancecar","heureDep":"09:30","heureArr":"11:00","prix":"25","payeur":"chacun"},{"id":"~3","type":"item","trip":"__T__","cat":"hotel","titre":"Kyoto","date":"@7","dateFin":"@12","statut":"booked","partage":"grp","qui":[],"createdBy":"__ME__","updatedBy":"__ME__","nom":"Machiya Gion","adresse":"Higashiyama, Kyoto","heure":"16:00","prix":"950","payeur":"__ME__"},{"id":"~4","type":"item","trip":"__T__","cat":"transport","statut":"booked","partage":"pp","qui":[],"mode":"Train","titre":"Hakone → Kyoto","from":"Hakone","to":"Kyoto","date":"@7","createdBy":"__ME__","updatedBy":"__ME__","compagnie":"Shinkansen Hikari","heureDep":"10:12","heureArr":"12:20","prix":"95","payeur":"__P1__"},{"id":"~5","type":"item","trip":"__T__","cat":"hotel","titre":"Hiroshima","date":"@12","dateFin":"@14","statut":"booked","partage":"grp","qui":[],"createdBy":"__ME__","updatedBy":"__ME__","nom":"Hotel Granvia","adresse":"Gare de Hiroshima","heure":"15:00","prix":"260","payeur":"__P1__"},{"id":"~6","type":"item","trip":"__T__","cat":"transport","statut":"paid","partage":"pp","qui":[],"mode":"Train","titre":"Kyoto → Hiroshima","from":"Kyoto","to":"Hiroshima","date":"@12","createdBy":"__ME__","updatedBy":"__ME__","compagnie":"Shinkansen Nozomi","heureDep":"09:05","heureArr":"10:45","prix":"85","payeur":"__P2__"},{"id":"~7","type":"item","trip":"__T__","cat":"hotel","titre":"Osaka","date":"@14","dateFin":"@17","statut":"todo","partage":"grp","qui":[],"createdBy":"__ME__","updatedBy":"__ME__","nom":"Cross Hotel","adresse":"Dōtonbori, Osaka","estime":"390"},{"id":"~8","type":"item","trip":"__T__","cat":"transport","statut":"todo","partage":"pp","qui":[],"mode":"Train","titre":"Hiroshima → Osaka","from":"Hiroshima","to":"Osaka","date":"@14","createdBy":"__ME__","updatedBy":"__ME__","estime":"75"},{"id":"~9","type":"item","trip":"__T__","cat":"hotel","titre":"Tokyo","date":"@17","dateFin":"@20","statut":"todo","partage":"grp","qui":[],"createdBy":"__ME__","updatedBy":"__ME__","nom":"Mitsui Garden Ginza","adresse":"Ginza, Tokyo","estime":"600"},{"id":"~10","type":"item","trip":"__T__","cat":"transport","statut":"todo","partage":"pp","qui":[],"mode":"Train","titre":"Osaka → Tokyo","from":"Osaka","to":"Tokyo","date":"@17","createdBy":"__ME__","updatedBy":"__ME__","estime":"105"},{"id":"~11","type":"item","trip":"__T__","cat":"transport","statut":"paid","partage":"pp","qui":[],"mode":"Avion","titre":"Paris → Tokyo","from":"Paris","to":"Tokyo","date":"@0","createdBy":"__ME__","updatedBy":"__ME__","compagnie":"Air France AF276","heureDep":"10:25","heureArr":"06:40","prix":"980","estime":"","ref":"","lien":"","payeur":"__ME__"},{"id":"~12","type":"item","trip":"__T__","cat":"transport","statut":"paid","partage":"pp","qui":[],"mode":"Avion","titre":"Tokyo → Paris","from":"Tokyo","to":"Paris","date":"@20","createdBy":"__ME__","updatedBy":"__ME__","compagnie":"Air France AF275","heureDep":"12:05","heureArr":"18:30","prix":"0","estime":"","payeur":"__ME__","note":"inclus dans l’aller-retour"},{"type":"day","trip":"__T__","date":"@0","titre":"Arrivée à Tokyo","plan":"","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@1","titre":"Tokyo","plan":"Shibuya, Harajuku, Meiji-jingu","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@2","titre":"Tokyo","plan":"teamLab le matin, Odaiba l’après-midi","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@3","titre":"Tokyo","plan":"","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@4","titre":"Tokyo","plan":"Asakusa, Senso-ji, Skytree au coucher du soleil","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@5","titre":"Tokyo → Hakone","plan":"","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@6","titre":"Hakone","plan":"Lac Ashi, Owakudani, onsen le soir","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@7","titre":"Hakone → Kyoto","plan":"","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@8","titre":"Kyoto","plan":"Fushimi Inari tôt le matin, Gion le soir","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@9","titre":"Kyoto","plan":"","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@10","titre":"Kyoto","plan":"Arashiyama, bambouseraie","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@11","titre":"Kyoto","plan":"","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@12","titre":"Kyoto → Hiroshima","plan":"","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@13","titre":"Hiroshima","plan":"Miyajima, torii flottant à marée haute","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@14","titre":"Hiroshima → Osaka","plan":"","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@15","titre":"Osaka","plan":"","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@16","titre":"Osaka","plan":"Dōtonbori, street food","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@17","titre":"Osaka → Tokyo","plan":"","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@18","titre":"Tokyo","plan":"Shimokitazawa, dernières emplettes","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@19","titre":"Tokyo","plan":"","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@20","titre":"Tokyo → retour","plan":"","createdBy":"__ME__","updatedBy":"__ME__"},{"id":"~13","type":"check","trip":"__T__","cat":"📋 Documents","label":"Pièce d’identité / passeport valide","done":true,"createdBy":"__ME__","updatedBy":"__ME__"},{"id":"~14","type":"check","trip":"__T__","cat":"📋 Documents","label":"Assurance voyage (rapatriement)","done":true,"createdBy":"__ME__","updatedBy":"__ME__"},{"id":"~15","type":"check","trip":"__T__","cat":"📋 Documents","label":"Carte bancaire sans frais à l’étranger + 2e carte","done":true,"createdBy":"__ME__","updatedBy":"__ME__"},{"id":"~16","type":"check","trip":"__T__","cat":"📋 Documents","label":"Copies numériques (papiers, billets, réservations)","done":true,"createdBy":"__ME__","updatedBy":"__ME__"},{"id":"~17","type":"check","trip":"__T__","cat":"🗓️ À réserver tôt","label":"Trajets aller et retour","done":true,"createdBy":"__ME__","updatedBy":"__ME__"},{"id":"~18","type":"check","trip":"__T__","cat":"🗓️ À réserver tôt","label":"Hébergements","done":false,"createdBy":"__ME__","updatedBy":"__ME__"},{"id":"~19","type":"check","trip":"__T__","cat":"🗓️ À réserver tôt","label":"Visites à créneau","done":false,"createdBy":"__ME__","updatedBy":"__ME__"},{"id":"~20","type":"check","trip":"__T__","cat":"☀️ Santé","label":"Trousse pharmacie","done":false,"createdBy":"__ME__","updatedBy":"__ME__"},{"id":"~21","type":"check","trip":"__T__","cat":"☀️ Santé","label":"Crème solaire, gourde","done":false,"createdBy":"__ME__","updatedBy":"__ME__"},{"id":"~22","type":"check","trip":"__T__","cat":"📱 Tech","label":"Chargeur + batterie externe","done":false,"createdBy":"__ME__","updatedBy":"__ME__"},{"id":"~23","type":"check","trip":"__T__","cat":"📱 Tech","label":"Cartes hors ligne","done":false,"createdBy":"__ME__","updatedBy":"__ME__"},{"id":"~24","type":"check","trip":"__T__","cat":"📱 Tech","label":"eSIM / forfait à l’étranger","done":false,"createdBy":"__ME__","updatedBy":"__ME__"},{"id":"~25","type":"item","trip":"__T__","statut":"paid","partage":"pp","qui":[],"createdBy":"__ME__","updatedBy":"__ME__","cat":"activite","titre":"teamLab Planets","date":"@2","heure":"10:00","adresse":"Toyosu, Tokyo","prix":"32","payeur":"__ME__"},{"id":"~26","type":"item","trip":"__T__","statut":"booked","partage":"pp","qui":[],"createdBy":"__ME__","updatedBy":"__ME__","cat":"activite","titre":"Musée Ghibli","date":"@3","heure":"14:00","adresse":"Mitaka, Tokyo","prix":"8","payeur":"__P2__"},{"id":"~27","type":"item","trip":"__T__","statut":"todo","partage":"pp","qui":[],"createdBy":"__ME__","updatedBy":"__ME__","cat":"activite","titre":"Croisière lac Ashi","date":"@6","adresse":"Hakone","estime":"15"},{"id":"~28","type":"item","trip":"__T__","statut":"booked","partage":"pp","qui":[],"createdBy":"__ME__","updatedBy":"__ME__","cat":"activite","titre":"Cours de cuisine japonaise","date":"@9","heure":"11:00","adresse":"Nishiki, Kyoto","prix":"75","payeur":"__P2__"},{"id":"~29","type":"item","trip":"__T__","statut":"todo","partage":"pp","qui":[],"createdBy":"__ME__","updatedBy":"__ME__","cat":"activite","titre":"Ferry pour Miyajima","date":"@13","adresse":"Port de Miyajimaguchi","estime":"5"},{"id":"~30","type":"item","trip":"__T__","statut":"paid","partage":"pp","qui":[],"createdBy":"__ME__","updatedBy":"__ME__","cat":"activite","titre":"Universal Studios Japan","date":"@15","heure":"09:00","adresse":"Osaka","prix":"85","payeur":"__P1__"},{"id":"~31","type":"item","trip":"__T__","statut":"paid","partage":"grp","qui":[],"createdBy":"__ME__","updatedBy":"__ME__","cat":"divers","titre":"Pocket Wi-Fi 3 semaines","prix":"90","payeur":"__ME__"},{"id":"~32","type":"item","trip":"__T__","statut":"paid","partage":"pp","qui":[],"createdBy":"__ME__","updatedBy":"__ME__","cat":"divers","titre":"Assurance voyage","prix":"45","payeur":"chacun"},{"id":"~33","type":"item","trip":"__T__","statut":"todo","partage":"pp","qui":[],"createdBy":"__ME__","updatedBy":"__ME__","cat":"divers","titre":"Carte Suica (recharges)","estime":"60"},{"id":"~34","type":"souv","trip":"__T__","date":"@6","titre":"Premier onsen","lieu":"Hakone","texte":"Eau à 42 °C avec vue sur la montagne. Léo a tenu 4 minutes.","photos":[],"createdBy":"__P2__","updatedBy":"__P2__"},{"id":"~35","type":"souv","trip":"__T__","date":"@8","titre":"Mille torii à l’aube","lieu":"Fushimi Inari, Kyoto","texte":"Partis à 6 h : personne sur le sentier, seulement les corbeaux.","photos":[],"createdBy":"__P2__","updatedBy":"__P2__"},{"id":"~36","type":"souv","trip":"__T__","date":"@6","titre":"Le Fuji au coucher du soleil","lieu":"Hakone","texte":"Le ciel a viré au rose juste au moment où le Fuji est sorti des nuages.","photos":[],"createdBy":"__ME__","updatedBy":"__ME__"}];
+  const demoTrip = () => list('trip', t=>t.demo)[0] || null;
+  function demoLoad(){
+    if(!M.me){ alert('Indique d’abord ton prénom.'); return; }
+    const ex = demoTrip(); if(ex){ closeSheet(true); M.tab = 'prog'; go(ex.id); return; }
+    const base = new Date(); base.setHours(12,0,0,0); base.setDate(base.getDate() + 180);
+    const day0 = base.toISOString().slice(0,10);
+    const tid = 't' + uid() + 'demo', p1 = 'p' + uid() + 'd1', p2 = 'p' + uid() + 'd2', ids = {}, now = Date.now();
+    const mapId = v => v==='__T__' ? tid : v==='__ME__' ? M.me : v==='__P1__' ? p1 : v==='__P2__' ? p2 : (v[0]==='~' ? (ids[v] = ids[v] || 'i' + uid() + v.slice(1)) : v);
+    const conv = v => typeof v==='string' ? (/^@-?\d+$/.test(v) ? addDays(day0, parseInt(v.slice(1))) : /^(__|~)/.test(v) ? mapId(v) : v)
+      : Array.isArray(v) ? v.map(conv) : (v && typeof v==='object') ? Object.fromEntries(Object.entries(v).map(([k,x])=>[k,conv(x)])) : v;
+    DEMO_TPL.forEach((t,k)=>{
+      const r = conv(clone(t));
+      if(r.type==='day') r.id = 'day:' + tid + ':' + r.date;
+      if(!r.createdBy) r.createdBy = M.me;
+      if(!r.updatedBy) r.updatedBy = r.createdBy;
+      r.createdAt = now + k; r.updatedAt = now + k; r.demo = true;
+      R[r.id] = r;
+    });
+    persist(); closeSheet(true); M.tab = 'prog'; go(tid);
+    toast('👀 Voyage de démo chargé');
+  }
+  function demoDel(){
+    if(!confirm('Supprimer le voyage de démo ?\n\nTes propres voyages ne sont pas touchés.')) return;
+    Object.keys(R).forEach(id=>{ if(R[id].demo) delete R[id]; });
+    if(!trip()){ const t = trips()[0]; M.trip = t ? t.id : null; }
+    persist(); closeSheet(true); M.tab = 'prog'; applyMode(); toast('🗑 Démo supprimée');
+  }
+  const demoBtn = () => PUBLIC ? (demoTrip()
+      ? `<button class="v-btn sec" onclick="CV.demoDel()">🗑 Supprimer le voyage de démo</button>`
+      : `<button class="v-btn sec" onclick="CV.demoLoad()">👀 Voir un voyage de démo (Japon, 3 semaines)</button>`) : '';
   function go(id){ M.trip = id; M.who = 'all'; persist(); applyMode(); window.scrollTo({top:0}); }
   function tab(id){
     M.tab = id; persist(); buildTabs(); render();
@@ -1374,7 +1409,7 @@ const CV = (function(){
     fab.style.display = 'none';
     if(!t && !['envies','reglages'].includes(M.tab)){
       body.innerHTML = `<div class="v-box"><h3>Aucun voyage</h3><p>Crée un voyage, ou transforme une envie en voyage depuis l’onglet ✨ Envies.</p>
-        <button class="v-btn" onclick="CV.wizard()">＋ Nouveau voyage</button></div>`;
+        <button class="v-btn" onclick="CV.wizard()">＋ Nouveau voyage</button>${demoBtn()}</div>`;
       return;
     }
     if(CATS[M.tab]) renderList(M.tab);
@@ -1643,6 +1678,8 @@ const CV = (function(){
     const ds = dayList();
     let h = whoBar() + pinBoard();
     const tt = trip();
+    if(tt && tt.demo) h = `<div class="cv-demo-bar">👀 <b>Voyage de démo</b> : touche à tout, modifie, supprime. Il reste sur ce téléphone et n’est jamais partagé.
+        <button type="button" onclick="CV.demoDel()">Supprimer la démo</button></div>` + h;
     if(ESCALE && tt && !tt.archived) h += `<a class="cv-escale-card" href="${ESCALE}" target="_blank" rel="noopener">
         <span class="ek">Escale · comparateur</span>
         <span class="et">Trouve les vols les moins chers pour ce voyage</span>
@@ -2153,7 +2190,7 @@ const CV = (function(){
     try {
       const j = await call(0, []);
       const remote = j.records.filter(r=>!r.deleted);
-      const localContent = Object.values(R).filter(r=>r.type!=='profile' && !r.deleted);
+      const localContent = Object.values(R).filter(r=>r.type!=='profile' && !r.deleted && !r.demo);
       if(remote.length && localContent.length){
         const replace = confirm(`Le carnet partagé contient déjà ${remote.length} fiches.\n\nOK = utiliser le carnet partagé (recommandé pour rejoindre : ce téléphone garde seulement ses profils).\nAnnuler = fusionner les deux carnets.`);
         if(replace) Object.keys(R).forEach(id=>{ if(R[id].type!=='profile') delete R[id]; });
@@ -2262,6 +2299,8 @@ const CV = (function(){
         <div class="v-f"><label>Ta couleur</label>${colorPick(COLORS[0])}</div>
         ${!PUBLIC && old && Array.isArray(old.items) ? `<div class="v-hint">✅ Tes saisies du voyage 2027 (${old.items.length} fiches) seront reprises.</div>` : ''}
         <button class="v-btn" onclick="CV.obCreate()">Commencer</button>
+        ${PUBLIC ? `<button class="v-btn sec" onclick="CV.obCreate('demo')">👀 Commencer avec un voyage de démo</button>
+        <div class="v-sum-small" style="margin-top:6px;text-align:center">Un voyage au Japon déjà rempli pour tout découvrir. Il reste sur ton téléphone et se supprime en un geste.</div>` : ''}
       </div>
       <div id="cv-ob-join" style="display:none">
         ${hosted ? '' : `<div class="v-f"><label>Adresse de l’appli en ligne</label><input class="v-in" id="cv-surl" placeholder="https://carnet-voyage.pages.dev"></div>`}
@@ -2274,7 +2313,7 @@ const CV = (function(){
       document.getElementById('cv-ob-join').style.display = j ? 'block' : 'none';
     }));
   }
-  function obCreate(){
+  function obCreate(mode){
     const nom = document.getElementById('cv-pnom').value.trim();
     if(!nom){ alert('Indique ton prénom.'); return; }
     const me = {id:'p'+uid(), type:'profile', nom, couleur:document.getElementById('cv-pcol').value};
@@ -2282,7 +2321,7 @@ const CV = (function(){
     let old = null; try { old = JSON.parse(localStorage.getItem(OLD) || 'null'); } catch(e){}
     if(PUBLIC){
       persist(); closeSheet(true); M.trip = null; applyMode(); toast('Bienvenue ' + nom + ' 👋');
-      setTimeout(()=>wizard(), 400); return;
+      setTimeout(()=> mode==='demo' ? demoLoad() : wizard(), 400); return;
     }
     if(old && Array.isArray(old.items)){
       putMany(fromV1(old, me.id, false).map(r=>Object.assign(r,{imported:true})), false);
@@ -3650,7 +3689,7 @@ const CV = (function(){
     envF:setEnvF, envP:setEnvP, like, editWish, saveWish, delWish, wishToTrip,
     editTrip, saveTrip, delTrip, closeTrip, reopenTrip,
     live, one, echAdd, echDel, echSpread, echToggle, lisser, echReset, echRange, echRangeReset,
-    planDay, plCfg, plAdd, plDel, plOpt, wizard, wzGo, wzDates, wzEt, wzSum, wzTpl, wzCreate,
+    planDay, plCfg, plAdd, plDel, plOpt, wizard, demoLoad, demoDel, wzGo, wzDates, wzEt, wzSum, wzTpl, wzCreate,
     pickColor, newProfile, editProfile, saveProfile, delProfile, whoSheet, setMe,
     genCode, syncOn, syncOff, syncNow, shareCode, exportShare, exportDownload, importPick, wipe, obCreate, obJoin,
     _R:()=>R, _M:()=>M};
