@@ -913,6 +913,15 @@ body.locked .v-fab,body.locked .cv-thx,body.locked .cv-addph,body.locked .v-cl .
 a.v-btn.cv-escale{display:block;text-align:center;text-decoration:none}
 .cv-demo-bar{background:#FFF4D6;border:1.5px solid #F5C451;color:#5a4200;border-radius:14px;padding:10px 12px;margin:4px 0 12px;font-size:.8rem;line-height:1.4}
 .cv-demo-bar button{display:block;margin-top:7px;background:#fff;border:1px solid #E0B23C;color:#7a5600;font:inherit;font-weight:700;border-radius:20px;padding:5px 12px}
+.cv-disc-card{background:#fff;border:2px solid #E9D5FF;border-radius:18px;padding:13px 14px;margin:4px 0 14px;box-shadow:0 4px 14px rgba(91,33,182,.10)}
+.cv-disc-card .dt{font-weight:800;font-size:1rem;color:#4C1D95}
+.cv-disc-card .dd{font-size:.8rem;color:var(--gray);margin:4px 0 2px;line-height:1.35}
+.cv-disc-card .dc{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+.cv-disc-card .dc button{background:#F3EAFF;border:0;color:#4C1D95;font:inherit;font-weight:700;font-size:.82rem;padding:7px 12px;border-radius:20px}
+.cv-disc-card.compact .dc{margin-top:7px}
+.cv-souv-grp{margin:16px 2px 8px;font-weight:800;font-size:.86rem;color:var(--ink);display:flex;gap:8px;align-items:baseline}
+.cv-souv-grp small{font-weight:600;color:var(--gray);font-size:.75rem}
+.cv-tuto video{width:100%;max-height:68vh;border-radius:14px;background:#000;display:block}
 .cv-escale-card{display:block;text-decoration:none;color:#fff;background:linear-gradient(135deg,#5B21B6 0%,#7C3AED 55%,#DB2777 100%);border-radius:18px;padding:16px 16px 14px;margin:4px 0 14px;box-shadow:0 6px 18px rgba(91,33,182,.28);position:relative;overflow:hidden}
 .cv-escale-card::after{content:'✈️';position:absolute;right:-6px;top:-10px;font-size:4.6rem;opacity:.18;transform:rotate(-12deg)}
 .cv-escale-card .ek{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
@@ -1409,7 +1418,7 @@ const CV = (function(){
     fab.style.display = 'none';
     if(!t && !['envies','reglages'].includes(M.tab)){
       body.innerHTML = `<div class="v-box"><h3>Aucun voyage</h3><p>Crée un voyage, ou transforme une envie en voyage depuis l’onglet ✨ Envies.</p>
-        <button class="v-btn" onclick="CV.wizard()">＋ Nouveau voyage</button>${demoBtn()}</div>`;
+        <button class="v-btn" onclick="CV.wizard()">＋ Nouveau voyage</button>${tutoBtn()}${demoBtn()}</div>`;
       return;
     }
     if(CATS[M.tab]) renderList(M.tab);
@@ -1497,6 +1506,16 @@ const CV = (function(){
       </div>
     </div>`;
   }
+  /* Carte « Que voir ? » : un bouton par étape, ouvre la recherche des lieux à visiter */
+  function discoverCard(compact){
+    const seen = new Set();
+    const st = items(i=>i.cat==='hotel').sort((a,b)=>(a.date||'').localeCompare(b.date||''))
+      .filter(h=>{ const c = cityOf(h.titre||''); if(!c || seen.has(c)) return false; seen.add(c); return true; });
+    if(!st.length) return '';
+    return `<div class="cv-disc-card${compact?' compact':''}"><div class="dt">🔎 Que voir pendant le voyage ?</div>
+      ${compact ? '' : '<div class="dd">Musées, monuments, points de vue… autour de chaque étape. Touche une ville pour voir les lieux et les ajouter au programme.</div>'}
+      <div class="dc">${st.map(h=>`<button type="button" onclick="CV.discover('${h.id}')">📍 ${esc(cityOf(h.titre))}</button>`).join('')}</div></div>`;
+  }
   function renderList(cat){
     const all = items(i => i.cat===cat).sort(sortItems);
     const mine = all.filter(forWho);
@@ -1506,7 +1525,7 @@ const CV = (function(){
     const proj = M.who==='all' ? mine.reduce((s,i)=>s+totalOf(i),0) : mine.reduce((s,i)=>s+shareOf(i,M.who),0);
     const reel = M.who==='all' ? mine.reduce((s,i)=>s+totalOf(i,'reel'),0) : mine.reduce((s,i)=>s+shareOf(i,M.who,'reel'),0);
     const nv = tv().length;
-    let h = whoBar() + `<div class="v-sum">
+    let h = whoBar() + (cat==='activite' ? discoverCard() : '') + `<div class="v-sum">
       <div class="v-sum-row"><div class="v-sum-big">${eur(proj)}</div><div class="v-sum-small">${paid+booked}/${n} réservés · ${paid} payés</div></div>
       <div class="v-sum-small">${M.who!=='all' ? 'Part de '+esc(pname(M.who)) : nv>1 ? 'Total pour '+nv+' · soit ≈ '+eur(proj/nv)+' par personne' : 'Projection'} · réel saisi : ${eur(reel)}</div>
       <div class="v-bar"><span class="b-paid" style="width:${n?paid/n*100:0}%"></span><span class="b-booked" style="width:${n?booked/n*100:0}%"></span></div>
@@ -1680,6 +1699,7 @@ const CV = (function(){
     const tt = trip();
     if(tt && tt.demo) h = `<div class="cv-demo-bar">👀 <b>Voyage de démo</b> : touche à tout, modifie, supprime. Il reste sur ce téléphone et n’est jamais partagé.
         <button type="button" onclick="CV.demoDel()">Supprimer la démo</button></div>` + h;
+    if(tt && !tt.archived) h += discoverCard(true);
     if(ESCALE && tt && !tt.archived) h += `<a class="cv-escale-card" href="${ESCALE}" target="_blank" rel="noopener">
         <span class="ek">Escale · comparateur</span>
         <span class="et">Trouve les vols les moins chers pour ce voyage</span>
@@ -2170,6 +2190,7 @@ const CV = (function(){
         <button class="v-btn sec" onclick="CV.pdfSheet()">🖨️ Carnet de route à imprimer (PDF)</button>
         <button class="v-btn sec" onclick="CV.wizard()">＋ Nouveau voyage</button></div>`;
     }
+    h += `<div class="v-box"><h3>🎬 Tuto vidéo</h3><p>Toutes les fonctions de l’appli en 5 minutes.</p>${tutoBtn()}</div>`;
     h += `<div class="v-box"><h3>🕘 Activité récente</h3>${activity()}</div>
       <div class="v-box"><h3>💾 Sauvegarde</h3>
         <p>Tout est enregistré sur ce téléphone (${Math.round(size/1024)} Ko)${s.on?' et sur le serveur':''}. L’export reste ta copie de secours, et il contient aussi l’archive 2026.</p>
@@ -3051,9 +3072,12 @@ const CV = (function(){
       ${(M.pq||[]).length && M.sync.on ? `<div class="v-sum-small" style="margin-top:6px">${E2E ? '🔐' : '☁️'} ${Math.ceil(M.pq.length/2)} photo(s) en cours ${E2E ? 'de chiffrement et d’envoi' : 'd’envoi'}…</div>` : ''}
       ${!M.sync.on && nph ? `<div class="v-sum-small" style="margin-top:6px">Les photos restent sur ce téléphone tant que la synchro n’est pas activée.</div>` : ''}</div>`;
     if(!all.length) h += `<div class="v-empty">Encore aucun souvenir pour ce voyage.</div>`;
+    const dsl = dayList(); let lastG = null;
+    const grpOf = s => { const i = dsl.indexOf(s.date); return i >= 0 ? `J${i+1} · ${fdate(s.date)}|${dayInfo(s.date).titre||''}` : s.date ? `${fdate(s.date)}|hors programme` : 'Sans date|'; };
     h += all.map(s=>{
+      const g = grpOf(s), gh = g !== lastG ? (lastG = g, `<div class="cv-souv-grp">📅 ${esc(g.split('|')[0])}${g.split('|')[1] ? ` <small>${esc(g.split('|')[1])}</small>` : ''}</div>`) : '';
       const ph = s.photos || [], more = ph.length - 9;
-      return `<div class="cv-souv">
+      return gh + `<div class="cv-souv">
         <div class="cv-souv-h"><span class="v-day-d">${s.date ? fdate(s.date) : '—'}</span><div><div class="cv-souv-t">${esc(s.titre||s.lieu||'Souvenir')}</div>
           ${s.lieu || s.pays ? `<div class="v-sum-small">📍 ${esc([s.lieu, s.pays].filter(Boolean).join(', '))}</div>` : ''}</div>
           <button class="cv-x" onclick="CV.editSouv('${s.id}')" aria-label="Modifier">✏️</button></div>
@@ -3065,11 +3089,21 @@ const CV = (function(){
     document.getElementById('cv-body').innerHTML = h;
     hydrate();
   }
+  function souvDaySel(s){
+    const ds = dayList(); if(!ds.length) return '';
+    const has = ds.includes(s.date);
+    return `<div class="v-f"><label>📅 Étape du voyage (jour par jour)</label>
+      <select class="v-in" onchange="if(this.value){const f=document.querySelector('#v-form [name=date]'); if(f) f.value=this.value;}">
+        <option value="">${has ? '— autre date —' : '— choisir le jour —'}</option>
+        ${ds.map((d,i)=>`<option value="${d}"${d===s.date?' selected':''}>J${i+1} · ${fdate(d)}${dayInfo(d).titre ? ' · ' + esc(dayInfo(d).titre) : ''}</option>`).join('')}
+      </select><div class="v-sum-small" style="margin-top:4px">Le souvenir et ses photos sont classés sous ce jour.</div></div>`;
+  }
   function editSouv(id){
     const s = id ? clone(R[id]) : {id:null, type:'souv', trip:M.trip, date:new Date().toISOString().slice(0,10), titre:'', lieu:'', texte:'', photos:[]};
     editing = s;
     openSheet(`<h2>📸 ${id ? esc(s.titre||'Souvenir') : 'Nouveau souvenir'}</h2>${byline(s)}
       <form id="v-form" onsubmit="event.preventDefault();CV.saveSouv()">
+        ${souvDaySel(s)}
         ${field('Titre','titre',s.titre,'text','placeholder="Ex. Coucher de soleil sur le Golden Gate"')}
         <div class="v-f2">${field('Date','date',s.date,'date')}${field('Lieu','lieu',s.lieu,'text','placeholder="Ville, endroit"')}</div>
         <div class="v-f"><label>Récit</label><textarea class="v-in" name="texte" style="min-height:120px">${esc(s.texte)}</textarea></div>
@@ -3293,7 +3327,6 @@ const CV = (function(){
     window.addEventListener('online', ()=>syncNow());
     setInterval(()=>{ if(document.visibilityState==='visible' && !sheetOpen()) syncNow(); }, 20000);
     applyMode(); applyLock(); bootOffline();
-    const hero = document.querySelector('.hero'); if(hero) hero.addEventListener('click', secretTap);
     if(PUBLIC && !M.infoSeen) infoSheet(true);
     else if(!M.me || !prof(M.me)){ if(M.sync.on && profiles().length) whoSheet(); else onboarding(); }
     syncNow();
@@ -3613,8 +3646,17 @@ const CV = (function(){
   }
 
   /* ══════════ 🔐 Fonctionnement & confidentialité (version publique) ══════════ */
+  const TUTO = 'tuto.mp4';
+  const tutoBtn = (cls) => `<button type="button" class="v-btn ${cls||'sec'}" onclick="CV.tutoSheet()">🎬 Voir le tuto vidéo (5 min)</button>`;
+  function tutoSheet(){
+    openSheet(`<h2>🎬 Tuto vidéo</h2>
+      <div class="v-sum-small" style="margin-bottom:10px">Créer un voyage de 3 semaines à plusieurs : étapes, vols, hôtels, budget, qui doit quoi, souvenirs et PDF.</div>
+      <div class="cv-tuto"><video src="${TUTO}" controls playsinline preload="metadata"></video></div>
+      <div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.close()">Fermer</button></div>`);
+  }
   function infoHTML(){
     return `<div class="cv-info">
+      ${tutoBtn()}
       ${installHTML(false)}
       <h3>🔐 Vos données restent à vous</h3>
       <p>Vos voyages, notes, dépenses et photos sont <b>chiffrés sur votre téléphone</b>, avec le code de votre carnet, avant d’être envoyés sur le serveur.</p>
@@ -3689,7 +3731,7 @@ const CV = (function(){
     envF:setEnvF, envP:setEnvP, like, editWish, saveWish, delWish, wishToTrip,
     editTrip, saveTrip, delTrip, closeTrip, reopenTrip,
     live, one, echAdd, echDel, echSpread, echToggle, lisser, echReset, echRange, echRangeReset,
-    planDay, plCfg, plAdd, plDel, plOpt, wizard, demoLoad, demoDel, wzGo, wzDates, wzEt, wzSum, wzTpl, wzCreate,
+    planDay, plCfg, plAdd, plDel, plOpt, wizard, tutoSheet, demoLoad, demoDel, wzGo, wzDates, wzEt, wzSum, wzTpl, wzCreate,
     pickColor, newProfile, editProfile, saveProfile, delProfile, whoSheet, setMe,
     genCode, syncOn, syncOff, syncNow, shareCode, exportShare, exportDownload, importPick, wipe, obCreate, obJoin,
     _R:()=>R, _M:()=>M};

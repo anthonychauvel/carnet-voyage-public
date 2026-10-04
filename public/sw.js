@@ -20,6 +20,7 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url);
   if (url.origin === self.location.origin) {
     if (url.pathname.startsWith('/api/')) return;
+    if (url.pathname.endsWith('.mp4')) return;   // vidéo du tuto : lue en direct (pas de cache, lecture par morceaux)
     e.respondWith(timeout(fetch(req), 6000)
       .then(r => { if (r && r.ok) { const cp = r.clone(); caches.open(CACHE).then(c => c.put(req, cp)); } return r; })
       .catch(() => caches.match(req, {ignoreSearch: true}).then(m => m || caches.match('./index.html'))));
