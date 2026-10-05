@@ -949,6 +949,21 @@ a.v-btn.cv-escale{display:block;text-align:center;text-decoration:none}
 .cv-share-qr{display:block;margin:6px auto 10px;width:min(64vw,240px);height:auto;background:#fff;border-radius:14px;padding:10px}
 .cv-share-url{font-size:.78rem;text-align:center;word-break:break-all;color:var(--gray);margin-bottom:10px}
 .cv-rmap{margin-top:10px}
+.cv-pjl{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 6px}
+.cv-pj{position:relative;display:inline-flex}
+.cv-pj>button:first-child{display:flex;flex-direction:column;align-items:center;gap:3px;width:78px;background:#fff;border:1px solid #eadfe6;border-radius:12px;padding:6px;font:inherit;color:inherit}
+.cv-pj img,.cv-pj .pdf{width:64px;height:64px;object-fit:cover;border-radius:8px;background:#f3eefc;display:flex;align-items:center;justify-content:center;font-weight:800;color:#7c3aed}
+.cv-pj small{font-size:.66rem;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cv-pj .x{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:0;background:#2a1238;color:#fff;font-size:.7rem}
+#cv-pjv{position:fixed;inset:0;z-index:10000;background:#000;display:flex;align-items:center;justify-content:center;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+#cv-pjv img{max-width:100%;max-height:100%;object-fit:contain;background:#fff}
+#cv-pjv button{position:absolute;top:calc(env(safe-area-inset-top,0px) + 10px);right:10px;z-index:2;background:#fff;border:0;border-radius:20px;padding:8px 14px;font:inherit;font-weight:700}
+.cv-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px}
+.cv-stats div{background:#fff;border:1px solid #eadfe6;border-radius:14px;padding:10px 6px;text-align:center}
+.cv-stats b{display:block;font-size:1.3rem;color:#4c1d95}
+.cv-stats span{font-size:.7rem;color:#6b5670}
+.cv-flags{display:flex;flex-wrap:wrap;gap:6px}
+.cv-flags span{background:#fff;border:1px solid #eadfe6;border-radius:20px;padding:4px 10px;font-size:.8rem}
 .cv-rcl{display:flex;flex-direction:column;gap:8px}
 .cv-rc{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#fff;border:1px solid #eadfe6;border-radius:14px;padding:8px;font:inherit;color:inherit}
 .cv-rc img{width:64px;height:64px;object-fit:cover;border-radius:10px;background:#eee;flex:0 0 64px}
@@ -1683,7 +1698,8 @@ const CV = (function(){
 
   /* ── Fiche trajet / hôtel / visite / dépense ── */
   function edit(id, newCat){
-    const src = id ? R[id] : {id:null, type:'item', trip:M.trip, cat:newCat, titre:'', statut:'todo', date:'', mode:'Avion', qui: M.who!=='all' ? [M.who] : []};
+    let draft = null; if(id && typeof id === 'object'){ draft = id; id = null; newCat = draft.cat; }
+    const src = draft ? Object.assign({id:null, type:'item', trip:M.trip, titre:'', statut:'todo', date:'', mode:'Avion', qui:[]}, draft) : id ? R[id] : {id:null, type:'item', trip:M.trip, cat:newCat, titre:'', statut:'todo', date:'', mode:'Avion', qui: M.who!=='all' ? [M.who] : []};
     if(!src) return;
     const it = clone(src); editing = it;
     const c = it.cat;
@@ -1716,6 +1732,7 @@ const CV = (function(){
     }
     h += `<div class="v-f2">${field('Prix réel (€)','prix',it.prix,'text','inputmode="decimal" placeholder="à saisir"')}${field('Estimation (€)','estime',it.estime,'text','inputmode="decimal"')}</div>`;
     h += fxFormRow();
+    h += pjBlock(it);
     if(id && it.cat==='divers') h += it.recu ? `<div class="v-f"><label>🧾 Ticket</label><button type="button" class="cv-rc" onclick="CV.rcView('${id}')"><img data-ph="${esc(it.recu)}.t" alt=""><span><b>Voir le ticket</b><small>touche pour l’agrandir</small></span></button></div>`
       : `<div class="v-f"><button type="button" class="v-day-edit" onclick="CV.rcAttach('${id}')">📷 Joindre la photo du ticket</button></div>`;
     h += `<div class="v-f"><label>Le prix saisi est</label>${segBtns('cv-part', [['pp','Par personne'],['grp','Global, partagé']], partage(it))}
@@ -2752,6 +2769,13 @@ const CV = (function(){
         if(it.mode==='Avion' && ESCALE) L.push(['🛫','Escale', ESCALE]);
         if(it.mode==='Avion') L.push(['✈️','Vols',`https://www.google.com/travel/flights?hl=fr&q=${q('Flights from '+it.from+' to '+it.to+(it.date?' on '+it.date:''))}`]);
         else L.push(['🔎','Horaires & prix',`https://www.rome2rio.com/fr/map/${q(it.from)}/${q(it.to)}`]);
+        if(/Train|Bus|Car|Voiture/i.test(it.mode||'')){
+          L.push(['🚆','Trainline',`https://www.thetrainline.com/fr`]);
+          L.push(['🧭','Omio',`https://www.omio.fr/`]);
+          L.push(['🚗','BlaBlaCar',`https://www.blablacar.fr/search?fn=${q(it.from)}&tn=${q(it.to)}${it.date ? '&db=' + it.date : ''}`]);
+        }
+      }
+      { const fn = String(it.compagnie||'').match(/\b([A-Z0-9]{2})\s?(\d{1,4})\b/); if(it.mode==='Avion' && fn) L.push(['📡','Suivre le vol',`https://www.flightradar24.com/data/flights/${(fn[1]+fn[2]).toLowerCase()}`]);
       }
     } else {
       const where = [it.nom, it.adresse || cityOf(it.titre)].filter(Boolean).join(', ');
@@ -5186,6 +5210,11 @@ const CV = (function(){
     const box = (ic, ti, p, btn) => `<div class="v-box cv-tool"><h3>${ic} ${ti}</h3><p>${p}</p>${btn}</div>`;
     let h = `<div class="v-sum"><div class="v-sum-row"><div class="v-sum-big">🧰 Outils du voyage</div></div>
       <div class="v-sum-small">Tout fonctionne sur ton téléphone. Rien n’est envoyé à l’éditeur de l’appli.</div></div>`;
+    h += box('📋','Coller une confirmation','Colle le texte d’un e-mail de réservation (vol, hôtel, train…) : l’appli crée la fiche avec la date, les horaires, la référence et le prix.', `<button class="v-btn" onclick="CV.cfSheet()">📋 Coller une confirmation</button>`);
+    h += box('🪄','Remplir mes journées','Les lieux les plus connus de chaque étape, répartis sur tes jours libres (sans toucher à ce qui est déjà prévu).', `<button class="v-btn sec" onclick="CV.tlFill()">🪄 Remplir mes journées</button>`);
+    h += box('📍','Je suis ici','Pendant le voyage, enregistre où tu es (ville, pays, petit mot) : ça trace ton parcours réel sur la carte et alimente tes stats.', `<button class="v-btn sec" onclick="CV.hereNow()">📍 Je suis ici</button><button class="v-btn sec" onclick="CV.tlStats()">📊 Mes stats (pays, km, nuits)</button>`);
+    h += box('🌍','Empreinte carbone et conseils','CO2 estimé de chaque trajet, comparaison avec le train, et le bon moment pour réserver les vols encore à réserver.', `<button class="v-btn sec" onclick="CV.tlCo2()">🌍 Calculer</button>`);
+    h += box('🗺️','Exporter l’itinéraire','Étapes, lieux à voir et tracés à pied dans un fichier KML : à ouvrir dans Google My Maps, Google Earth ou <b>Organic Maps</b> (cartes hors ligne gratuites).', `<button class="v-btn sec" onclick="CV.tlKml()">🗺️ Exporter (KML)</button>`);
     h += box('📴','Fiche du jour','Billets, horaires, adresses, téléphones et références d’aujourd’hui et de demain, sur une seule page lisible même sans réseau.',
       `<button class="v-btn" onclick="CV.tlDay()">📴 Ouvrir la fiche du jour</button>`);
     h += box('🔔','Rappels dans le calendrier','Échéances de paiement, enregistrement des vols (24 h avant), arrivées à l’hôtel : ajoutés en un geste au calendrier de ton téléphone, avec alertes. Pas de notification de l’appli.',
@@ -5226,14 +5255,14 @@ const CV = (function(){
       [...own, ...night].forEach(it=>{
         h += `<div class="cv-dayi"><b>${icon(it)} ${esc(it.titre)}</b>${it.heureDep||it.heure ? ` · ${esc(it.heureDep||it.heure)}${it.heureArr ? ' → ' + esc(it.heureArr) : ''}` : ''}
           <div>${[it.compagnie, it.nom && it.cat==='hotel' ? it.nom : '', it.ref ? 'Réf. <b>' + esc(it.ref) + '</b>' : ''].filter(Boolean).map(x=>x.startsWith('Réf.') ? x : esc(x)).join(' · ')}</div>
-          <div class="cv-dayl">${map(it.adresse)} ${tel(it.tel)} ${it.lien ? `<a href="${esc(it.lien)}">🔗 réservation</a>` : ''}</div></div>`;
+          <div class="cv-dayl">${map(it.adresse)} ${tel(it.tel)} ${it.lien ? `<a href="${esc(it.lien)}">🔗 réservation</a>` : ''}</div>${pjChips(it)}</div>`;
       });
       const pl = placesOf(d); if(pl.length) h += `<div class="v-sum-small">À voir : ${pl.map((p,n)=>`${n+1}. ${esc(p.nom)}`).join(' · ')}</div>`;
       if(!own.length && !night.length && !pl.length) h += `<div class="v-sum-small">Rien de prévu.</div>`;
       h += `</div>`;
     });
     h += `<div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.close()">Fermer</button></div>`;
-    openSheet(h);
+    openSheet(h); hydrate();
   }
 
   /* ---------- 🔔 Rappels dans le calendrier (même mécanisme que le menu de SimulHeures) ----------
@@ -5762,14 +5791,19 @@ const CV = (function(){
     const st = tlStages(); if(!st.length) return null;
     const pts = []; for(const s of st){ const c = geoCached(s.city) || await geocode(s.city, null).catch(()=>null); if(c) pts.push({lat:c.lat, lng:c.lng, name:s.city}); }
     if(!pts.length) return null;
-    return drawMap({w, h, line: pts.map(p=>[p.lat,p.lng]), dashed:true, color:'#7C3AED', maxZoom:12, markers: pts.map((p,i)=>Object.assign({label:i+1, color:'#7C3AED'}, p))});
+    const steps = list('step', s=>s.trip===M.trip && s.lat != null).map(s=>({lat:s.lat, lng:s.lng, label:'•', color:'#16a34a'}));
+    return drawMap({w, h, line: pts.map(p=>[p.lat,p.lng]), dashed:true, color:'#7C3AED', maxZoom:12, markers: [...pts.map((p,i)=>Object.assign({label:i+1, color:'#7C3AED'}, p)), ...steps]});
   }
   async function hydrateMaps(){
     for(const el of [...document.querySelectorAll('[data-rmap]:not([data-ok]),[data-tmap]:not([data-ok])')]){
       el.dataset.ok = '1'; el.innerHTML = '<div class="v-sum-small">🗺️ Carte en cours…</div>';
+      const mk = 'mapimg:' + (el.dataset.rmap || ('trip-' + M.trip));
       try { const c = el.dataset.rmap ? await dayMapCanvas(el.dataset.rmap, 640, 380) : await tripMapCanvas(640, 400);
-        el.innerHTML = c ? `<img src="${c.toDataURL('image/jpeg', .86)}" alt="Carte" style="width:100%;border-radius:12px;display:block">` : ''; }
+        if(c){ const u = c.toDataURL('image/jpeg', .86); el.innerHTML = `<img src="${u}" alt="Carte" style="width:100%;border-radius:12px;display:block">`;
+          if(navigator.onLine !== false) c.toBlob(b=>{ if(b) IDB.put({id:mk, blob:b, up:1}).catch(()=>{}); }, 'image/jpeg', .86); }
+        else el.innerHTML = ''; }
       catch(e){ el.innerHTML = ''; }
+      if(navigator.onLine === false){ const b = await photoBlob(mk).catch(()=>null); if(b) el.innerHTML = `<img src="${URL.createObjectURL(b)}" alt="Carte" style="width:100%;border-radius:12px;display:block"><div class="v-sum-small">Carte enregistrée (hors ligne)</div>`; }
     }
   }
 
@@ -5998,6 +6032,228 @@ const CV = (function(){
   function pollClose(id){ const p = clone(R[id]); p.closed = !p.closed; put(p); refresh(); }
   function pollDel(id){ if(!confirm('Supprimer ce sondage ?')) return; const p = clone(R[id]); p.deleted = true; put(p, '🗑 Sondage supprimé'); refresh(); }
 
+  /* ══════════════════════════════════════════════════════════════════════════
+     🎫 BILLETS JOINTS · 📋 CONFIRMATION COLLÉE · 🌍 CO2 & CONSEILS · 📍 JE SUIS ICI · 📊 STATS
+     🗺️ EXPORT KML · 🪄 REMPLIR MES JOURNÉES   (tout est gratuit, sans clé)
+     ══════════════════════════════════════════════════════════════════════════ */
+  /* ---------- 🎫 Billets, QR codes, PDF joints à n'importe quelle fiche ---------- */
+  const pjOf = it => (it && it.pj) || [];
+  function pjListHTML(it){
+    const l = pjOf(it);
+    return l.length ? `<div class="cv-pjl">${l.map((p,i)=>`<span class="cv-pj"><button type="button" onclick="CV.pjOpen('${esc(p.id)}','${p.t}')">${p.t==='img' ? `<img data-ph="${esc(p.id)}.t" alt="">` : '<span class="pdf">PDF</span>'}<small>${esc(p.n||'billet')}</small></button><button type="button" class="x" onclick="CV.pjDel(${i})" aria-label="Retirer">✕</button></span>`).join('')}</div>` : '<div class="v-sum-small">Aucun billet joint.</div>';
+  }
+  const pjBlock = it => `<div class="v-f"><label>🎫 Billets, cartes d’embarquement, PDF</label><div id="pj-box">${pjListHTML(it)}</div>
+    <button type="button" class="v-day-edit" onclick="CV.pjAdd()">📎 Joindre (photo, capture du QR code ou PDF)</button>
+    <div class="v-sum-small">Gardés dans le téléphone : lisibles sans réseau. Les photos sont aussi partagées avec le groupe ; les PDF restent sur ce téléphone.</div></div>`;
+  function pjRefresh(){ const b = document.getElementById('pj-box'); if(b && editing){ b.innerHTML = pjListHTML(editing); hydrate(); } }
+  function pjSave(pj){
+    if(!editing) return; editing.pj = pj;
+    if(editing.id && R[editing.id]){ const r = clone(R[editing.id]); r.pj = pj; put(r); }
+    pjRefresh();
+  }
+  function pjAdd(){
+    tlPickFile('image/*,application/pdf', async f => {
+      const id = 'pj' + uid(), isPdf = /pdf/i.test(f.type) || /\.pdf$/i.test(f.name||'');
+      try { if(isPdf) await IDB.put({id, blob:f, up:1}); else { await storePhoto(f, id); uploadQueue(); } }
+      catch(e){ alert('Fichier impossible à enregistrer.'); return; }
+      pjSave([...pjOf(editing), {id, t: isPdf ? 'pdf' : 'img', n: (f.name || (isPdf ? 'billet.pdf' : 'billet')).replace(/\.[a-z0-9]+$/i,'').slice(0,40)}]);
+    });
+  }
+  function pjDel(i){ if(!confirm('Retirer ce document de la fiche ?')) return; const l = pjOf(editing).slice(); l.splice(i,1); pjSave(l); }
+  async function pjOpen(id, t){
+    if(t === 'pdf'){ const b = await photoBlob(id); if(!b){ alert('Ce PDF n’est pas sur ce téléphone (les PDF ne sont pas partagés).'); return; } const u = URL.createObjectURL(b); const w = window.open(u, '_blank'); if(!w) location.href = u; return; }
+    let ov = document.getElementById('cv-pjv'); if(!ov){ ov = document.createElement('div'); ov.id = 'cv-pjv'; document.body.appendChild(ov); }
+    ov.innerHTML = `<button type="button" onclick="this.parentNode.remove()">✕ Fermer</button><img data-ph="${esc(id)}" alt="Billet">`; hydrate();
+  }
+  const pjChips = it => pjOf(it).length ? `<div class="cv-dayl">${pjOf(it).map(p=>`<a href="javascript:void 0" onclick="CV.pjOpen('${esc(p.id)}','${p.t}')">🎫 ${esc(p.n||'billet')}</a>`).join(' ')}</div>` : '';
+
+  /* ---------- 📋 Coller une confirmation de réservation ---------- */
+  const MOIS_FR = {janv:1,jan:1,janvier:1,fevr:2,fev:2,feb:2,fevrier:2,mars:3,mar:3,march:3,avr:4,avril:4,apr:4,april:4,mai:5,may:5,juin:6,jun:6,june:6,juil:7,juillet:7,jul:7,july:7,aout:8,aug:8,august:8,sept:9,sep:9,septembre:9,september:9,oct:10,octobre:10,october:10,nov:11,novembre:11,november:11,dec:12,decembre:12,december:12};
+  function cfDates(txt){
+    const out = [], n = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\./g,'');
+    let m; const re1 = /\b(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})\b/g;
+    while((m = re1.exec(txt))){ let y = +m[3]; if(y < 100) y += 2000; out.push({i:m.index, d:`${y}-${String(+m[2]).padStart(2,'0')}-${String(+m[1]).padStart(2,'0')}`}); }
+    const re2 = /\b(\d{4})-(\d{2})-(\d{2})\b/g; while((m = re2.exec(txt))) out.push({i:m.index, d:m[0]});
+    const re3 = /\b(\d{1,2})(?:er)?\s+([a-zA-Zéèûôàç]{3,10})\.?\s+(\d{4})\b/g;
+    while((m = re3.exec(txt))){ const mo = MOIS_FR[n(m[2])]; if(mo) out.push({i:m.index, d:`${m[3]}-${String(mo).padStart(2,'0')}-${String(+m[1]).padStart(2,'0')}`}); }
+    const re4 = /\b([a-zA-Z]{3,9})\.?\s+(\d{1,2}),?\s+(\d{4})\b/g;
+    while((m = re4.exec(txt))){ const mo = MOIS_FR[n(m[1])]; if(mo) out.push({i:m.index, d:`${m[3]}-${String(mo).padStart(2,'0')}-${String(+m[2]).padStart(2,'0')}`}); }
+    return out.filter(x=>!isNaN(new Date(x.d))).sort((a,b)=>a.i-b.i).map(x=>x.d);
+  }
+  function cfParse(txt){
+    const T = txt.replace(/\r/g,''), low = T.toLowerCase();
+    const r = {kind:'autre'};
+    const ref = T.match(/(?:PNR|r[ée]f[ée]rence(?: de r[ée]servation| du dossier)?|num[ée]ro de (?:r[ée]servation|confirmation|dossier)|booking (?:reference|ref|number)|confirmation(?: number| code|)|code de r[ée]servation|dossier)\s*[:#nN°º.]*\s*([A-Z0-9]{5,12})\b/i);
+    if(ref) r.ref = ref[1].toUpperCase();
+    const fl = T.match(/\b(?:vol|flight|flug)\s*[:#nN°º]*\s*([A-Z0-9]{2})\s?(\d{1,4})\b/i) || T.match(/\b((?:[A-Z]{2}|[A-Z]\d|\d[A-Z]))\s?(\d{2,4})\b(?=[^\n]{0,40}(?:\d{1,2}[:h]\d{2}|départ|depart|departure))/);
+    const iata = [...T.matchAll(/\(([A-Z]{3})\)/g)].map(m=>m[1]);
+    const times = [...T.matchAll(/\b([01]?\d|2[0-3])[:h]([0-5]\d)\b/g)].map(m=>m[1].padStart(2,'0') + ':' + m[2]);
+    const dates = cfDates(T);
+    if(fl || /embarquement|boarding|vol |flight|a[ée]roport|airport/.test(low)){
+      r.kind = 'vol'; if(fl) r.flight = (fl[1] + fl[2]).toUpperCase();
+      const ap = [...T.matchAll(/([A-ZÀ-Ý][A-Za-zÀ-ÿ'’-]+(?:[ -][A-Za-zÀ-ÿ'’-]+){0,4})\s*\(([A-Z]{3})\)/g)].map(m=>m[1].trim().split(/\s+/)[0]);
+      if(ap.length >= 2){ r.from = ap[0]; r.to = ap[1]; } else if(iata.length >= 2){ r.from = iata[0]; r.to = iata[1]; }
+      const fr = T.match(/(?:de|from|départ de)\s+([A-ZÉ][\wéèêàç' -]{2,30}?)\s+(?:à|to|vers|->|→)\s+([A-ZÉ][\wéèêàç' -]{2,30})/);
+      if(fr && !r.from){ r.from = fr[1].trim(); r.to = fr[2].trim(); }
+    } else if(/h[oô]tel|check-?in|arriv[ée]e|nuit|night|booking\.com|airbnb|chambre|room/.test(low)){
+      r.kind = 'hotel';
+      const hn = T.match(/(?:h[oô]tel|hotel|établissement|propriété|property)\s*[:\-]?\s*([^\n]{3,60})/i); if(hn) r.nom = hn[1].trim().replace(/^[:\-\s]+/,'');
+      const ad = T.match(/(?:adresse|address)\s*[:\-]?\s*([^\n]{6,90})/i); if(ad) r.adresse = ad[1].trim();
+    } else if(/train|sncf|tgv|ouigo|trenitalia|renfe|db bahn|eurostar|bus|flixbus|car /.test(low)){
+      r.kind = /bus|flixbus|car /.test(low) ? 'bus' : 'train';
+      const fr = T.match(/([A-ZÉ][\wéèêàç' -]{2,30}?)\s*(?:->|→|›|>|à|to)\s*([A-ZÉ][\wéèêàç' -]{2,30})/); if(fr){ r.from = fr[1].trim(); r.to = fr[2].trim(); }
+    }
+    r.date = dates[0] || ''; r.dateFin = dates.length > 1 && r.kind === 'hotel' ? dates[1] : '';
+    r.heure = times[0] || ''; r.heureArr = r.kind !== 'hotel' ? (times[1] || '') : '';
+    const co = T.match(/\b(Air France|KLM|Transavia|easyJet|Ryanair|Vueling|Volotea|Lufthansa|ITA Airways|Iberia|TAP|British Airways|Emirates|Qatar Airways|Turkish Airlines|Aegean|Air Malta|Wizz Air|EgyptAir|Royal Air Maroc|SNCF|OUIGO|TGV INOUI|Trenitalia|Italo|Renfe|Eurostar|FlixBus|BlaBlaCar)\b/i);
+    if(co) r.compagnie = co[1] + (r.flight ? ' ' + r.flight : ''); else if(r.flight) r.compagnie = r.flight;
+    const px = T.match(/(?:total|montant|prix|price|amount|à payer)[^\n\d]{0,25}(\d[\d\s.,]*\d)\s*(?:€|eur)/i) || T.match(/(\d[\d\s.,]*[.,]\d{2})\s*(?:€|eur)\b/i);
+    if(px) r.prix = px[1].replace(/\s/g,'').replace(/\.(?=\d{3}\b)/g,'').replace(',', '.');
+    return r;
+  }
+  function cfSheet(){
+    openSheet(`<h2>📋 Coller une confirmation</h2><div class="v-sum-small" style="margin-bottom:8px">Copie le texte de l’e-mail de réservation (vol, hôtel, train, bus…) et colle-le ici : l’appli repère la date, les horaires, la référence, la compagnie et le prix. Tu vérifies avant d’enregistrer. Rien n’est envoyé sur Internet.</div>
+      <textarea class="v-in" id="cf-txt" rows="8" placeholder="Colle ici le texte de la confirmation…"></textarea>
+      <div class="v-actions"><button type="button" class="v-btn" onclick="CV.cfGo()">🔍 Analyser</button><button type="button" class="v-btn sec cv-sq" onclick="CV.close()">✕</button></div>`);
+  }
+  function cfGo(){
+    const txt = (document.getElementById('cf-txt')||{}).value || ''; if(txt.trim().length < 20){ alert('Colle le texte complet de la confirmation.'); return; }
+    const r = cfParse(txt), t = trip();
+    const it = r.kind === 'hotel'
+      ? {cat:'hotel', titre: cityOf(r.adresse ? r.adresse.split(',').slice(-2,-1)[0] || '' : '').replace(/\b\d{3,}\b/g,'').trim() || 'Hébergement', nom:r.nom||'', adresse:r.adresse||'', date:r.date, dateFin:r.dateFin, heure:r.heure, ref:r.ref||'', prix:r.prix||'', partage:'grp'}
+      : r.kind === 'autre' ? {cat:'activite', titre:'Réservation', date:r.date, heure:r.heure, ref:r.ref||'', prix:r.prix||''}
+      : {cat:'transport', mode: r.kind==='vol' ? 'Avion' : r.kind==='bus' ? 'Bus' : 'Train', from:r.from||'', to:r.to||'', titre:(r.from && r.to) ? r.from + ' → ' + r.to : (r.kind==='vol' ? 'Vol' : 'Trajet'), date:r.date, heureDep:r.heure, heureArr:r.heureArr, compagnie:r.compagnie||'', ref:r.ref||'', prix:r.prix||''};
+    Object.assign(it, {type:'item', trip:M.trip, statut: r.prix ? 'paid' : 'booked', note:'Créée depuis une confirmation collée'});
+    const found = [r.kind==='vol' ? 'vol' : r.kind, r.date && 'date', (r.heure) && 'horaire', r.ref && 'référence', r.compagnie && 'compagnie', r.prix && 'prix'].filter(Boolean);
+    edit(it);
+    toast('📋 Repéré : ' + (found.join(', ') || 'peu d’informations') + ' — vérifie puis Enregistrer');
+  }
+
+  /* ---------- 🌍 Empreinte carbone et conseils de réservation ---------- */
+  // Facteurs d'ordre de grandeur (kg CO2e par passager et par km), inspirés des moyennes ADEME / Base Carbone.
+  const CO2F = d => ({Avion: d < 1000 ? 0.23 : d < 3500 ? 0.18 : 0.15, Train: 0.03, Bus: 0.03, Voiture: 0.11, Ferry: 0.12, Bateau: 0.12}); 
+  async function tlCo2(){
+    const tr = items(i=>i.cat==='transport' && i.from && i.to).sort(sortItems);
+    if(!tr.length){ alert('Ajoute des trajets avec un départ et une arrivée.'); return; }
+    openSheet(`<h2>🌍 Empreinte et conseils</h2><div id="co2-box" class="cv-route-load">📡 Calcul des distances…</div><div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.close()">Fermer</button></div>`);
+    let tot = 0, rows = '', tips = '';
+    for(const it of tr){
+      const a = await geocode(it.from, null).catch(()=>null), b = await geocode(it.to, null).catch(()=>null);
+      if(!a || !b){ rows += `<div class="cv-dayi"><b>${icon(it)} ${esc(it.titre)}</b><div class="v-sum-small">ville introuvable</div></div>`; continue; }
+      const d = km(a, b) * (it.mode === 'Avion' ? 1.08 : 1.25), mode = it.mode || 'Train', f = (CO2F(d)[mode] != null ? CO2F(d)[mode] : 0.1), kg = d * f; tot += kg;
+      rows += `<div class="cv-dayi"><b>${icon(it)} ${esc(it.titre)}</b><div class="v-sum-small">≈ ${Math.round(d).toLocaleString('fr-FR')} km · <b>≈ ${Math.round(kg).toLocaleString('fr-FR')} kg CO2e</b> par personne${mode==='Avion' && d < 800 ? ' · en train ce serait env. ' + Math.round(d*0.03) + ' kg' : ''}</div></div>`;
+      if(it.mode === 'Avion' && it.statut === 'todo' && it.date){
+        const w = (new Date(it.date) - new Date(isoToday())) / (7*864e5), lg = d > 3500;
+        const ideal = lg ? [8, 24] : [4, 12];
+        tips += `<div class="cv-dayi"><b>✈️ ${esc(it.titre)}</b> · départ dans ${Math.max(0, Math.round(w))} semaine(s)<div class="v-sum-small">${w > ideal[1] ? `⏳ Un peu tôt : la fenêtre la plus souvent favorable est ${ideal[0]}–${ideal[1]} semaines avant. Mets ce trajet dans le Radar d’Escale pour suivre le prix.` : w >= ideal[0] ? `✅ Bonne période pour réserver (${ideal[0]}–${ideal[1]} semaines avant). Vérifie le prix réel avec ⚡ dans Escale.` : `⚠️ Départ proche : les prix montent souvent. Compare vite dans Escale (« N’importe où » et dates voisines).`}</div></div>`;
+      }
+    }
+    const b = document.getElementById('co2-box'); if(!b) return;
+    b.className = ''; b.innerHTML = `<div class="v-sum" style="margin:0 0 8px"><div class="v-sum-big">≈ ${Math.round(tot).toLocaleString('fr-FR')} kg CO2e</div><div class="v-sum-small">par personne pour les trajets du voyage · repère : un aller-retour Paris–New York ≈ 1 t ; un Français émet ≈ 9 t par an</div></div>
+      ${rows}${tips ? '<h3 style="margin:14px 0 4px">Quand réserver ?</h3>' + tips : ''}
+      <div class="v-sum-small" style="margin-top:8px">Ordres de grandeur (distance à vol d’oiseau corrigée × facteurs moyens type ADEME), pas un calcul certifié. Conseils de réservation = tendances générales, pas une prédiction de prix.</div>`;
+  }
+
+  /* ---------- 📍 Je suis ici · 📊 Mes stats ---------- */
+  async function hereNow(){
+    if(!navigator.geolocation){ alert('Localisation indisponible sur ce téléphone.'); return; }
+    toast('📍 Localisation…');
+    navigator.geolocation.getCurrentPosition(async pos => {
+      const lat = +pos.coords.latitude.toFixed(5), lng = +pos.coords.longitude.toFixed(5);
+      let lieu = '', pays = '', cc = '';
+      try { const j = await (await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=10&accept-language=fr&lat=${lat}&lon=${lng}`)).json();
+        const a = (j && j.address) || {}; lieu = a.city || a.town || a.village || a.municipality || a.county || ''; pays = a.country || ''; cc = (a.country_code || '').toUpperCase(); } catch(e){}
+      const note = prompt('📍 ' + (lieu ? lieu + (pays ? ', ' + pays : '') : 'Position enregistrée') + '\nUn petit mot pour cette étape ? (facultatif)', '');
+      put({id:'st'+uid(), type:'step', trip:M.trip, date:isoToday(), heure:new Date().toTimeString().slice(0,5), lat, lng, lieu, pays, cc, note: note || ''}, '📍 ' + (lieu || 'Étape') + ' ajoutée');
+      refresh();
+    }, err => alert('Position introuvable (' + (err && err.message || 'refusée') + '). Autorise la localisation pour l’appli dans les réglages.'), {enableHighAccuracy:true, timeout:15000, maximumAge:60000});
+  }
+  async function countryOf(city){
+    M.ctry = M.ctry || {}; const k = normQ(city); if(M.ctry[k]) return M.ctry[k];
+    const wait = 1100 - (Date.now() - geoLast); if(wait > 0) await new Promise(r=>setTimeout(r, wait)); geoLast = Date.now();
+    try { const j = await (await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&addressdetails=1&accept-language=fr&q=' + encodeURIComponent(city))).json();
+      const a = j && j[0] && j[0].address; if(a && a.country){ M.ctry[k] = {pays:a.country, cc:(a.country_code||'').toUpperCase()}; persist(); return M.ctry[k]; } } catch(e){}
+    return null;
+  }
+  const flag = cc => cc && cc.length === 2 ? String.fromCodePoint(...[...cc].map(c=>127397 + c.charCodeAt(0))) : '🌍';
+  async function tlStats(){
+    openSheet(`<h2>📊 Mes stats de voyage</h2><div id="stt" class="cv-route-load">📡 Je compte…</div><div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.close()">Fermer</button></div>`);
+    const ts = trips(), now = isoToday(); let nights = 0, kmTot = 0, nSteps = 0; const countries = {}, cities = new Set();
+    for(const t of ts){
+      if(t.debut) nights += Math.max(0, nights_(t.debut, t.fin || t.debut));
+      const hs = list('item', i=>i.trip===t.id && i.cat==='hotel' && i.date && !i.deleted).sort((a,b)=>a.date.localeCompare(b.date));
+      let prev = null;
+      for(const h of hs){ const c = cityOf(h.titre); if(!c) continue; cities.add(normQ(c));
+        const g = geoCached(c) || await geocode(c, null).catch(()=>null); if(g && prev) kmTot += km(prev, g); if(g) prev = g;
+        if(t.debut && t.debut <= now){ const co = await countryOf(c); if(co) countries[co.cc || co.pays] = co; } }
+      list('step', s=>s.trip===t.id).forEach(s=>{ nSteps++; if(s.cc || s.pays) countries[s.cc || s.pays] = {pays:s.pays, cc:s.cc}; });
+    }
+    const el = document.getElementById('stt'); if(!el) return;
+    const cs = Object.values(countries);
+    el.className = ''; el.innerHTML = `<div class="cv-stats"><div><b>${ts.length}</b><span>voyage${ts.length>1?'s':''}</span></div><div><b>${nights}</b><span>nuits</span></div><div><b>${Math.round(kmTot).toLocaleString('fr-FR')}</b><span>km entre étapes</span></div><div><b>${cities.size}</b><span>villes</span></div><div><b>${cs.length}</b><span>pays visités</span></div><div><b>${nSteps}</b><span>« je suis ici »</span></div></div>
+      <div class="cv-flags">${cs.map(c=>`<span>${flag(c.cc)} ${esc(c.pays)}</span>`).join('') || '<span class="v-sum-small">Les pays apparaissent une fois les voyages commencés (ou avec « 📍 Je suis ici »).</span>'}</div>
+      <div class="v-sum-small" style="margin-top:8px">Pays comptés pour les voyages commencés, d’après les villes des hébergements et tes « Je suis ici ». Distances à vol d’oiseau entre étapes.</div>`;
+  }
+  const nights_ = (a, b) => Math.round((new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00')) / 864e5);
+
+  /* ---------- 🗺️ Export KML (Google My Maps, Organic Maps hors ligne, Google Earth…) ---------- */
+  function kmlEsc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  async function tlKml(){
+    const t = trip(); if(!t) return;
+    toast('🗺️ Préparation de l’export…');
+    const pm = [], st = tlStages(), line = [];
+    for(const s of st){ const g = geoCached(s.city) || await geocode(s.city, null).catch(()=>null); if(g){ line.push(g); pm.push(`<Placemark><name>${kmlEsc('🏨 ' + s.city)}</name><description>${kmlEsc(fshort(s.debut) + ' → ' + fshort(s.fin) + (s.h && s.h.nom ? ' · ' + s.h.nom : ''))}</description><styleUrl>#etape</styleUrl><Point><coordinates>${g.lng},${g.lat}</coordinates></Point></Placemark>`); } }
+    if(line.length > 1) pm.push(`<Placemark><name>Itinéraire du voyage</name><styleUrl>#trace</styleUrl><LineString><tessellate>1</tessellate><coordinates>${line.map(g=>g.lng+','+g.lat).join(' ')}</coordinates></LineString></Placemark>`);
+    dayList().forEach((d,i)=>{ const pl = placesOf(d).filter(p=>p.lat != null), r = dayInfo(d).route;
+      pl.forEach((p,k)=>pm.push(`<Placemark><name>${kmlEsc('J' + (i+1) + '.' + (k+1) + ' ' + p.nom)}</name><styleUrl>#lieu</styleUrl><Point><coordinates>${p.lng},${p.lat}</coordinates></Point></Placemark>`));
+      if(r && r.geom && r.geom.length > 1) pm.push(`<Placemark><name>${kmlEsc('J' + (i+1) + ' · à pied')}</name><styleUrl>#pied</styleUrl><LineString><coordinates>${r.geom.map(p=>p[1]+','+p[0]).join(' ')}</coordinates></LineString></Placemark>`); });
+    list('step', s=>s.trip===M.trip).forEach(s=>pm.push(`<Placemark><name>${kmlEsc('📍 ' + (s.lieu || 'Je suis ici') + ' · ' + fshort(s.date))}</name><description>${kmlEsc(s.note||'')}</description><styleUrl>#ici</styleUrl><Point><coordinates>${s.lng},${s.lat}</coordinates></Point></Placemark>`));
+    if(!pm.length){ alert('Rien à exporter : ajoute des hébergements avec leur ville ou des lieux à voir.'); return; }
+    const kml = `<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>${kmlEsc(t.titre)}</name>
+<Style id="etape"><IconStyle><color>ffed3a7c</color></IconStyle></Style><Style id="lieu"><IconStyle><color>ff2626dc</color></IconStyle></Style><Style id="ici"><IconStyle><color>ff4ac716</color></IconStyle></Style>
+<Style id="trace"><LineStyle><color>ffed3a7c</color><width>4</width></LineStyle></Style><Style id="pied"><LineStyle><color>ffe5464f</color><width>3</width></LineStyle></Style>
+${pm.join('\n')}</Document></kml>`;
+    tlShareFile(new Blob([kml], {type:'application/vnd.google-earth.kml+xml'}), pdfName('itineraire', t).replace(/\.pdf$/,'.kml'), 'Itinéraire ' + t.titre);
+  }
+
+  /* ---------- 🪄 Remplir mes journées (lieux les plus connus, répartis sur les jours libres) ---------- */
+  async function placesFor(city){
+    const key = normQ(city); M.poiCache = M.poiCache || {};
+    const hit = M.poiCache[key]; if(hit && Date.now() - hit.t < DISC_TTL && hit.list.length) return hit.list;
+    const c = await withTimeout(geocode(city, null), 10000).catch(()=>null); if(!c) return [];
+    const res = await Promise.allSettled([seeWiki(c), seeApi(c), seeOverpass(c)].map(p=>withTimeout(p, 20000)));
+    const seen = new Set(), all = res.filter(r=>r.status==='fulfilled').flatMap(r=>r.value||[]);
+    const list_ = all.filter(p=>p.nom && p.lat != null && !/^\d+$/.test(p.nom)).sort((x,y)=>y.score-x.score).filter(p=>{ const k = normQ(p.nom); if(seen.has(k)) return false; seen.add(k); return true; }).slice(0,150);
+    if(list_.length){ M.poiCache[key] = {t:Date.now(), list:list_}; persist(); }
+    return list_;
+  }
+  function tlFill(){
+    const st = items(i=>i.cat==='hotel' && i.date).sort((a,b)=>a.date.localeCompare(b.date));
+    if(!st.length){ alert('Ajoute d’abord les hébergements (une ville par étape).'); return; }
+    openSheet(`<h2>🪄 Remplir mes journées</h2><div class="v-sum-small" style="margin-bottom:8px">Pour chaque étape, l’appli choisit les lieux les plus connus (Wikipédia, OpenStreetMap) et les répartit sur les jours, sans toucher à ce que tu as déjà prévu. Tu ajustes ensuite dans « Organiser l’étape ».</div>
+      <div class="v-f"><label>Lieux par jour</label><select class="v-in" id="fl-n"><option value="2">2 (tranquille)</option><option value="3" selected>3 (équilibré)</option><option value="4">4 (intense)</option></select></div>
+      <label class="cv-checkline"><input type="checkbox" id="fl-mus"> Inclure les musées</label>
+      <div id="fl-msg" class="v-sum-small" style="margin:6px 0"></div>
+      <div class="v-actions"><button type="button" class="v-btn" onclick="CV.tlFillGo()">🪄 Remplir</button><button type="button" class="v-btn sec cv-sq" onclick="CV.close()">✕</button></div>`);
+  }
+  async function tlFillGo(){
+    const per = +document.getElementById('fl-n').value, mus = document.getElementById('fl-mus').checked, msg = m => { const e = document.getElementById('fl-msg'); if(e) e.textContent = m; };
+    const st = items(i=>i.cat==='hotel' && i.date).sort((a,b)=>a.date.localeCompare(b.date));
+    let added = 0; const out = [];
+    for(const h of st){
+      const city = cityOf(h.titre); if(!city) continue; msg('📡 ' + city + '…');
+      const days = stayDays(h).slice(0, h.dateFin ? -1 : undefined);
+      const have = placesOfStay(h.id), names = new Set(have.map(p=>normQ(p.nom)));
+      const free = days.filter(d=>placesOf(d).length === 0 && !(dayInfo(d).plan||'').trim()).slice(0, 12);
+      if(!free.length) continue;
+      const cand = (await placesFor(city)).filter(p=>!names.has(normQ(p.nom)) && (mus || p.cat !== 'musee'));
+      let k = 0; free.forEach(d=>{ for(let j=0;j<per && k<cand.length;j++,k++){ const p = cand[k]; out.push({id:'pl'+uid()+k+j, type:'place', trip:M.trip, stay:h.id, date:d, nom:p.nom, adresse:'', lat:p.lat, lng:p.lng, cat:p.cat, lock:false}); added++; } });
+    }
+    if(!out.length){ msg('Rien à ajouter : tes journées sont déjà remplies, ou aucun lieu trouvé.'); return; }
+    putMany(out, '🪄 ' + added + ' lieu(x) ajouté(s)'); closeSheet(true); M.tab = 'prog'; refresh();
+    setTimeout(()=>alert(`🪄 ${added} lieux répartis sur tes journées libres.\nPour chaque jour : « Itinéraire » optimise l’ordre de visite et trace le parcours à pied.`), 300);
+  }
+
   function infoHTML(){
     return `<div class="cv-info">
       ${tutoBtn()}
@@ -6076,7 +6332,7 @@ const CV = (function(){
     envF:setEnvF, envP:setEnvP, like, editWish, saveWish, delWish, wishToTrip,
     editTrip, saveTrip, delTrip, closeTrip, reopenTrip,
     live, one, echAdd, echDel, echSpread, echToggle, lisser, echReset, echRange, echRangeReset,
-    planDay, plCfg, plAdd, plDel, plOpt, wizard, rcView, rcAttach, tlIcsGo, capSet, shopSheet, shopAdd, shopTick, shopClear, rembAsk, pollNew, pollSave, pollVote, pollClose, pollDel, pdfRoute, pdfJournal, pdfShare, pdfOpen, pkgPick, pkgApply, hydrateMaps, renderOutils, tlDay, tlIcs, fxTool, fxFill, tlMeteo, tlReceipt, tlRcPhoto, tlRcOcr, tlRcSave, tlReceipts, tlMap, tlBags, tlBagsGo, tlDocs, tlDocEdit, tlDocSave, tlDocDel, tlJournal, pkgSheet, pkgExport, pkgImport, pinToggle, shareSheet, shareLink, askErase, tutoSheet, escaleTuto, demoLoad, demoDel, demoReset, wzGo, wzDates, wzEt, wzSum, wzTpl, wzCreate,
+    planDay, plCfg, plAdd, plDel, plOpt, wizard, pjAdd, pjDel, pjOpen, cfSheet, cfGo, tlCo2, hereNow, tlStats, tlKml, tlFill, tlFillGo, rcView, rcAttach, tlIcsGo, capSet, shopSheet, shopAdd, shopTick, shopClear, rembAsk, pollNew, pollSave, pollVote, pollClose, pollDel, pdfRoute, pdfJournal, pdfShare, pdfOpen, pkgPick, pkgApply, hydrateMaps, renderOutils, tlDay, tlIcs, fxTool, fxFill, tlMeteo, tlReceipt, tlRcPhoto, tlRcOcr, tlRcSave, tlReceipts, tlMap, tlBags, tlBagsGo, tlDocs, tlDocEdit, tlDocSave, tlDocDel, tlJournal, pkgSheet, pkgExport, pkgImport, pinToggle, shareSheet, shareLink, askErase, tutoSheet, escaleTuto, demoLoad, demoDel, demoReset, wzGo, wzDates, wzEt, wzSum, wzTpl, wzCreate,
     pickColor, newProfile, editProfile, saveProfile, delProfile, whoSheet, setMe,
     genCode, syncOn, syncOff, syncNow, shareCode, exportShare, exportDownload, importPick, wipe, obCreate, obJoin,
     _R:()=>R, _M:()=>M};
