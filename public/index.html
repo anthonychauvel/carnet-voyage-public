@@ -1,9 +1,18 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+<script>/* Carnet + Escale : au lancement, rouvre la dernière appli utilisée */
+(function(){ try {
+  var u = new URL(location.href);
+  if(u.searchParams.get('app') === 'carnet'){ localStorage.setItem('app_last','carnet'); sessionStorage.setItem('app_started','1'); history.replaceState(null,'',u.pathname); return; }
+  if(!sessionStorage.getItem('app_started') && localStorage.getItem('app_last') === 'escale'){ sessionStorage.setItem('app_started','1'); location.replace('/escale/'); return; }
+  sessionStorage.setItem('app_started','1'); localStorage.setItem('app_last','carnet');
+} catch(e){} })();
+</script>
 <meta charset="UTF-8">
 <style>html,body{background:#2A1238}</style>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<style>/* iPhone : pas de zoom automatique quand on touche un champ (iOS zoome sous 16 px). Le zoom à deux doigts reste possible. */@supports(-webkit-touch-callout:none){input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),select,textarea{font-size:max(16px,1em)!important}}</style>
 <meta name="color-scheme" content="light">
 <meta name="theme-color" content="#2A1238">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -654,6 +663,7 @@ button,input,select,textarea{font-family:var(--ui)}
   color:#fff;border-radius:30px;padding:5px 14px 5px 5px;font-size:.82rem;font-weight:600;cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
 .trip-pill .hdr-logo{width:30px;height:30px;border-radius:50%;box-shadow:none}
 .trip-pill em{font-style:normal;opacity:.7;font-size:.7rem}
+.cv-switch{display:flex;align-items:center;height:38px;padding:0 12px;border-radius:20px;background:rgba(255,255,255,.16);border:1.5px solid rgba(255,255,255,.6);color:#fff;font-weight:800;font-size:.82rem;text-decoration:none;backdrop-filter:blur(6px)}
 .header .cv-me{position:relative;right:auto;top:auto;transform:none;width:38px;height:38px;border:2px solid rgba(255,255,255,.9);box-shadow:0 4px 14px rgba(0,0,0,.25)}
 .header h1,#hdr-title{position:relative;font-family:var(--display);font-style:italic;font-weight:500;font-size:2.45rem;line-height:1.02;
   color:#fff;text-align:left;letter-spacing:-.5px;max-width:15ch;text-wrap:balance}
@@ -854,6 +864,9 @@ body.locked .v-fab,body.locked .cv-thx,body.locked .cv-addph,body.locked .v-cl .
 .v-sheet.ro .v-actions button[type=submit],.v-sheet.ro .v-btn.danger,.v-sheet.ro #pl-go,.v-sheet.ro .cv-row .v-btn.sec.cv-sq{display:none}
 .cv-robanner{background:var(--navy);color:var(--gold2);font-weight:600;font-size:.8rem;border-radius:30px;padding:7px 14px;display:inline-block;margin-bottom:8px}
 /* ── Carnet de route imprimable ── */
+.pr-map{margin:8px 0 6px}
+.pr-map svg{display:block;width:100%;height:auto;max-height:240px;border:1px solid #e5ddd2;border-radius:10px}
+.pr-map figcaption{font-size:.72rem;color:#5a4f60;margin-top:3px}
 #cv-print{position:fixed;inset:0;z-index:3000;background:#fff;overflow:auto;-webkit-overflow-scrolling:touch;display:none;color:#1b1320}
 .pr-bar{position:sticky;top:0;display:flex;gap:8px;justify-content:space-between;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;background:var(--navy);z-index:2}
 .pr-bar button{border:none;border-radius:30px;padding:10px 16px;font-weight:700;font-size:.9rem;background:var(--sunset);color:#fff;cursor:pointer}
@@ -888,6 +901,7 @@ body.locked .v-fab,body.locked .cv-thx,body.locked .cv-addph,body.locked .v-cl .
   @page{size:A4;margin:12mm}
   html,body.printing{background:#fff!important}
   body.printing>*:not(#cv-print){display:none!important}
+  .pr-map{break-inside:avoid;page-break-inside:avoid}
   body.printing #cv-print{position:static;display:block!important;overflow:visible}
   .pr-bar{display:none!important}
   .pr-doc{max-width:none;padding:0}
@@ -924,6 +938,56 @@ a.v-btn.cv-escale{display:block;text-align:center;text-decoration:none}
 .cv-souv-grp small{font-weight:600;color:var(--gray);font-size:.75rem}
 .cv-tuto video{width:100%;max-height:68vh;border-radius:14px;background:#000;display:block}
 .cv-escale-tuto{display:block;width:100%;margin:-6px 0 14px;background:#F3EAFF;border:1.5px dashed #C4A5F5;color:#4C1D95;font:inherit;font-weight:700;font-size:.82rem;padding:9px 12px;border-radius:14px;text-align:center}
+.cv-foot{text-align:center;font-size:.72rem;padding:18px 12px 8px;color:var(--gray)}
+.cv-foot a{color:inherit}
+.hero-top{position:relative}
+.cv-hero-qr{position:relative;flex:0 0 auto;margin:0 12px 0 auto;z-index:2;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 6px 4px;border:0;border-radius:12px;background:rgba(255,255,255,.92);box-shadow:0 6px 18px rgba(0,0,0,.25);cursor:pointer;color:#2A1238;font:700 .62rem/1 inherit}
+.cv-hero-qr svg{display:block;width:46px;height:46px}
+.cv-hero-qr span{font-size:.62rem;font-weight:800;letter-spacing:.02em}
+.cv-share-qr{display:block;margin:6px auto 10px;width:min(64vw,240px);height:auto;background:#fff;border-radius:14px;padding:10px}
+.cv-share-url{font-size:.78rem;text-align:center;word-break:break-all;color:var(--gray);margin-bottom:10px}
+.cv-rmap{margin-top:10px}
+.cv-live{background:linear-gradient(135deg,#1e1b4b,#4c1d95);color:#fff;border-radius:18px;padding:14px;margin:4px 0 14px;box-shadow:0 6px 18px rgba(76,29,149,.25)}
+.cv-live.done{background:linear-gradient(135deg,#064e3b,#047857)}
+.cv-live .lk{font-size:.7rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
+.cv-live .lt{font-size:.95rem;margin:5px 0 8px;line-height:1.35}
+.cv-live .lsp{font-size:.8rem;opacity:.95}
+.cv-live .red{color:#fecaca}
+.cv-live .lmini{background:rgba(255,255,255,.18);border:0;color:#fff;border-radius:10px;padding:2px 8px;font:inherit;font-size:.72rem;margin-left:4px}
+.cv-live .lcap{height:6px;border-radius:4px;background:rgba(255,255,255,.2);margin:6px 0 2px;overflow:hidden}
+.cv-live .lcap span{display:block;height:100%;background:#86efac}
+.cv-live .lcap.over span{background:#f87171}
+.cv-live .lb{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.cv-live .lb button{background:#fff;color:#312e81;border:0;border-radius:20px;padding:7px 12px;font:inherit;font-weight:700;font-size:.8rem}
+.cv-shop.done{opacity:.5;text-decoration:line-through}
+.cv-poll{border-top:1px dashed #eadfe6;padding:10px 0}
+.cv-poll .pq{margin-bottom:6px}
+.cv-poll .po{position:relative;display:flex;justify-content:space-between;width:100%;text-align:left;border:1.5px solid #e9e2f5;background:#fff;border-radius:12px;padding:9px 12px;margin:5px 0;font:inherit;font-size:.86rem;overflow:hidden;color:var(--ink,#2a1238)}
+.cv-poll .po .pb{position:absolute;left:0;top:0;bottom:0;background:#f1eafe;z-index:0}
+.cv-poll .po .pl,.cv-poll .po .pc{position:relative;z-index:1}
+.cv-poll .po.me{border-color:#7c3aed;font-weight:700}
+.cv-poll .po.win{border-color:#16a34a}
+.cv-poll.closed .po{cursor:default}
+.cv-fx{display:flex;gap:6px;align-items:center;margin:2px 0 8px}
+.cv-fx .v-in{flex:1;min-width:0;margin:0}
+.cv-fx select.v-in{flex:0 0 92px}
+.cv-fx .v-btn{flex:0 0 auto;width:auto;margin:0;padding:10px 14px}
+.cv-tool p{font-size:.84rem}
+.cv-dayc{background:#fff;border:1px solid var(--line,#eadfe6);border-radius:14px;padding:10px 12px;margin:8px 0}
+.cv-dayc h3{font-size:.95rem;margin:0 0 6px}
+.cv-dayi{border-top:1px dashed #eadfe6;padding:7px 0;font-size:.86rem}
+.cv-dayl a{display:inline-block;margin:4px 8px 0 0;font-size:.82rem}
+.cv-warnline{display:block;color:#9a3412;background:#fff1e6;border-radius:10px;padding:8px 10px;font-size:.82rem}
+.cv-docalert{display:block;width:100%;text-align:left;border:1.5px solid #f59e0b;background:#fff7e6;color:#7c2d12;border-radius:14px;padding:10px 12px;margin:4px 0 12px;font:inherit;font-size:.82rem;font-weight:600}
+.jr-s{margin:8px 0 12px}
+.jr-s h4{margin:0 0 2px;font-size:1rem}
+.jr-ph{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px}
+.jr-ph img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;background:#eee}
+@media print{.jr-day{break-inside:avoid-page}.jr-ph img{break-inside:avoid}}
+.cv-pin-tog{display:flex;width:100%;align-items:center;gap:8px;background:none;border:0;font:inherit;padding:0;margin:0;cursor:pointer;color:inherit;text-align:left}
+.cv-pin-tog .n{background:rgba(0,0,0,.08);border-radius:10px;padding:0 8px;font-size:.75rem}
+.cv-pin-tog .ch{margin-left:auto;font-size:.72rem;opacity:.7;font-weight:600}
+.cv-pinboard.closed .cv-pin-tog{margin-bottom:0}
 .cv-escale-card{display:block;text-decoration:none;color:#fff;background:linear-gradient(135deg,#5B21B6 0%,#7C3AED 55%,#DB2777 100%);border-radius:18px;padding:16px 16px 14px;margin:4px 0 14px;box-shadow:0 6px 18px rgba(91,33,182,.28);position:relative;overflow:hidden}
 .cv-escale-card::after{content:'✈️';position:absolute;right:-6px;top:-10px;font-size:4.6rem;opacity:.18;transform:rotate(-12deg)}
 .cv-escale-card .ek{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
@@ -965,16 +1029,17 @@ html,body{overscroll-behavior-y:none}
     <div class="hero-sun"></div>
     <div class="hero-top">
       <button class="trip-pill" onclick="CV.tripSheet()" aria-label="Changer de voyage"><img class="hdr-logo" alt="Logo" src="data:image/jpeg;base64,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"><span id="cv-tripname">Mes voyages</span><em>▾</em></button>
-      <div class="hero-btns"><button class="cv-lock" id="cv-lock" onclick="CV.toggleLock()" aria-label="Verrouiller">✏️</button>
+      <div class="hero-btns"><a class="cv-switch" href="/escale/" aria-label="Ouvrir Escale">🛫 Escale</a><button class="cv-lock" id="cv-lock" onclick="CV.toggleLock()" aria-label="Verrouiller">✏️</button>
       <button class="cv-me" id="cv-me" onclick="CV.mySheet()" aria-label="Mon profil"></button></div>
     </div>
     <h1 id="hdr-title">Carnet de voyage</h1>
     <div class="sub" id="hdr-sub"></div>
-    <div class="hero-foot"><div class="cv-avs" id="cv-avs"></div><div class="hero-count" id="cv-count"></div></div>
+    <div class="hero-foot"><div class="cv-avs" id="cv-avs"></div><button class="cv-hero-qr" id="cv-hero-qr" type="button" onclick="CV.shareSheet()" aria-label="Partager l’appli à un ami (QR code)"></button><div class="hero-count" id="cv-count"></div></div>
   </div>
 </div>
 <!-- ═══ CARNET PARTAGÉ ═══════════════════════════════ -->
-<div id="appC" style="display:none"><div class="tabs cv-sub" id="tabsC"></div><div id="cv-body"></div></div>
+<div id="appC" style="display:none"><div class="tabs cv-sub" id="tabsC"></div><div id="cv-body"></div>
+<footer class="cv-foot"><a href="mentions-legales.html">Mentions légales</a> · <a href="privacy.html">Confidentialité</a></footer></div>
 <nav class="cv-nav" id="cv-nav" style="display:none"></nav>
 <button class="v-fab" id="cv-fab" style="display:none" onclick="CV.add()">＋</button>
 <div class="v-toast" id="cv-toast">💾 Enregistré</div>
@@ -986,7 +1051,7 @@ html,body{overscroll-behavior-y:none}
 ══════════════════════════════════════════════════════════ */
 const CV = (function(){
   const PUBLIC = true;   // version grand public : sans données perso ni archives
-  const ESCALE = 'https://vol-bm4.pages.dev';
+  const ESCALE = '/escale/';   // Escale est intégrée à l'appli (même installation, même stockage)
   const KEY = 'carnet_v2', OLD = 'voyage2027_v1', ARCHIVE_KEY = 'roadtrip2026_v3', LEGACY = 'legacy2026';
 
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -995,7 +1060,16 @@ const CV = (function(){
   const eur = n => (Math.round(n*100)/100).toLocaleString('fr-FR',{minimumFractionDigits:0,maximumFractionDigits:2}) + ' €';
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 
-  const COLORS = ['#2f6fdb','#e0559a','#2e9e6a','#e8862e','#8a5cd6','#d64545','#1fa5b5','#b8902f'];
+  const COLORS = ['#2f6fdb','#e0559a','#2e9e6a','#e8862e','#8a5cd6','#d64545','#1fa5b5','#b8902f','#5b6b2e','#c2410c','#0f766e','#7c3aed','#be185d','#15803d','#1d4ed8','#a16207'];
+  const MAXP = 50;   // nombre maximum de compagnons (profils et voyageurs d'un voyage)
+  // couleur libre pour un nouveau profil (les 16 de la palette, puis des teintes calculées)
+  function nextColor(){
+    const used = new Set(profiles().map(p=>(p.couleur||'').toLowerCase()));
+    const free = COLORS.find(c=>!used.has(c)); if(free) return free;
+    const h = (profiles().length * 137.508) % 360, l = .42, a = .55 * Math.min(l, 1-l);
+    const f = n => { const k = (n + h/30) % 12; return Math.round(255*(l - a*Math.max(-1, Math.min(k-3, 9-k, 1)))).toString(16).padStart(2,'0'); };
+    return '#' + f(0) + f(8) + f(4);
+  }
   const CATS = {
     transport:{lbl:'Trajets',     one:'trajet',            icon:'✈️'},
     hotel:    {lbl:'Hébergements',one:'hébergement',       icon:'🏨'},
@@ -1291,7 +1365,7 @@ const CV = (function(){
     {id:'resas',  icon:'🎫', lbl:'Résas',     tabs:[['transport','✈️ Trajets'], ['hotel','🏨 Hôtels'], ['activite','🎟️ Visites'], ['divers','🧾 Divers']]},
     {id:'sous',   icon:'💸', lbl:'Budget',    tabs:[['budget','Qui paie quoi'], ['ech','📆 Échéancier']]},
     {id:'envies', icon:'✨', lbl:'Envies',    tabs:[['envies','Envies']]},
-    {id:'plus',   icon:'🧳', lbl:'Plus',      tabs:[['check','✅ Checklist'], ['reglages','👥 Partage & profils']]},
+    {id:'plus',   icon:'🧳', lbl:'Plus',      tabs:[['check','✅ Checklist'], ['outils','🧰 Outils'], ['reglages','👥 Partage & profils']]},
   ];
   const groupOf = id => GROUPS.find(g=>g.tabs.some(t=>t[0]===id)) || GROUPS[0];
   const MOIS = ['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
@@ -1321,7 +1395,10 @@ const CV = (function(){
       sub.textContent = [tripDatesLong(t), t.sous||''].filter(Boolean).join(' · ');
       pill.textContent = trips().length > 1 ? trips().length + ' voyages' : 'Mes voyages';
       cd.innerHTML = countdown(t);
-      av.innerHTML = tv().map(id=>`<span class="cv-av" style="background:${pcol(id)}" title="${esc(pname(id))}">${esc((pname(id)[0]||'?').toUpperCase())}</span>`).join('') + `<span class="cv-av-names">${tv().map(id=>esc(pname(id))).join(' & ')}</span>`;
+      const vv = tv(), shown = vv.slice(0, 8);
+      av.innerHTML = shown.map(id=>`<span class="cv-av" style="background:${pcol(id)}" title="${esc(pname(id))}">${esc((pname(id)[0]||'?').toUpperCase())}</span>`).join('')
+        + (vv.length > 8 ? `<span class="cv-av" style="background:#444" title="${vv.length - 8} autres">+${vv.length - 8}</span>` : '')
+        + `<span class="cv-av-names">${vv.length <= 3 ? vv.map(id=>esc(pname(id))).join(' & ') : vv.slice(0,2).map(id=>esc(pname(id))).join(', ') + ' et ' + (vv.length - 2) + ' autres'}</span>`;
       document.title = 'Carnet · ' + (t.titre||'Voyage');
     } else { title.textContent = 'Carnet de voyage'; sub.textContent = 'Ton premier voyage t’attend'; pill.textContent = 'Mes voyages'; cd.innerHTML = ''; av.innerHTML = ''; }
     const me = document.getElementById('cv-me');
@@ -1340,9 +1417,10 @@ const CV = (function(){
       </div>
       <button class="v-btn" onclick="CV.wizard()">＋ Préparer un nouveau voyage</button>
       ${demoBtn()}
+      <button class="v-btn sec" onclick="CV.shareSheet()">📤 Partager l’appli à un ami (QR code)</button>
       <button class="v-btn sec" onclick="CV.psPick()">📥 Importer des voyages Polarsteps</button>
       ${!PUBLIC && !(R.t2025 && !R.t2025.deleted) ? `<button class="v-btn sec" onclick="CV.seedUSA2025()">📦 Ajouter l’archive USA 2025</button>` : ''}
-      ${ESCALE ? `<a class="v-btn sec cv-escale" href="${ESCALE}" target="_blank" rel="noopener">✈️ Chercher des vols avec Escale</a><button class="v-btn sec" onclick="CV.escaleTuto()">🎓 Tuto Escale premium</button>` : ''}
+      ${ESCALE ? `<a class="v-btn sec cv-escale" href="${ESCALE}">✈️ Chercher des vols avec Escale</a><button class="v-btn sec" onclick="CV.escaleTuto()">🎓 Tuto Escale premium</button>` : ''}
       ${trip() ? `<button class="v-btn sec" onclick="CV.editTrip('${M.trip}')">✏️ Modifier « ${esc(trip().titre)} »</button>` : ''}`);
   }
   function buildTabs(){
@@ -1437,6 +1515,7 @@ const CV = (function(){
     else if(M.tab==='souv') renderSouv();
     else if(M.tab==='check') renderCheck();
     else if(M.tab==='envies') renderEnvies();
+    else if(M.tab==='outils') renderOutils();
     else renderReglages();
     const fabs = {transport:1, hotel:1, activite:1, divers:1, notes:1, envies:1, prog:1, souv:1};
     if(fabs[M.tab] && (t || M.tab==='envies')){
@@ -1538,7 +1617,7 @@ const CV = (function(){
       <div class="v-sum-small">${M.who!=='all' ? 'Part de '+esc(pname(M.who)) : nv>1 ? 'Total pour '+nv+' · soit ≈ '+eur(proj/nv)+' par personne' : 'Projection'} · réel saisi : ${eur(reel)}</div>
       <div class="v-bar"><span class="b-paid" style="width:${n?paid/n*100:0}%"></span><span class="b-booked" style="width:${n?booked/n*100:0}%"></span></div>
       ${cat==='transport' && ESCALE ? `<button type="button" class="cv-escale-tuto" style="margin:10px 0 0" onclick="CV.escaleTuto()">🎓 Tuto Escale premium</button>` : ''}
-      ${cat==='transport' && ESCALE ? `<a class="cv-escale-mini" href="${ESCALE}" target="_blank" rel="noopener">🛫 Chercher les meilleurs prix de vols avec <b>Escale</b> ↗${PUBLIC ? '<small>Mode soft : prix indicatifs en cache (Travelpayouts). Tarifs en direct, Booking, voitures et attractions : mode premium sur code d’accès.</small>' : ''}</a>` : ''}
+      ${cat==='transport' && ESCALE ? `<a class="cv-escale-mini" href="${ESCALE}">🛫 Chercher les meilleurs prix de vols avec <b>Escale</b> ↗${PUBLIC ? '<small>Mode soft : prix indicatifs en cache (Travelpayouts). Tarifs en direct, Booking, voitures et attractions : mode premium sur code d’accès.</small>' : ''}</a>` : ''}
     </div>
     <div class="v-filters">${[['all','Tous'],['todo','À réserver'],['booked','Réservé'],['paid','Payé']].map(([k,l])=>
       `<button class="v-chip${f===k?' on':''}" onclick="CV.filter('${cat}','${k}')">${l}</button>`).join('')}</div>`;
@@ -1569,6 +1648,7 @@ const CV = (function(){
     if(locked) bg.dataset.locked = '1';
     document.body.appendChild(bg);
     document.body.style.overflow = 'hidden';
+    if(/data-[rt]map=/.test(html)) setTimeout(hydrateMaps, 30);
   }
   function closeSheet(force){
     const bg = document.getElementById('v-sheet-bg');
@@ -1626,6 +1706,7 @@ const CV = (function(){
       h += field('Lieu / prestataire','adresse',it.adresse);
     }
     h += `<div class="v-f2">${field('Prix réel (€)','prix',it.prix,'text','inputmode="decimal" placeholder="à saisir"')}${field('Estimation (€)','estime',it.estime,'text','inputmode="decimal"')}</div>`;
+    h += fxFormRow();
     h += `<div class="v-f"><label>Le prix saisi est</label>${segBtns('cv-part', [['pp','Par personne'],['grp','Global, partagé']], partage(it))}
       <div class="v-sum-small" style="margin-top:4px">Par personne : compté pour chaque voyageur concerné (vol, billet). Global : divisé entre eux (chambre, guide privé).</div></div>`;
     h += payForm(it);
@@ -1700,16 +1781,19 @@ const CV = (function(){
   function pinBoard(){
     const pins = list('note', n=>n.trip===M.trip && n.pin).sort((a,b)=>b.updatedAt-a.updatedAt);
     if(!pins.length) return '';
-    return `<div class="cv-pinboard"><div class="cv-pinboard-h">📌 Épinglé</div>${pins.map(n=>noteCard(n,true)).join('')}</div>`;
+    const open = M.pinOpen !== false;
+    return `<div class="cv-pinboard${open?'':' closed'}"><button type="button" class="cv-pinboard-h cv-pin-tog" onclick="CV.pinToggle()" aria-expanded="${open}">📌 Épinglé <span class="n">${pins.length}</span><span class="ch">${open?'▴ replier':'▾ déplier'}</span></button>${open ? pins.map(n=>noteCard(n,true)).join('') : ''}</div>`;
   }
+  function pinToggle(){ M.pinOpen = M.pinOpen === false; persist(); const y = window.scrollY; render(); window.scrollTo(0, y); }
   function renderProg(){
     const ds = dayList();
-    let h = whoBar() + pinBoard();
+    let h = liveCard() + whoBar() + pinBoard();
     const tt = trip();
     if(tt && tt.demo) h = `<div class="cv-demo-bar">👀 <b>Voyage de démo</b> : touche à tout, modifie, supprime. Il reste sur ce téléphone et n’est jamais partagé.
         <span class="cv-demo-btns"><button type="button" onclick="CV.demoReset()">↺ Recommencer</button><button type="button" onclick="CV.demoDel()">Supprimer la démo</button></span></div>` + h;
+    { const di0 = tt && !tt.archived ? docIssues() : []; if(di0.length) h += `<button type="button" class="cv-docalert" onclick="CV.tlDocs()">⚠️ ${di0.length} document${di0.length>1?'s':''} de voyage à vérifier — ${esc(di0[0])}${di0.length>1?'…':''}</button>`; }
     if(tt && !tt.archived) h += discoverCard(true);
-    if(ESCALE && tt && !tt.archived) h += `<a class="cv-escale-card" href="${ESCALE}" target="_blank" rel="noopener">
+    if(ESCALE && tt && !tt.archived) h += `<a class="cv-escale-card" href="${ESCALE}">
         <span class="ek">Escale · comparateur</span>
         <span class="et">Trouve les vols les moins chers pour ce voyage</span>
         <span class="ed">Compare les prix des compagnies en quelques secondes, puis ajoute ton vol ici.</span>
@@ -1817,7 +1901,6 @@ const CV = (function(){
         <div class="v-f"><label>Épinglée</label>${segBtns('cv-npin', [['1','📌 Oui, en haut'],['0','Non']], n.pin?'1':'0')}</div>
         ${actions(id ? `CV.delNote('${id}')` : '')}
       </form>`);
-    setTimeout(()=>{ const t = document.getElementById('cv-ntext'); if(t && !id) t.focus(); }, 50);
   }
   function saveNote(){
     const n = editing; if(!n) return;
@@ -1893,12 +1976,13 @@ const CV = (function(){
       ${others.length ? `<div class="v-f"><label>Profils existants</label><div class="cv-plist">${others.map(p=>`<button class="cv-prow" onclick="CV.addToTrip('${p.id}')">${pchip(p.id)}<span>Ajouter →</span></button>`).join('')}</div></div>` : ''}
       <form onsubmit="event.preventDefault();CV.newProfile(true)">
         <div class="v-f"><label>Nouveau profil</label><input class="v-in" id="cv-pnom" placeholder="Prénom (ex. Camille)" required></div>
-        <div class="v-f"><label>Couleur</label>${colorPick(COLORS[profiles().length % COLORS.length])}</div>
+        <div class="v-f"><label>Couleur</label>${colorPick(nextColor())}</div>
         ${actions('')}
       </form>`);
   }
   function addToTrip(pid){
-    const t = trip(); t.voyageurs = [...new Set([...(t.voyageurs||[]), ...tv(), pid])];
+    const t = trip();
+    if(tv().length >= MAXP && !tv().includes(pid)){ alert('Maximum ' + MAXP + ' voyageurs par voyage.'); return; } t.voyageurs = [...new Set([...(t.voyageurs||[]), ...tv(), pid])];
     put(t, '👥 ' + pname(pid) + ' ajouté(e)'); closeSheet(); refresh();
   }
   function removeCompanion(pid){
@@ -1959,6 +2043,7 @@ const CV = (function(){
         `<button class="v-chip${f===k?' on':''}" onclick="CV.envF('${k}')">${l}</button>`).join('')}</div>
       <div class="v-filters"><span class="cv-lbl">De</span><button class="v-chip${fp==='all'?' on':''}" onclick="CV.envP('all')">Tous</button>${profiles().map(p=>`<button class="v-chip cv-pc${fp===p.id?' on':''}" style="--pc:${p.couleur}" onclick="CV.envP('${p.id}')">${esc(p.nom)}</button>`).join('')}</div>`;
     h += shown.map(wishCard).join('') || '<div class="v-empty">Aucune envie ici. Ajoute avec ＋ en bas.</div>';
+    h = pollsHTML() + h;
     document.getElementById('cv-body').innerHTML = h;
   }
   function wishCard(w){
@@ -2119,23 +2204,26 @@ const CV = (function(){
   }
   function newProfile(toTrip){
     const nom = document.getElementById('cv-pnom').value.trim(); if(!nom) return;
+    if(profiles().length >= MAXP){ alert('Maximum ' + MAXP + ' compagnons dans un carnet.'); return; }
     const p = put({id:'p'+uid(), type:'profile', nom, couleur:document.getElementById('cv-pcol').value}, '👤 ' + nom + ' ajouté(e)');
     if(toTrip===true && trip()) addToTrip(p.id); else { closeSheet(); refresh(); }
     return p;
   }
   function editProfile(id){
-    const p = id ? clone(R[id]) : {id:null, nom:'', couleur:COLORS[profiles().length % COLORS.length]};
+    const p = id ? clone(R[id]) : {id:null, nom:'', couleur:nextColor()};
     editing = p;
     openSheet(`<h2>👤 ${id ? 'Modifier le profil' : 'Nouveau profil'}</h2>${byline(p)}
       <form onsubmit="event.preventDefault();CV.saveProfile()">
         <div class="v-f"><label>Prénom</label><input class="v-in" id="cv-pnom" value="${esc(p.nom)}" required></div>
         <div class="v-f"><label>Couleur</label>${colorPick(p.couleur)}</div>
+        <div class="v-f"><label>Pour me rembourser (facultatif)</label><input class="v-in" id="cv-prb" value="${esc(p.rembours||'')}" placeholder="Ex. Lydia ou Wero au 06…, ou IBAN FR76…"></div>
         ${actions(id && id!==M.me ? `CV.delProfile('${id}')` : '')}
       </form>`);
   }
   function saveProfile(){
     const p = editing; p.nom = document.getElementById('cv-pnom').value.trim(); if(!p.nom) return;
     p.couleur = document.getElementById('cv-pcol').value; p.type = 'profile';
+    const rb = document.getElementById('cv-prb'); if(rb) p.rembours = rb.value.trim();
     if(!p.id) p.id = 'p' + uid();
     if(!prof(M.me)) M.me = p.id;
     put(p); closeSheet(true); refresh();
@@ -2199,6 +2287,8 @@ const CV = (function(){
         <button class="v-btn sec" onclick="CV.pdfSheet()">🖨️ Carnet de route à imprimer (PDF)</button>
         <button class="v-btn sec" onclick="CV.wizard()">＋ Nouveau voyage</button></div>`;
     }
+    h += pkgBox();
+    h += `<div class="v-box"><h3>📤 Inviter un ami</h3><p>Montre-lui le QR code ou envoie-lui le lien de l’appli.</p><button class="v-btn" onclick="CV.shareSheet()">📤 Partager l’appli (QR code)</button></div>`;
     h += `<div class="v-box"><h3>🎬 Tutos</h3><p>Toutes les fonctions de l’appli en 5 minutes, et comment chercher tes vols avec Escale.</p>${tutoBtn()}${ESCALE ? `<button type="button" class="v-btn sec" onclick="CV.escaleTuto()">🎓 Tuto Escale premium</button>` : ''}</div>`;
     h += `<div class="v-box"><h3>🕘 Activité récente</h3>${activity()}</div>
       <div class="v-box"><h3>💾 Sauvegarde</h3>
@@ -2498,7 +2588,7 @@ const CV = (function(){
     return `<div class="v-sum">
       <div class="v-sum-row"><div class="v-sum-big" style="font-size:1rem">⚖️ Qui doit quoi</div><div class="v-sum-small">sur ce qui est déjà réglé</div></div>
       ${bal.map(b=>`<div class="cv-bal">${pchip(b.pid)}<span>a payé ${eur(b.avance)} · sa part ${eur(b.part)}${b.verse>0.5?' · a remboursé '+eur(b.verse):''}${b.recu>0.5?' · a reçu '+eur(b.recu):''}</span><b style="color:${b.solde>0.5?'var(--green)':b.solde<-0.5?'var(--red)':'var(--gray)'}">${Math.abs(b.solde)<0.5 ? '0 €' : (b.solde>0?'+':'') + eur(b.solde)}</b></div>`).join('')}
-      <div class="cv-settle">${tr.length ? tr.map(x=>`<div class="cv-settle-r"><span>➡️ ${pname_c(x.de)} doit <b>${eur(x.v)}</b> à ${pname_c(x.a)}</span><button class="v-chip on" onclick="CV.rembAdd('${x.de}','${x.a}',${x.v.toFixed(2)})">💸 Régler</button></div>`).join('') : '✓ Personne ne doit rien à personne.'}</div>
+      <div class="cv-settle">${tr.length ? tr.map(x=>`<div class="cv-settle-r"><span>➡️ ${pname_c(x.de)} doit <b>${eur(x.v)}</b> à ${pname_c(x.a)}</span><button class="v-chip on" onclick="CV.rembAdd('${x.de}','${x.a}',${x.v.toFixed(2)})">💸 Régler</button><button class="v-chip" onclick="CV.rembAsk('${x.de}','${x.a}',${x.v.toFixed(2)})">📤 Demander</button></div>`).join('') : '✓ Personne ne doit rien à personne.'}</div>
       ${rembs().length ? `<div class="cv-rbs">${rembs().map(x=>`<div class="cv-rb">💸 ${pname_c(x.de)} a remboursé <b>${eur(num(x.montant))}</b> à ${pname_c(x.a)} <span class="v-sum-small">le ${fdate(x.date)}</span><button class="cv-x" onclick="CV.rembDel('${x.id}')">✕</button></div>`).join('')}</div>` : ''}
     </div>`;
   }
@@ -2759,6 +2849,7 @@ const CV = (function(){
       ${legs.map((L,i)=>`<a class="cv-leg" href="${dirUrl(L.from, L.to, L.a.mode)}" target="_blank" rel="noopener">${L.a.icon} ${L.a.txt} · ${fmtKm(L.dk)} · ~${fmtMin(L.a.min)}${L.a.alt ? ' <span>('+L.a.alt+')</span>' : ''} ↗</a>
         <div class="cv-stop${i===legs.length-1?' s':''}">${i===legs.length-1 ? (r.loop ? '↩️ Retour · ' : '🏁 ') + esc(r.end.lbl||'Arrivée') : '<b>'+(i+1)+'</b> '+esc(L.to.nom)}</div>`).join('')}
       <div class="cv-route-sum">${sum}</div>${gm}
+      <div class="cv-rmap" data-rmap="${d}"></div>
       ${(r.miss||[]).length ? `<div class="v-sum-small" style="color:var(--red)">Introuvable(s) : ${r.miss.map(id=>byId[id] ? esc(byId[id].nom) : '').filter(Boolean).join(', ')} — ajoute une adresse précise ou un lien Google Maps.</div>` : ''}
     </div>`;
   }
@@ -2809,7 +2900,6 @@ const CV = (function(){
       return {id:'pl'+uid()+i, type:'place', trip:M.trip, date:d, stay: st ? st.id : '', nom, adresse: s!==nom ? s : ''};
     });
     putMany(out, '📍 Ajouté'); planDay(d);
-    setTimeout(()=>{ const e = document.getElementById('pl-new'); if(e) e.focus(); }, 50);
   }
   function plDel(id){ drop(id, false); planDay(planD); }
   async function plOpt(){
@@ -3340,6 +3430,7 @@ const CV = (function(){
 
   /* ══════════ Démarrage ══════════ */
   function init(){
+    try { const hq = document.getElementById('cv-hero-qr'); if(hq) hq.innerHTML = qrSVG(APP_URL(), 'q') + '<span>📤 Partager</span>'; } catch(e){}
     loadStore();
     document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ if(vw) viewClose(); else closeSheet(); } if(vw && e.key==='ArrowRight') viewGo(1); if(vw && e.key==='ArrowLeft') viewGo(-1); });
     document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') syncNow(); });
@@ -3372,35 +3463,73 @@ const CV = (function(){
   };
   const poiScore = t => (t.wikidata?5:0) + (t.wikipedia?3:0) + (t.heritage?2:0) + (t.tourism==='attraction'?2:0) + (t.historic?1:0) + (t['name:fr']?1:0);
   let disc = null;
+  // Lieux à voir : cache par ville (30 jours), puis l'API /api/seewhat (cache serveur 24 h)
+  // en course avec OpenStreetMap (Overpass) interrogé sur 2 serveurs en parallèle.
+  const DISC_TTL = 30*864e5;
+  const seeCat = c => /Musée|Galerie/i.test(c) ? 'musee' : /Point de vue/i.test(c) ? 'vue' : /Zoo|Aquarium|Parc d|Loisir|attraction/i.test(c) ? 'loisir'
+    : /Parc|Jardin|Nature|Plage|Site naturel/i.test(c) ? 'parc' : /Église|Cathédrale|Temple|Sanctuaire|Religi|Monastère/i.test(c) ? 'relig' : 'monu';
+  function withTimeout(pr, ms){ return Promise.race([pr, new Promise((_,rej)=>setTimeout(()=>rej(new Error('délai dépassé')), ms))]); }
+  async function seeApi(c){
+    const r = await fetch(`https://vol-bm4.pages.dev/api/seewhat?lat=${c.lat}&lng=${c.lng}&radius=7000`); if(!r.ok) throw new Error('api');
+    const j = await r.json(); const pl = (j && j.places) || []; if(!pl.length) throw new Error('vide');
+    return pl.map(p=>({nom:p.name, cat:seeCat(p.cat||''), score:(p.wiki?5:0) + (p.site?1:0), lat:p.lat, lng:p.lng, wiki:p.wiki||''}));
+  }
+  // Wikipédia : lieux qui ont un article, autour d'un point (rapide, sans clé, CORS ouvert)
+  const wikiCat = t => /Musée|Museo|Galerie|Pinacoth/i.test(t) ? 'musee' : /Mirador|Belvédère|Point de vue|Tour |Torre/i.test(t) ? 'vue'
+    : /Parc |Parque|Jardin|Jardín|Bois |Plage|Lac /i.test(t) ? 'parc' : /Église|Iglesia|Cathédrale|Catedral|Basilique|Basílica|Chapelle|Temple|Mosquée|Synagogue|Monastère|Couvent|Abbaye|Sanctuaire/i.test(t) ? 'relig'
+    : /Zoo|Aquarium|Stade|Estadio|Arène|Plaza de toros/i.test(t) ? 'loisir' : 'monu';
+  async function seeWiki(c){
+    const u = `https://fr.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord=${c.lat}%7C${c.lng}&gsradius=10000&gslimit=150&format=json&origin=*`;
+    const r = await fetch(u); if(!r.ok) throw new Error('wiki');
+    const g = ((await r.json()).query || {}).geosearch || []; if(!g.length) throw new Error('vide');
+    return g.filter(x=>!/^(Liste |Gare |Station |Métro|Ligne |Arrondissement|Quartier|District|Barrio|Rue |Avenue |Calle |Ambassade|Consulat|Hôpital|École|Lycée|Collège|Université|Ministère|Siège|Bataille)/i.test(x.title) && !/\(métro|\(station|\(gare/i.test(x.title))
+      .map(x=>({nom: x.title.replace(/ \([^)]*\)$/,''), cat: wikiCat(x.title + ' '), score: 4.5 - Math.min(x.dist, 10000)/4000, lat: x.lat, lng: x.lon, wiki: 'fr:' + x.title}));
+  }
+  async function seeOverpass(c){
+    const a = `(around:4500,${c.lat},${c.lng})`;
+    const q = `[out:json][timeout:15];(
+      nw["tourism"~"^(attraction|museum|viewpoint|gallery|zoo|theme_park|aquarium)$"]["name"]${a};
+      nw["historic"~"^(monument|castle|ruins|archaeological_site|memorial|fort|city_gate|palace|church|cathedral|tower|monastery)$"]["name"]${a};
+      nw["amenity"="place_of_worship"]["wikidata"]${a};
+      nw["leisure"~"^(park|garden)$"]["wikidata"]${a};
+    );out center tags 250;`;
+    const one = ep => fetch(ep, {method:'POST', body:'data=' + encodeURIComponent(q), headers:{'Content-Type':'application/x-www-form-urlencoded'}})
+      .then(r=>{ if(!r.ok) throw new Error('osm'); return r.json(); });
+    const j = await Promise.any(['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'].map(one));
+    return (j.elements||[]).map(e=>{ const t = e.tags || {};
+      return {nom: t['name:fr'] || t.name, cat: poiCat(t), score: poiScore(t), lat: e.lat ?? (e.center||{}).lat, lng: e.lon ?? (e.center||{}).lon, wiki: t.wikipedia || ''}; });
+  }
   async function discover(hid){
     const h = R[hid]; if(!h) return;
-    const city = cityOf(h.titre);
+    const city = cityOf(h.titre), key = normQ(city);
     disc = {hid, city, list:[], f: M.poiF || {musee:false}, q:''};
-    openSheet(`<h2>🔎 À voir à ${esc(city)}</h2><div class="cv-route-load" id="ds-msg">📡 Je cherche les lieux autour de ${esc(city)}…</div>`);
+    M.poiCache = M.poiCache || {};
+    const hit = M.poiCache[key];
+    if(hit && Date.now() - hit.t < DISC_TTL && hit.list.length){ disc.list = hit.list; discRender(); return; }
+    openSheet(`<h2>🔎 À voir à ${esc(city)}</h2><div class="cv-route-load" id="ds-msg">📡 Je cherche les lieux autour de ${esc(city)}…<br><small>La première recherche d’une ville prend quelques secondes, les suivantes sont immédiates.</small></div>`);
     try {
-      const c = await geocode(city, null);
+      const c = await withTimeout(geocode(city, null), 10000).catch(()=>null);
       if(!c) throw new Error('Ville introuvable : vérifie le nom de l’étape (fiche hôtel).');
-      const R0 = 7000, a = `(around:${R0},${c.lat},${c.lng})`;
-      const q = `[out:json][timeout:25];(
-        nwr["tourism"~"^(attraction|museum|viewpoint|gallery|zoo|theme_park|aquarium)$"]["name"]${a};
-        nwr["historic"~"^(monument|castle|ruins|archaeological_site|memorial|fort|city_gate|palace|church|cathedral|tower|monastery)$"]["name"]${a};
-        nwr["amenity"="place_of_worship"]["wikidata"]${a};
-        nwr["leisure"~"^(park|garden)$"]["wikidata"]${a};
-      );out center tags 400;`;
-      let j = null;
-      for(const ep of ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter']){
-        try { const r = await fetch(ep, {method:'POST', body:'data=' + encodeURIComponent(q), headers:{'Content-Type':'application/x-www-form-urlencoded'}}); if(r.ok){ j = await r.json(); break; } } catch(e){}
-      }
-      if(!j) throw new Error('Le service de cartes (OpenStreetMap) ne répond pas. Réessaie dans un instant.');
-      const seen = new Set();
-      disc.list = (j.elements||[]).map(e=>{
-        const t = e.tags || {}, lat = e.lat ?? (e.center||{}).lat, lng = e.lon ?? (e.center||{}).lon;
-        return {nom: t['name:fr'] || t.name, cat: poiCat(t), score: poiScore(t), lat, lng, wiki: t.wikipedia || ''};
-      }).filter(p=>p.nom && p.lat != null && !/^\d+$/.test(p.nom))
-        .sort((x,y)=>y.score-x.score)
-        .filter(p=>{ const k = normQ(p.nom); if(seen.has(k)) return false; seen.add(k); return true; })
-        .slice(0, 150);
-      discRender();
+      // 3 sources en parallèle : Wikipédia (très rapide), le serveur (cache 24 h), OpenStreetMap.
+      // On affiche dès la première réponse, puis on complète quand les autres arrivent.
+      let got = [], ok = 0;
+      const finalize = arr => { const seen = new Set();
+        return arr.filter(p=>p.nom && p.lat != null && !/^\d+$/.test(p.nom))
+          .sort((x,y)=>y.score-x.score)
+          .filter(p=>{ const k = normQ(p.nom); if(seen.has(k)) return false; seen.add(k); return true; })
+          .slice(0, 150); };
+      await new Promise(done => {
+        let left = 3;
+        [seeWiki(c), seeApi(c), seeOverpass(c)].forEach(pr => withTimeout(pr, 22000).then(list => {
+          if(!list || !list.length) return;
+          got = got.concat(list); ok++;
+          if(!disc || disc.hid !== hid) return;
+          disc.list = finalize(got);
+          M.poiCache[key] = {t: Date.now(), list: disc.list}; const ks = Object.keys(M.poiCache); if(ks.length > 30) delete M.poiCache[ks[0]]; persist();
+          discRender(); done();
+        }).catch(()=>{}).finally(()=>{ if(--left === 0) done(); }));
+      });
+      if(!ok) throw new Error('Aucun service de lieux ne répond pour l’instant (Wikipédia, OpenStreetMap). Vérifie ta connexion et réessaie dans un instant.');
     } catch(e){ const m = document.getElementById('ds-msg'); if(m) m.textContent = '⚠️ ' + e.message; }
   }
   function discRender(){
@@ -3408,7 +3537,7 @@ const CV = (function(){
     const mine = new Set(placesOfStay(d.hid).map(p=>normQ(p.nom)));
     const shown = d.list.filter(p => d.f[p.cat] !== false && (!d.q || normQ(p.nom).includes(normQ(d.q))));
     openSheet(`<h2>🔎 À voir à ${esc(d.city)}</h2>
-      <div class="v-sum-small" style="margin-bottom:8px">${d.list.length} lieux trouvés (OpenStreetMap), les plus connus en premier. Touche ＋ pour les ajouter à l’étape, puis optimise.</div>
+      <div class="v-sum-small" style="margin-bottom:8px">${d.list.length} lieux trouvés (Wikipédia, OpenStreetMap), les plus connus en premier. Touche ＋ pour les ajouter à l’étape, puis optimise.</div>
       <div class="v-filters" style="flex-wrap:wrap">${Object.entries(POI_CATS).map(([k,c])=>`<button class="v-chip${d.f[k]!==false?' on':''}" onclick="CV.discF('${k}')">${c.icon} ${c.lbl}</button>`).join('')}</div>
       <input class="v-in" id="ds-q" placeholder="Rechercher un lieu…" value="${esc(d.q)}" oninput="CV.discQ(this.value)">
       <div id="ds-list" style="margin-top:8px">${shown.map(p=>{ const i = d.list.indexOf(p), has = mine.has(normQ(p.nom));
@@ -3579,8 +3708,45 @@ const CV = (function(){
       <div class="v-sum-small" style="margin-bottom:10px">Une version papier de « ${esc(t.titre)} » à emporter. Sur iPhone, l’aperçu s’ouvre : touche <b>Imprimer</b>, ou partage-le en PDF (pince l’aperçu pour l’agrandir, puis Partager → Enregistrer dans Fichiers).</div>
       <div class="v-f"><label>Ce qu’on met dedans</label>${PR_SECTIONS.map(([k,l])=>`<label class="cv-checkline"><input type="checkbox" id="pr-${k}" checked> ${l}</label>`).join('')}</div>
       ${v.length > 1 ? `<div class="v-f"><label>Carnet de</label><select class="v-in" id="pr-who"><option value="all">Tout le monde</option>${v.map(p=>`<option value="${p}">${esc(pname(p))} (seulement ses trajets et sa part)</option>`).join('')}</select></div>` : ''}
+      <label class="cv-checkline"><input type="checkbox" id="pr-maps" checked> Cartes (voyage + itinéraires du jour, fond de carte)</label>
       <label class="cv-checkline"><input type="checkbox" id="pr-lines" checked> Lignes vides pour écrire chaque jour</label>
-      <div class="v-actions"><button type="button" class="v-btn" onclick="CV.pdfMake()">🖨️ Préparer le carnet</button><button type="button" class="v-btn sec cv-sq" onclick="CV.close()">✕</button></div>`);
+      <div class="v-actions"><button type="button" class="v-btn" onclick="CV.pdfRoute()">📄 Créer le PDF</button><button type="button" class="v-btn sec cv-sq" onclick="CV.close()">✕</button></div>`);
+  }
+  // Tracé de l'itinéraire d'un jour (SVG, sans service extérieur) : départ, visites numérotées, arrivée
+  function routeSVG(r){
+    if(!r || !r.pts) return '';
+    const ids = (r.ids||[]).filter(id=>r.pts[id] && r.pts[id].lat != null);
+    if(!ids.length) return '';
+    const ok = p => p && p.lat != null && p.lng != null;
+    const seq = [];
+    if(ok(r.start)) seq.push({p:r.start, k:'D'});
+    ids.forEach((id,i)=>seq.push({p:r.pts[id], k:String(i+1)}));
+    const fin = r.loop ? r.start : r.end; if(ok(fin)) seq.push({p:fin, k: r.loop ? '' : 'A'});
+    const lat0 = seq.reduce((s,x)=>s + +x.p.lat, 0) / seq.length, kx = Math.cos(lat0*Math.PI/180);
+    const X = seq.map(x=>+x.p.lng*kx), Y = seq.map(x=>-x.p.lat);
+    const W = 600, H = 260, pad = 28;
+    const minX = Math.min(...X), maxX = Math.max(...X), minY = Math.min(...Y), maxY = Math.max(...Y);
+    const sc = Math.min((W-2*pad)/Math.max(maxX-minX, 1e-4), (H-2*pad)/Math.max(maxY-minY, 1e-4));
+    const ox = (W - (maxX-minX)*sc)/2, oy = (H - (maxY-minY)*sc)/2;
+    const P = i => [(X[i]-minX)*sc + ox, (Y[i]-minY)*sc + oy].map(v=>Math.round(v*10)/10);
+    const pts = seq.map((_,i)=>P(i));
+    let dist = 0; for(let i=1;i<seq.length;i++) dist += km(seq[i-1].p, seq[i].p);
+    // échelle : longueur « ronde » proche de 1/5 de la largeur
+    const pxKm = sc / 111.32, target = W/5/pxKm, nice = [0.1,0.2,0.5,1,2,5,10,20,50,100,200,500].find(v=>v >= target*0.6) || 500, bar = nice*pxKm;
+    let g = `<rect width="${W}" height="${H}" rx="10" fill="#faf7f2"/>`;
+    for(let x=0;x<=W;x+=50) g += `<line x1="${x}" y1="0" x2="${x}" y2="${H}" stroke="#eee6dc" stroke-width="1"/>`;
+    for(let y=0;y<=H;y+=50) g += `<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="#eee6dc" stroke-width="1"/>`;
+    g += `<polyline points="${pts.map(p=>p.join(',')).join(' ')}" fill="none" stroke="#7C3AED" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="${r.loop ? '0' : '0'}"/>`;
+    seq.forEach((x,i)=>{
+      if(!x.k) return;
+      const [a,b] = pts[i], end = x.k==='D' || x.k==='A';
+      g += end ? `<rect x="${a-11}" y="${b-11}" width="22" height="22" rx="5" fill="#2A1238"/><text x="${a}" y="${b+4.5}" font-size="12" font-weight="700" fill="#fff" text-anchor="middle" font-family="sans-serif">${x.k==='D' && r.loop ? '🏨' : x.k}</text>`
+        : `<circle cx="${a}" cy="${b}" r="11" fill="#fff" stroke="#7C3AED" stroke-width="2.5"/><text x="${a}" y="${b+4.5}" font-size="12" font-weight="700" fill="#4C1D95" text-anchor="middle" font-family="sans-serif">${x.k}</text>`;
+    });
+    g += `<line x1="${W-pad-bar}" y1="${H-14}" x2="${W-pad}" y2="${H-14}" stroke="#2A1238" stroke-width="2"/><text x="${W-pad-bar/2}" y="${H-19}" font-size="11" fill="#2A1238" text-anchor="middle" font-family="sans-serif">${nice < 1 ? nice*1000 + ' m' : nice + ' km'}</text>`;
+    const st = r.start && r.start.lbl ? esc(r.start.lbl) : 'départ', en = r.loop ? 'retour au départ' : (r.end && r.end.lbl ? esc(r.end.lbl) : 'arrivée');
+    return `<figure class="pr-map"><svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Carte de l’itinéraire">${g}</svg>
+      <figcaption>🗺️ Itinéraire : <b>D</b> ${st} → ${ids.length} visite${ids.length>1?'s':''} → ${r.loop ? '🏨 ' + en : '<b>A</b> ' + en} · ≈ ${dist < 10 ? dist.toFixed(1) : Math.round(dist)} km à vol d’oiseau</figcaption></figure>`;
   }
   const longDate = iso => { if(!iso) return ''; const p = iso.split('-'); const s = new Date(+p[0], +p[1]-1, +p[2]).toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long'}); return s[0].toUpperCase() + s.slice(1); };
   function pdfMake(){
@@ -3597,6 +3763,7 @@ const CV = (function(){
     const ttl = whoSel==='all' ? tv().map(pname).map(esc).join(' & ') : esc(pname(whoSel));
     let d = `<header class="pr-cover"><div class="pr-kicker">Carnet de route</div><h1>${esc(t.titre)}</h1>
       <p class="pr-dates">${tripDatesLong(t)}</p>${t.sous ? `<p class="pr-route">${esc(t.sous)}</p>` : ''}<p class="pr-who">${ttl}</p></header>`;
+    d += tripMapCached();
     if(on('prog')){
       d += `<h2 class="pr-h">Programme jour par jour</h2>`;
       dayList().forEach((day, i)=>{
@@ -3608,6 +3775,7 @@ const CV = (function(){
           ${own.length || night.length ? `<table class="pr-t">${own.map(it=>`<tr><td class="ic">${icon(it)}</td><td class="tm">${esc(it.heureDep || it.heure || '')}${it.heureArr ? '<br>→ ' + esc(it.heureArr) : ''}</td><td><b>${esc(it.titre)}</b>${who(it)}<br><small>${det(it)}</small></td><td class="stt">${st(it)}</td></tr>`).join('')}
             ${night.map(it=>`<tr><td class="ic">🏨</td><td class="tm">${it.date===day && it.heure ? esc(it.heure) : 'nuit'}</td><td><b>${esc(it.nom || it.titre)}</b>${who(it)}<br><small>${det(it)}</small></td><td class="stt">${st(it)}</td></tr>`).join('')}</table>` : ''}
           ${pl.length ? `<p class="pr-pl"><b>À voir :</b> ${pl.map((p,k)=>`${k+1}. ${esc(p.nom)}`).join(' · ')}</p>` : ''}
+          ${info.route ? routeSVG(info.route) : ''}
           ${dn.length || notesIt.length ? `<div class="pr-notes">${dn.map(n=>'📌 ' + esc(n.texte)).concat(notesIt.map(x=>'📌 ' + x)).join('<br>')}</div>` : ''}
           ${lines ? '<div class="pr-lines"><i></i><i></i><i></i></div>' : ''}
         </section>`;
@@ -3694,8 +3862,2121 @@ const CV = (function(){
       <p>Réserve chez la compagnie, puis dans le carnet : <b>Résas → Trajets</b>, ouvre le vol et remplis la compagnie, les horaires, le prix et le lien de réservation. Le budget et « qui doit quoi » se mettent à jour tout seuls.</p>
       <p class="cv-warn">💡 Le premium utilise des services payants à quota : garde-le pour tes vraies dates, et repasse en soft pour flâner.</p>
       </div>
-      <div class="v-actions">${ESCALE ? `<a class="v-btn" href="${ESCALE}" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">✈️ Ouvrir Escale</a>` : ''}<button type="button" class="v-btn sec cv-sq" onclick="CV.close()">✕</button></div>`);
+      <div class="v-actions">${ESCALE ? `<a class="v-btn" href="${ESCALE}" style="text-align:center;text-decoration:none">✈️ Ouvrir Escale</a>` : ''}<button type="button" class="v-btn sec cv-sq" onclick="CV.close()">✕</button></div>`);
   }
+  /* ══════════ 📤 Partager l'appli à un ami (lien + QR code, généré sur le téléphone) ══════════ */
+  /* QRCode for JavaScript — Copyright (c) 2009 Kazuhiko Arase — MIT license (http://www.opensource.org/licenses/mit-license.php).
+     « QR Code » est une marque déposée de DENSO WAVE INCORPORATED. Regroupé pour le Carnet de voyage. */
+  var CVQR=(function(){var M={};function require(n){return M[n.replace('./','')];}
+  M['QRMode']=(function(){var module={exports:{}};var exports=module.exports;
+  module.exports = {
+      MODE_NUMBER :       1 << 0,
+      MODE_ALPHA_NUM :    1 << 1,
+      MODE_8BIT_BYTE :    1 << 2,
+      MODE_KANJI :        1 << 3
+  };
+  
+  return module.exports;})();
+  M['QRMath']=(function(){var module={exports:{}};var exports=module.exports;
+  var QRMath = {
+  
+  	glog : function(n) {
+  	
+  		if (n < 1) {
+  			throw new Error("glog(" + n + ")");
+  		}
+  		
+  		return QRMath.LOG_TABLE[n];
+  	},
+  	
+  	gexp : function(n) {
+  	
+  		while (n < 0) {
+  			n += 255;
+  		}
+  	
+  		while (n >= 256) {
+  			n -= 255;
+  		}
+  	
+  		return QRMath.EXP_TABLE[n];
+  	},
+  	
+  	EXP_TABLE : new Array(256),
+  	
+  	LOG_TABLE : new Array(256)
+  
+  };
+  	
+  for (var i = 0; i < 8; i++) {
+  	QRMath.EXP_TABLE[i] = 1 << i;
+  }
+  for (var i = 8; i < 256; i++) {
+  	QRMath.EXP_TABLE[i] = QRMath.EXP_TABLE[i - 4]
+  		^ QRMath.EXP_TABLE[i - 5]
+  		^ QRMath.EXP_TABLE[i - 6]
+  		^ QRMath.EXP_TABLE[i - 8];
+  }
+  for (var i = 0; i < 255; i++) {
+  	QRMath.LOG_TABLE[QRMath.EXP_TABLE[i] ] = i;
+  }
+  
+  module.exports = QRMath;
+  
+  return module.exports;})();
+  M['QRMaskPattern']=(function(){var module={exports:{}};var exports=module.exports;
+  module.exports = {
+  	PATTERN000 : 0,
+  	PATTERN001 : 1,
+  	PATTERN010 : 2,
+  	PATTERN011 : 3,
+  	PATTERN100 : 4,
+  	PATTERN101 : 5,
+  	PATTERN110 : 6,
+  	PATTERN111 : 7
+  };
+  
+  return module.exports;})();
+  M['QRErrorCorrectLevel']=(function(){var module={exports:{}};var exports=module.exports;
+  module.exports = {
+  	L : 1,
+  	M : 0,
+  	Q : 3,
+  	H : 2
+  };
+  
+  
+  return module.exports;})();
+  M['QRPolynomial']=(function(){var module={exports:{}};var exports=module.exports;
+  var QRMath = require('./QRMath');
+  
+  function QRPolynomial(num, shift) {
+  	if (num.length === undefined) {
+  		throw new Error(num.length + "/" + shift);
+  	}
+  
+  	var offset = 0;
+  
+  	while (offset < num.length && num[offset] === 0) {
+  		offset++;
+  	}
+  
+  	this.num = new Array(num.length - offset + shift);
+  	for (var i = 0; i < num.length - offset; i++) {
+  		this.num[i] = num[i + offset];
+  	}
+  }
+  
+  QRPolynomial.prototype = {
+  
+  	get : function(index) {
+  		return this.num[index];
+  	},
+  	
+  	getLength : function() {
+  		return this.num.length;
+  	},
+  	
+  	multiply : function(e) {
+  	
+  		var num = new Array(this.getLength() + e.getLength() - 1);
+  	
+  		for (var i = 0; i < this.getLength(); i++) {
+  			for (var j = 0; j < e.getLength(); j++) {
+  				num[i + j] ^= QRMath.gexp(QRMath.glog(this.get(i) ) + QRMath.glog(e.get(j) ) );
+  			}
+  		}
+  	
+  		return new QRPolynomial(num, 0);
+  	},
+  	
+  	mod : function(e) {
+  	
+  		if (this.getLength() - e.getLength() < 0) {
+  			return this;
+  		}
+  	
+  		var ratio = QRMath.glog(this.get(0) ) - QRMath.glog(e.get(0) );
+  	
+  		var num = new Array(this.getLength() );
+  		
+  		for (var i = 0; i < this.getLength(); i++) {
+  			num[i] = this.get(i);
+  		}
+  		
+  		for (var x = 0; x < e.getLength(); x++) {
+  			num[x] ^= QRMath.gexp(QRMath.glog(e.get(x) ) + ratio);
+  		}
+  	
+  		// recursive call
+  		return new QRPolynomial(num, 0).mod(e);
+  	}
+  };
+  
+  module.exports = QRPolynomial;
+  
+  return module.exports;})();
+  M['QR8bitByte']=(function(){var module={exports:{}};var exports=module.exports;
+  var QRMode = require('./QRMode');
+  
+  function QR8bitByte(data) {
+  	this.mode = QRMode.MODE_8BIT_BYTE;
+  	this.data = data;
+  }
+  
+  QR8bitByte.prototype = {
+  
+  	getLength : function() {
+  		return this.data.length;
+  	},
+  	
+  	write : function(buffer) {
+  		for (var i = 0; i < this.data.length; i++) {
+  			// not JIS ...
+  			buffer.put(this.data.charCodeAt(i), 8);
+  		}
+  	}
+  };
+  
+  module.exports = QR8bitByte;
+  
+  return module.exports;})();
+  M['QRBitBuffer']=(function(){var module={exports:{}};var exports=module.exports;
+  function QRBitBuffer() {
+  	this.buffer = [];
+  	this.length = 0;
+  }
+  
+  QRBitBuffer.prototype = {
+  
+  	get : function(index) {
+  		var bufIndex = Math.floor(index / 8);
+  		return ( (this.buffer[bufIndex] >>> (7 - index % 8) ) & 1) == 1;
+  	},
+  	
+  	put : function(num, length) {
+  		for (var i = 0; i < length; i++) {
+  			this.putBit( ( (num >>> (length - i - 1) ) & 1) == 1);
+  		}
+  	},
+  	
+  	getLengthInBits : function() {
+  		return this.length;
+  	},
+  	
+  	putBit : function(bit) {
+  	
+  		var bufIndex = Math.floor(this.length / 8);
+  		if (this.buffer.length <= bufIndex) {
+  			this.buffer.push(0);
+  		}
+  	
+  		if (bit) {
+  			this.buffer[bufIndex] |= (0x80 >>> (this.length % 8) );
+  		}
+  	
+  		this.length++;
+  	}
+  };
+  
+  module.exports = QRBitBuffer;
+  
+  return module.exports;})();
+  M['QRRSBlock']=(function(){var module={exports:{}};var exports=module.exports;
+  var QRErrorCorrectLevel = require('./QRErrorCorrectLevel');
+  
+  function QRRSBlock(totalCount, dataCount) {
+  	this.totalCount = totalCount;
+  	this.dataCount  = dataCount;
+  }
+  
+  QRRSBlock.RS_BLOCK_TABLE = [
+  
+  	// L
+  	// M
+  	// Q
+  	// H
+  
+  	// 1
+  	[1, 26, 19],
+  	[1, 26, 16],
+  	[1, 26, 13],
+  	[1, 26, 9],
+  	
+  	// 2
+  	[1, 44, 34],
+  	[1, 44, 28],
+  	[1, 44, 22],
+  	[1, 44, 16],
+  
+  	// 3
+  	[1, 70, 55],
+  	[1, 70, 44],
+  	[2, 35, 17],
+  	[2, 35, 13],
+  
+  	// 4		
+  	[1, 100, 80],
+  	[2, 50, 32],
+  	[2, 50, 24],
+  	[4, 25, 9],
+  	
+  	// 5
+  	[1, 134, 108],
+  	[2, 67, 43],
+  	[2, 33, 15, 2, 34, 16],
+  	[2, 33, 11, 2, 34, 12],
+  	
+  	// 6
+  	[2, 86, 68],
+  	[4, 43, 27],
+  	[4, 43, 19],
+  	[4, 43, 15],
+  	
+  	// 7		
+  	[2, 98, 78],
+  	[4, 49, 31],
+  	[2, 32, 14, 4, 33, 15],
+  	[4, 39, 13, 1, 40, 14],
+  	
+  	// 8
+  	[2, 121, 97],
+  	[2, 60, 38, 2, 61, 39],
+  	[4, 40, 18, 2, 41, 19],
+  	[4, 40, 14, 2, 41, 15],
+  	
+  	// 9
+  	[2, 146, 116],
+  	[3, 58, 36, 2, 59, 37],
+  	[4, 36, 16, 4, 37, 17],
+  	[4, 36, 12, 4, 37, 13],
+  	
+  	// 10		
+  	[2, 86, 68, 2, 87, 69],
+  	[4, 69, 43, 1, 70, 44],
+  	[6, 43, 19, 2, 44, 20],
+  	[6, 43, 15, 2, 44, 16],
+  
+  	// 11
+  	[4, 101, 81],
+  	[1, 80, 50, 4, 81, 51],
+  	[4, 50, 22, 4, 51, 23],
+  	[3, 36, 12, 8, 37, 13],
+  
+  	// 12
+  	[2, 116, 92, 2, 117, 93],
+  	[6, 58, 36, 2, 59, 37],
+  	[4, 46, 20, 6, 47, 21],
+  	[7, 42, 14, 4, 43, 15],
+  
+  	// 13
+  	[4, 133, 107],
+  	[8, 59, 37, 1, 60, 38],
+  	[8, 44, 20, 4, 45, 21],
+  	[12, 33, 11, 4, 34, 12],
+  
+  	// 14
+  	[3, 145, 115, 1, 146, 116],
+  	[4, 64, 40, 5, 65, 41],
+  	[11, 36, 16, 5, 37, 17],
+  	[11, 36, 12, 5, 37, 13],
+  
+  	// 15
+  	[5, 109, 87, 1, 110, 88],
+  	[5, 65, 41, 5, 66, 42],
+  	[5, 54, 24, 7, 55, 25],
+  	[11, 36, 12],
+  
+  	// 16
+  	[5, 122, 98, 1, 123, 99],
+  	[7, 73, 45, 3, 74, 46],
+  	[15, 43, 19, 2, 44, 20],
+  	[3, 45, 15, 13, 46, 16],
+  
+  	// 17
+  	[1, 135, 107, 5, 136, 108],
+  	[10, 74, 46, 1, 75, 47],
+  	[1, 50, 22, 15, 51, 23],
+  	[2, 42, 14, 17, 43, 15],
+  
+  	// 18
+  	[5, 150, 120, 1, 151, 121],
+  	[9, 69, 43, 4, 70, 44],
+  	[17, 50, 22, 1, 51, 23],
+  	[2, 42, 14, 19, 43, 15],
+  
+  	// 19
+  	[3, 141, 113, 4, 142, 114],
+  	[3, 70, 44, 11, 71, 45],
+  	[17, 47, 21, 4, 48, 22],
+  	[9, 39, 13, 16, 40, 14],
+  
+  	// 20
+  	[3, 135, 107, 5, 136, 108],
+  	[3, 67, 41, 13, 68, 42],
+  	[15, 54, 24, 5, 55, 25],
+  	[15, 43, 15, 10, 44, 16],
+  
+  	// 21
+  	[4, 144, 116, 4, 145, 117],
+  	[17, 68, 42],
+  	[17, 50, 22, 6, 51, 23],
+  	[19, 46, 16, 6, 47, 17],
+  
+  	// 22
+  	[2, 139, 111, 7, 140, 112],
+  	[17, 74, 46],
+  	[7, 54, 24, 16, 55, 25],
+  	[34, 37, 13],
+  
+  	// 23
+  	[4, 151, 121, 5, 152, 122],
+  	[4, 75, 47, 14, 76, 48],
+  	[11, 54, 24, 14, 55, 25],
+  	[16, 45, 15, 14, 46, 16],
+  
+  	// 24
+  	[6, 147, 117, 4, 148, 118],
+  	[6, 73, 45, 14, 74, 46],
+  	[11, 54, 24, 16, 55, 25],
+  	[30, 46, 16, 2, 47, 17],
+  
+  	// 25
+  	[8, 132, 106, 4, 133, 107],
+  	[8, 75, 47, 13, 76, 48],
+  	[7, 54, 24, 22, 55, 25],
+  	[22, 45, 15, 13, 46, 16],
+  
+  	// 26
+  	[10, 142, 114, 2, 143, 115],
+  	[19, 74, 46, 4, 75, 47],
+  	[28, 50, 22, 6, 51, 23],
+  	[33, 46, 16, 4, 47, 17],
+  
+  	// 27
+  	[8, 152, 122, 4, 153, 123],
+  	[22, 73, 45, 3, 74, 46],
+  	[8, 53, 23, 26, 54, 24],
+  	[12, 45, 15, 28, 46, 16],
+  
+  	// 28
+  	[3, 147, 117, 10, 148, 118],
+  	[3, 73, 45, 23, 74, 46],
+  	[4, 54, 24, 31, 55, 25],
+  	[11, 45, 15, 31, 46, 16],
+  
+  	// 29
+  	[7, 146, 116, 7, 147, 117],
+  	[21, 73, 45, 7, 74, 46],
+  	[1, 53, 23, 37, 54, 24],
+  	[19, 45, 15, 26, 46, 16],
+  
+  	// 30
+  	[5, 145, 115, 10, 146, 116],
+  	[19, 75, 47, 10, 76, 48],
+  	[15, 54, 24, 25, 55, 25],
+  	[23, 45, 15, 25, 46, 16],
+  
+  	// 31
+  	[13, 145, 115, 3, 146, 116],
+  	[2, 74, 46, 29, 75, 47],
+  	[42, 54, 24, 1, 55, 25],
+  	[23, 45, 15, 28, 46, 16],
+  
+  	// 32
+  	[17, 145, 115],
+  	[10, 74, 46, 23, 75, 47],
+  	[10, 54, 24, 35, 55, 25],
+  	[19, 45, 15, 35, 46, 16],
+  
+  	// 33
+  	[17, 145, 115, 1, 146, 116],
+  	[14, 74, 46, 21, 75, 47],
+  	[29, 54, 24, 19, 55, 25],
+  	[11, 45, 15, 46, 46, 16],
+  
+  	// 34
+  	[13, 145, 115, 6, 146, 116],
+  	[14, 74, 46, 23, 75, 47],
+  	[44, 54, 24, 7, 55, 25],
+  	[59, 46, 16, 1, 47, 17],
+  
+  	// 35
+  	[12, 151, 121, 7, 152, 122],
+  	[12, 75, 47, 26, 76, 48],
+  	[39, 54, 24, 14, 55, 25],
+  	[22, 45, 15, 41, 46, 16],
+  
+  	// 36
+  	[6, 151, 121, 14, 152, 122],
+  	[6, 75, 47, 34, 76, 48],
+  	[46, 54, 24, 10, 55, 25],
+  	[2, 45, 15, 64, 46, 16],
+  
+  	// 37
+  	[17, 152, 122, 4, 153, 123],
+  	[29, 74, 46, 14, 75, 47],
+  	[49, 54, 24, 10, 55, 25],
+  	[24, 45, 15, 46, 46, 16],
+  
+  	// 38
+  	[4, 152, 122, 18, 153, 123],
+  	[13, 74, 46, 32, 75, 47],
+  	[48, 54, 24, 14, 55, 25],
+  	[42, 45, 15, 32, 46, 16],
+  
+  	// 39
+  	[20, 147, 117, 4, 148, 118],
+  	[40, 75, 47, 7, 76, 48],
+  	[43, 54, 24, 22, 55, 25],
+  	[10, 45, 15, 67, 46, 16],
+  
+  	// 40
+  	[19, 148, 118, 6, 149, 119],
+  	[18, 75, 47, 31, 76, 48],
+  	[34, 54, 24, 34, 55, 25],
+  	[20, 45, 15, 61, 46, 16]
+  ];
+  
+  QRRSBlock.getRSBlocks = function(typeNumber, errorCorrectLevel) {
+  	
+  	var rsBlock = QRRSBlock.getRsBlockTable(typeNumber, errorCorrectLevel);
+  	
+  	if (rsBlock === undefined) {
+  		throw new Error("bad rs block @ typeNumber:" + typeNumber + "/errorCorrectLevel:" + errorCorrectLevel);
+  	}
+  
+  	var length = rsBlock.length / 3;
+  	
+  	var list = [];
+  	
+  	for (var i = 0; i < length; i++) {
+  
+  		var count = rsBlock[i * 3 + 0];
+  		var totalCount = rsBlock[i * 3 + 1];
+  		var dataCount  = rsBlock[i * 3 + 2];
+  
+  		for (var j = 0; j < count; j++) {
+  			list.push(new QRRSBlock(totalCount, dataCount) );	
+  		}
+  	}
+  	
+  	return list;
+  };
+  
+  QRRSBlock.getRsBlockTable = function(typeNumber, errorCorrectLevel) {
+  
+  	switch(errorCorrectLevel) {
+  	case QRErrorCorrectLevel.L :
+  		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0];
+  	case QRErrorCorrectLevel.M :
+  		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 1];
+  	case QRErrorCorrectLevel.Q :
+  		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 2];
+  	case QRErrorCorrectLevel.H :
+  		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 3];
+  	default :
+  		return undefined;
+  	}
+  };
+  
+  module.exports = QRRSBlock;
+  
+  return module.exports;})();
+  M['QRUtil']=(function(){var module={exports:{}};var exports=module.exports;
+  var QRMode = require('./QRMode');
+  var QRPolynomial = require('./QRPolynomial');
+  var QRMath = require('./QRMath');
+  var QRMaskPattern = require('./QRMaskPattern');
+  
+  var QRUtil = {
+  
+      PATTERN_POSITION_TABLE : [
+          [],
+          [6, 18],
+          [6, 22],
+          [6, 26],
+          [6, 30],
+          [6, 34],
+          [6, 22, 38],
+          [6, 24, 42],
+          [6, 26, 46],
+          [6, 28, 50],
+          [6, 30, 54],        
+          [6, 32, 58],
+          [6, 34, 62],
+          [6, 26, 46, 66],
+          [6, 26, 48, 70],
+          [6, 26, 50, 74],
+          [6, 30, 54, 78],
+          [6, 30, 56, 82],
+          [6, 30, 58, 86],
+          [6, 34, 62, 90],
+          [6, 28, 50, 72, 94],
+          [6, 26, 50, 74, 98],
+          [6, 30, 54, 78, 102],
+          [6, 28, 54, 80, 106],
+          [6, 32, 58, 84, 110],
+          [6, 30, 58, 86, 114],
+          [6, 34, 62, 90, 118],
+          [6, 26, 50, 74, 98, 122],
+          [6, 30, 54, 78, 102, 126],
+          [6, 26, 52, 78, 104, 130],
+          [6, 30, 56, 82, 108, 134],
+          [6, 34, 60, 86, 112, 138],
+          [6, 30, 58, 86, 114, 142],
+          [6, 34, 62, 90, 118, 146],
+          [6, 30, 54, 78, 102, 126, 150],
+          [6, 24, 50, 76, 102, 128, 154],
+          [6, 28, 54, 80, 106, 132, 158],
+          [6, 32, 58, 84, 110, 136, 162],
+          [6, 26, 54, 82, 110, 138, 166],
+          [6, 30, 58, 86, 114, 142, 170]
+      ],
+  
+      G15 : (1 << 10) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 2) | (1 << 1) | (1 << 0),
+      G18 : (1 << 12) | (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8) | (1 << 5) | (1 << 2) | (1 << 0),
+      G15_MASK : (1 << 14) | (1 << 12) | (1 << 10)    | (1 << 4) | (1 << 1),
+  
+      getBCHTypeInfo : function(data) {
+          var d = data << 10;
+          while (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G15) >= 0) {
+              d ^= (QRUtil.G15 << (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G15) ) );    
+          }
+          return ( (data << 10) | d) ^ QRUtil.G15_MASK;
+      },
+  
+      getBCHTypeNumber : function(data) {
+          var d = data << 12;
+          while (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G18) >= 0) {
+              d ^= (QRUtil.G18 << (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G18) ) );    
+          }
+          return (data << 12) | d;
+      },
+  
+      getBCHDigit : function(data) {
+  
+          var digit = 0;
+  
+          while (data !== 0) {
+              digit++;
+              data >>>= 1;
+          }
+  
+          return digit;
+      },
+  
+      getPatternPosition : function(typeNumber) {
+          return QRUtil.PATTERN_POSITION_TABLE[typeNumber - 1];
+      },
+  
+      getMask : function(maskPattern, i, j) {
+          
+          switch (maskPattern) {
+              
+          case QRMaskPattern.PATTERN000 : return (i + j) % 2 === 0;
+          case QRMaskPattern.PATTERN001 : return i % 2 === 0;
+          case QRMaskPattern.PATTERN010 : return j % 3 === 0;
+          case QRMaskPattern.PATTERN011 : return (i + j) % 3 === 0;
+          case QRMaskPattern.PATTERN100 : return (Math.floor(i / 2) + Math.floor(j / 3) ) % 2 === 0;
+          case QRMaskPattern.PATTERN101 : return (i * j) % 2 + (i * j) % 3 === 0;
+          case QRMaskPattern.PATTERN110 : return ( (i * j) % 2 + (i * j) % 3) % 2 === 0;
+          case QRMaskPattern.PATTERN111 : return ( (i * j) % 3 + (i + j) % 2) % 2 === 0;
+  
+          default :
+              throw new Error("bad maskPattern:" + maskPattern);
+          }
+      },
+  
+      getErrorCorrectPolynomial : function(errorCorrectLength) {
+  
+          var a = new QRPolynomial([1], 0);
+  
+          for (var i = 0; i < errorCorrectLength; i++) {
+              a = a.multiply(new QRPolynomial([1, QRMath.gexp(i)], 0) );
+          }
+  
+          return a;
+      },
+  
+      getLengthInBits : function(mode, type) {
+  
+          if (1 <= type && type < 10) {
+  
+              // 1 - 9
+  
+              switch(mode) {
+              case QRMode.MODE_NUMBER     : return 10;
+              case QRMode.MODE_ALPHA_NUM  : return 9;
+              case QRMode.MODE_8BIT_BYTE  : return 8;
+              case QRMode.MODE_KANJI      : return 8;
+              default :
+                  throw new Error("mode:" + mode);
+              }
+  
+          } else if (type < 27) {
+  
+              // 10 - 26
+  
+              switch(mode) {
+              case QRMode.MODE_NUMBER     : return 12;
+              case QRMode.MODE_ALPHA_NUM  : return 11;
+              case QRMode.MODE_8BIT_BYTE  : return 16;
+              case QRMode.MODE_KANJI      : return 10;
+              default :
+                  throw new Error("mode:" + mode);
+              }
+  
+          } else if (type < 41) {
+  
+              // 27 - 40
+  
+              switch(mode) {
+              case QRMode.MODE_NUMBER     : return 14;
+              case QRMode.MODE_ALPHA_NUM  : return 13;
+              case QRMode.MODE_8BIT_BYTE  : return 16;
+              case QRMode.MODE_KANJI      : return 12;
+              default :
+                  throw new Error("mode:" + mode);
+              }
+  
+          } else {
+              throw new Error("type:" + type);
+          }
+      },
+  
+      getLostPoint : function(qrCode) {
+          
+          var moduleCount = qrCode.getModuleCount();
+          var lostPoint = 0;
+          var row = 0; 
+          var col = 0;
+  
+          
+          // LEVEL1
+          
+          for (row = 0; row < moduleCount; row++) {
+  
+              for (col = 0; col < moduleCount; col++) {
+  
+                  var sameCount = 0;
+                  var dark = qrCode.isDark(row, col);
+  
+                  for (var r = -1; r <= 1; r++) {
+  
+                      if (row + r < 0 || moduleCount <= row + r) {
+                          continue;
+                      }
+  
+                      for (var c = -1; c <= 1; c++) {
+  
+                          if (col + c < 0 || moduleCount <= col + c) {
+                              continue;
+                          }
+  
+                          if (r === 0 && c === 0) {
+                              continue;
+                          }
+  
+                          if (dark === qrCode.isDark(row + r, col + c) ) {
+                              sameCount++;
+                          }
+                      }
+                  }
+  
+                  if (sameCount > 5) {
+                      lostPoint += (3 + sameCount - 5);
+                  }
+              }
+          }
+  
+          // LEVEL2
+  
+          for (row = 0; row < moduleCount - 1; row++) {
+              for (col = 0; col < moduleCount - 1; col++) {
+                  var count = 0;
+                  if (qrCode.isDark(row,     col    ) ) count++;
+                  if (qrCode.isDark(row + 1, col    ) ) count++;
+                  if (qrCode.isDark(row,     col + 1) ) count++;
+                  if (qrCode.isDark(row + 1, col + 1) ) count++;
+                  if (count === 0 || count === 4) {
+                      lostPoint += 3;
+                  }
+              }
+          }
+  
+          // LEVEL3
+  
+          for (row = 0; row < moduleCount; row++) {
+              for (col = 0; col < moduleCount - 6; col++) {
+                  if (qrCode.isDark(row, col) && 
+                          !qrCode.isDark(row, col + 1) && 
+                           qrCode.isDark(row, col + 2) && 
+                           qrCode.isDark(row, col + 3) && 
+                           qrCode.isDark(row, col + 4) && 
+                          !qrCode.isDark(row, col + 5) && 
+                           qrCode.isDark(row, col + 6) ) {
+                      lostPoint += 40;
+                  }
+              }
+          }
+  
+          for (col = 0; col < moduleCount; col++) {
+              for (row = 0; row < moduleCount - 6; row++) {
+                  if (qrCode.isDark(row, col) &&
+                          !qrCode.isDark(row + 1, col) &&
+                           qrCode.isDark(row + 2, col) &&
+                           qrCode.isDark(row + 3, col) &&
+                           qrCode.isDark(row + 4, col) &&
+                          !qrCode.isDark(row + 5, col) &&
+                           qrCode.isDark(row + 6, col) ) {
+                      lostPoint += 40;
+                  }
+              }
+          }
+  
+          // LEVEL4
+          
+          var darkCount = 0;
+  
+          for (col = 0; col < moduleCount; col++) {
+              for (row = 0; row < moduleCount; row++) {
+                  if (qrCode.isDark(row, col) ) {
+                      darkCount++;
+                  }
+              }
+          }
+          
+          var ratio = Math.abs(100 * darkCount / moduleCount / moduleCount - 50) / 5;
+          lostPoint += ratio * 10;
+  
+          return lostPoint;       
+      }
+  
+  };
+  
+  module.exports = QRUtil;
+  
+  return module.exports;})();
+  M['index']=(function(){var module={exports:{}};var exports=module.exports;
+  //---------------------------------------------------------------------
+  // QRCode for JavaScript
+  //
+  // Copyright (c) 2009 Kazuhiko Arase
+  //
+  // URL: http://www.d-project.com/
+  //
+  // Licensed under the MIT license:
+  //   http://www.opensource.org/licenses/mit-license.php
+  //
+  // The word "QR Code" is registered trademark of 
+  // DENSO WAVE INCORPORATED
+  //   http://www.denso-wave.com/qrcode/faqpatent-e.html
+  //
+  //---------------------------------------------------------------------
+  // Modified to work in node for this project (and some refactoring)
+  //---------------------------------------------------------------------
+  
+  var QR8bitByte = require('./QR8bitByte');
+  var QRUtil = require('./QRUtil');
+  var QRPolynomial = require('./QRPolynomial');
+  var QRRSBlock = require('./QRRSBlock');
+  var QRBitBuffer = require('./QRBitBuffer');
+  
+  function QRCode(typeNumber, errorCorrectLevel) {
+  	this.typeNumber = typeNumber;
+  	this.errorCorrectLevel = errorCorrectLevel;
+  	this.modules = null;
+  	this.moduleCount = 0;
+  	this.dataCache = null;
+  	this.dataList = [];
+  }
+  
+  QRCode.prototype = {
+  	
+  	addData : function(data) {
+  		var newData = new QR8bitByte(data);
+  		this.dataList.push(newData);
+  		this.dataCache = null;
+  	},
+  	
+  	isDark : function(row, col) {
+  		if (row < 0 || this.moduleCount <= row || col < 0 || this.moduleCount <= col) {
+  			throw new Error(row + "," + col);
+  		}
+  		return this.modules[row][col];
+  	},
+  
+  	getModuleCount : function() {
+  		return this.moduleCount;
+  	},
+  	
+  	make : function() {
+  		// Calculate automatically typeNumber if provided is < 1
+  		if (this.typeNumber < 1 ){
+  			var typeNumber = 1;
+  			for (typeNumber = 1; typeNumber < 40; typeNumber++) {
+  				var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, this.errorCorrectLevel);
+  
+  				var buffer = new QRBitBuffer();
+  				var totalDataCount = 0;
+  				for (var i = 0; i < rsBlocks.length; i++) {
+  					totalDataCount += rsBlocks[i].dataCount;
+  				}
+  
+  				for (var x = 0; x < this.dataList.length; x++) {
+  					var data = this.dataList[x];
+  					buffer.put(data.mode, 4);
+  					buffer.put(data.getLength(), QRUtil.getLengthInBits(data.mode, typeNumber) );
+  					data.write(buffer);
+  				}
+  				if (buffer.getLengthInBits() <= totalDataCount * 8)
+  					break;
+  			}
+  			this.typeNumber = typeNumber;
+  		}
+  		this.makeImpl(false, this.getBestMaskPattern() );
+  	},
+  	
+  	makeImpl : function(test, maskPattern) {
+  		
+  		this.moduleCount = this.typeNumber * 4 + 17;
+  		this.modules = new Array(this.moduleCount);
+  		
+  		for (var row = 0; row < this.moduleCount; row++) {
+  			
+  			this.modules[row] = new Array(this.moduleCount);
+  			
+  			for (var col = 0; col < this.moduleCount; col++) {
+  				this.modules[row][col] = null;//(col + row) % 3;
+  			}
+  		}
+  	
+  		this.setupPositionProbePattern(0, 0);
+  		this.setupPositionProbePattern(this.moduleCount - 7, 0);
+  		this.setupPositionProbePattern(0, this.moduleCount - 7);
+  		this.setupPositionAdjustPattern();
+  		this.setupTimingPattern();
+  		this.setupTypeInfo(test, maskPattern);
+  		
+  		if (this.typeNumber >= 7) {
+  			this.setupTypeNumber(test);
+  		}
+  	
+  		if (this.dataCache === null) {
+  			this.dataCache = QRCode.createData(this.typeNumber, this.errorCorrectLevel, this.dataList);
+  		}
+  	
+  		this.mapData(this.dataCache, maskPattern);
+  	},
+  
+  	setupPositionProbePattern : function(row, col)  {
+  		
+  		for (var r = -1; r <= 7; r++) {
+  			
+  			if (row + r <= -1 || this.moduleCount <= row + r) continue;
+  			
+  			for (var c = -1; c <= 7; c++) {
+  				
+  				if (col + c <= -1 || this.moduleCount <= col + c) continue;
+  				
+  				if ( (0 <= r && r <= 6 && (c === 0 || c === 6) ) || 
+                       (0 <= c && c <= 6 && (r === 0 || r === 6) ) || 
+                       (2 <= r && r <= 4 && 2 <= c && c <= 4) ) {
+  					this.modules[row + r][col + c] = true;
+  				} else {
+  					this.modules[row + r][col + c] = false;
+  				}
+  			}		
+  		}		
+  	},
+  	
+  	getBestMaskPattern : function() {
+  	
+  		var minLostPoint = 0;
+  		var pattern = 0;
+  	
+  		for (var i = 0; i < 8; i++) {
+  			
+  			this.makeImpl(true, i);
+  	
+  			var lostPoint = QRUtil.getLostPoint(this);
+  	
+  			if (i === 0 || minLostPoint >  lostPoint) {
+  				minLostPoint = lostPoint;
+  				pattern = i;
+  			}
+  		}
+  	
+  		return pattern;
+  	},
+  	
+  	createMovieClip : function(target_mc, instance_name, depth) {
+  	
+  		var qr_mc = target_mc.createEmptyMovieClip(instance_name, depth);
+  		var cs = 1;
+  	
+  		this.make();
+  
+  		for (var row = 0; row < this.modules.length; row++) {
+  			
+  			var y = row * cs;
+  			
+  			for (var col = 0; col < this.modules[row].length; col++) {
+  	
+  				var x = col * cs;
+  				var dark = this.modules[row][col];
+  			
+  				if (dark) {
+  					qr_mc.beginFill(0, 100);
+  					qr_mc.moveTo(x, y);
+  					qr_mc.lineTo(x + cs, y);
+  					qr_mc.lineTo(x + cs, y + cs);
+  					qr_mc.lineTo(x, y + cs);
+  					qr_mc.endFill();
+  				}
+  			}
+  		}
+  		
+  		return qr_mc;
+  	},
+  
+  	setupTimingPattern : function() {
+  		
+  		for (var r = 8; r < this.moduleCount - 8; r++) {
+  			if (this.modules[r][6] !== null) {
+  				continue;
+  			}
+  			this.modules[r][6] = (r % 2 === 0);
+  		}
+  	
+  		for (var c = 8; c < this.moduleCount - 8; c++) {
+  			if (this.modules[6][c] !== null) {
+  				continue;
+  			}
+  			this.modules[6][c] = (c % 2 === 0);
+  		}
+  	},
+  	
+  	setupPositionAdjustPattern : function() {
+  	
+  		var pos = QRUtil.getPatternPosition(this.typeNumber);
+  		
+  		for (var i = 0; i < pos.length; i++) {
+  		
+  			for (var j = 0; j < pos.length; j++) {
+  			
+  				var row = pos[i];
+  				var col = pos[j];
+  				
+  				if (this.modules[row][col] !== null) {
+  					continue;
+  				}
+  				
+  				for (var r = -2; r <= 2; r++) {
+  				
+  					for (var c = -2; c <= 2; c++) {
+  					
+  						if (Math.abs(r) === 2 || 
+                              Math.abs(c) === 2 ||
+                              (r === 0 && c === 0) ) {
+  							this.modules[row + r][col + c] = true;
+  						} else {
+  							this.modules[row + r][col + c] = false;
+  						}
+  					}
+  				}
+  			}
+  		}
+  	},
+  	
+  	setupTypeNumber : function(test) {
+  	
+  		var bits = QRUtil.getBCHTypeNumber(this.typeNumber);
+          var mod;
+  	
+  		for (var i = 0; i < 18; i++) {
+  			mod = (!test && ( (bits >> i) & 1) === 1);
+  			this.modules[Math.floor(i / 3)][i % 3 + this.moduleCount - 8 - 3] = mod;
+  		}
+  	
+  		for (var x = 0; x < 18; x++) {
+  			mod = (!test && ( (bits >> x) & 1) === 1);
+  			this.modules[x % 3 + this.moduleCount - 8 - 3][Math.floor(x / 3)] = mod;
+  		}
+  	},
+  	
+  	setupTypeInfo : function(test, maskPattern) {
+  	
+  		var data = (this.errorCorrectLevel << 3) | maskPattern;
+  		var bits = QRUtil.getBCHTypeInfo(data);
+          var mod;
+  	
+  		// vertical		
+  		for (var v = 0; v < 15; v++) {
+  	
+  			mod = (!test && ( (bits >> v) & 1) === 1);
+  	
+  			if (v < 6) {
+  				this.modules[v][8] = mod;
+  			} else if (v < 8) {
+  				this.modules[v + 1][8] = mod;
+  			} else {
+  				this.modules[this.moduleCount - 15 + v][8] = mod;
+  			}
+  		}
+  	
+  		// horizontal
+  		for (var h = 0; h < 15; h++) {
+  	
+  			mod = (!test && ( (bits >> h) & 1) === 1);
+  			
+  			if (h < 8) {
+  				this.modules[8][this.moduleCount - h - 1] = mod;
+  			} else if (h < 9) {
+  				this.modules[8][15 - h - 1 + 1] = mod;
+  			} else {
+  				this.modules[8][15 - h - 1] = mod;
+  			}
+  		}
+  	
+  		// fixed module
+  		this.modules[this.moduleCount - 8][8] = (!test);
+  	
+  	},
+  	
+  	mapData : function(data, maskPattern) {
+  		
+  		var inc = -1;
+  		var row = this.moduleCount - 1;
+  		var bitIndex = 7;
+  		var byteIndex = 0;
+  		
+  		for (var col = this.moduleCount - 1; col > 0; col -= 2) {
+  	
+  			if (col === 6) col--;
+  	
+  			while (true) {
+  	
+  				for (var c = 0; c < 2; c++) {
+  					
+  					if (this.modules[row][col - c] === null) {
+  						
+  						var dark = false;
+  	
+  						if (byteIndex < data.length) {
+  							dark = ( ( (data[byteIndex] >>> bitIndex) & 1) === 1);
+  						}
+  	
+  						var mask = QRUtil.getMask(maskPattern, row, col - c);
+  	
+  						if (mask) {
+  							dark = !dark;
+  						}
+  						
+  						this.modules[row][col - c] = dark;
+  						bitIndex--;
+  	
+  						if (bitIndex === -1) {
+  							byteIndex++;
+  							bitIndex = 7;
+  						}
+  					}
+  				}
+  								
+  				row += inc;
+  	
+  				if (row < 0 || this.moduleCount <= row) {
+  					row -= inc;
+  					inc = -inc;
+  					break;
+  				}
+  			}
+  		}
+  		
+  	}
+  
+  };
+  
+  QRCode.PAD0 = 0xEC;
+  QRCode.PAD1 = 0x11;
+  
+  QRCode.createData = function(typeNumber, errorCorrectLevel, dataList) {
+  	
+  	var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, errorCorrectLevel);
+  	
+  	var buffer = new QRBitBuffer();
+  	
+  	for (var i = 0; i < dataList.length; i++) {
+  		var data = dataList[i];
+  		buffer.put(data.mode, 4);
+  		buffer.put(data.getLength(), QRUtil.getLengthInBits(data.mode, typeNumber) );
+  		data.write(buffer);
+  	}
+  
+  	// calc num max data.
+  	var totalDataCount = 0;
+  	for (var x = 0; x < rsBlocks.length; x++) {
+  		totalDataCount += rsBlocks[x].dataCount;
+  	}
+  
+  	if (buffer.getLengthInBits() > totalDataCount * 8) {
+  		throw new Error("code length overflow. (" + 
+              buffer.getLengthInBits() + 
+              ">" +  
+              totalDataCount * 8 + 
+              ")");
+  	}
+  
+  	// end code
+  	if (buffer.getLengthInBits() + 4 <= totalDataCount * 8) {
+  		buffer.put(0, 4);
+  	}
+  
+  	// padding
+  	while (buffer.getLengthInBits() % 8 !== 0) {
+  		buffer.putBit(false);
+  	}
+  
+  	// padding
+  	while (true) {
+  		
+  		if (buffer.getLengthInBits() >= totalDataCount * 8) {
+  			break;
+  		}
+  		buffer.put(QRCode.PAD0, 8);
+  		
+  		if (buffer.getLengthInBits() >= totalDataCount * 8) {
+  			break;
+  		}
+  		buffer.put(QRCode.PAD1, 8);
+  	}
+  
+  	return QRCode.createBytes(buffer, rsBlocks);
+  };
+  
+  QRCode.createBytes = function(buffer, rsBlocks) {
+  
+  	var offset = 0;
+  	
+  	var maxDcCount = 0;
+  	var maxEcCount = 0;
+  	
+  	var dcdata = new Array(rsBlocks.length);
+  	var ecdata = new Array(rsBlocks.length);
+  	
+  	for (var r = 0; r < rsBlocks.length; r++) {
+  
+  		var dcCount = rsBlocks[r].dataCount;
+  		var ecCount = rsBlocks[r].totalCount - dcCount;
+  
+  		maxDcCount = Math.max(maxDcCount, dcCount);
+  		maxEcCount = Math.max(maxEcCount, ecCount);
+  		
+  		dcdata[r] = new Array(dcCount);
+  		
+  		for (var i = 0; i < dcdata[r].length; i++) {
+  			dcdata[r][i] = 0xff & buffer.buffer[i + offset];
+  		}
+  		offset += dcCount;
+  		
+  		var rsPoly = QRUtil.getErrorCorrectPolynomial(ecCount);
+  		var rawPoly = new QRPolynomial(dcdata[r], rsPoly.getLength() - 1);
+  
+  		var modPoly = rawPoly.mod(rsPoly);
+  		ecdata[r] = new Array(rsPoly.getLength() - 1);
+  		for (var x = 0; x < ecdata[r].length; x++) {
+              var modIndex = x + modPoly.getLength() - ecdata[r].length;
+  			ecdata[r][x] = (modIndex >= 0)? modPoly.get(modIndex) : 0;
+  		}
+  
+  	}
+  	
+  	var totalCodeCount = 0;
+  	for (var y = 0; y < rsBlocks.length; y++) {
+  		totalCodeCount += rsBlocks[y].totalCount;
+  	}
+  
+  	var data = new Array(totalCodeCount);
+  	var index = 0;
+  
+  	for (var z = 0; z < maxDcCount; z++) {
+  		for (var s = 0; s < rsBlocks.length; s++) {
+  			if (z < dcdata[s].length) {
+  				data[index++] = dcdata[s][z];
+  			}
+  		}
+  	}
+  
+  	for (var xx = 0; xx < maxEcCount; xx++) {
+  		for (var t = 0; t < rsBlocks.length; t++) {
+  			if (xx < ecdata[t].length) {
+  				data[index++] = ecdata[t][xx];
+  			}
+  		}
+  	}
+  
+  	return data;
+  
+  };
+  
+  module.exports = QRCode;
+  
+  return module.exports;})();
+  return {make:function(text){var q=new M['index'](-1,M['QRErrorCorrectLevel'].M);q.addData(text);q.make();var n=q.getModuleCount(),a=[];for(var r=0;r<n;r++){var row=[];for(var c=0;c<n;c++)row.push(q.isDark(r,c));a.push(row);}return a;}};})();
+  const APP_URL = () => location.origin + '/';
+  function qrSVG(text, cls){
+    const m = CVQR.make(text), n = m.length, q = 2; let d = '';
+    for(let r=0;r<n;r++) for(let c=0;c<n;c++) if(m[r][c]) d += `M${c+q} ${r+q}h1v1h-1z`;
+    return `<svg class="${cls||'cv-share-qr'}" viewBox="0 0 ${n+2*q} ${n+2*q}" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" role="img" aria-label="QR code de l’appli"><rect width="100%" height="100%" fill="#fff"/><path d="${d}" fill="#2A1238"/></svg>`;
+  }
+  function shareSheet(){
+    const url = APP_URL();
+    openSheet(`<h2>📤 Partager l’appli à un ami</h2>
+      <div class="v-sum-small" style="margin-bottom:6px;text-align:center">Ton ami scanne ce code avec l’appareil photo de son téléphone, puis installe l’appli sur son écran d’accueil.</div>
+      ${qrSVG(url)}
+      <div class="cv-share-url">${esc(url)}</div>
+      <button type="button" class="v-btn" onclick="CV.shareLink()">📤 Envoyer le lien</button>
+      <div class="v-sum-small" style="margin-top:10px">Ce lien donne l’appli, <b>pas ton carnet</b>. Pour voyager ensemble sur le même carnet, envoie aussi ton <b>code de partage</b> (Plus → Partage &amp; profils).</div>
+      <div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.close()">Fermer</button></div>`);
+  }
+  async function shareLink(){
+    const url = APP_URL(), text = 'Je t’invite sur Carnet de voyage : on prépare nos voyages à plusieurs (programme, budget, souvenirs), et tout est chiffré.';
+    try { if(navigator.share){ await navigator.share({title:'Carnet de voyage', text, url}); return; } } catch(e){ if(e && e.name === 'AbortError') return; }
+    try { await navigator.clipboard.writeText(text + ' ' + url); toast('🔗 Lien copié'); } catch(e){ prompt('Copie ce lien :', url); }
+  }
+  /* ══════════════════════════════════════════════════════════════════════════
+     🧰 OUTILS DU VOYAGE (5 octobre 2026)
+     Fiche du jour · rappels calendrier · devises · météo · tickets · carte ·
+     bagages · documents · journal · paquets sans serveur
+     Tout se fait sur le téléphone ; les seuls appels réseau sont des services
+     publics gratuits (taux de change, météo, lecture de ticket) — jamais vers l'éditeur.
+     ══════════════════════════════════════════════════════════════════════════ */
+  const tlDays = () => { const t = trip(); return t && t.debut ? dayList() : []; };
+  const isoToday = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); };
+  async function tlShareFile(blob, name, title){
+    try {
+      const f = new File([blob], name, {type: blob.type || 'application/octet-stream'});
+      if(navigator.canShare && navigator.canShare({files:[f]})){ await navigator.share({files:[f], title: title || name}); return; }
+    } catch(e){ if(e && e.name === 'AbortError') return; }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+  }
+  function tlPickFile(accept, cb, capture){
+    const i = document.createElement('input'); i.type = 'file'; i.accept = accept; if(capture) i.setAttribute('capture', 'environment');
+    i.onchange = () => { if(i.files && i.files[0]) cb(i.files[0]); }; i.click();
+  }
+  const tlB64 = { enc: buf => { const u = new Uint8Array(buf); let s = ''; for(let i=0;i<u.length;i+=0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i+0x8000)); return btoa(s); },
+                dec: str => { const s = atob(str), u = new Uint8Array(s.length); for(let i=0;i<s.length;i++) u[i] = s.charCodeAt(i); return u; } };
+
+  /* ---------- Onglet « 🧰 Outils » ---------- */
+  function renderOutils(){
+    const t = trip(), di = docIssues(), nRec = items(i=>i.recu).length;
+    const box = (ic, ti, p, btn) => `<div class="v-box cv-tool"><h3>${ic} ${ti}</h3><p>${p}</p>${btn}</div>`;
+    let h = `<div class="v-sum"><div class="v-sum-row"><div class="v-sum-big">🧰 Outils du voyage</div></div>
+      <div class="v-sum-small">Tout fonctionne sur ton téléphone. Rien n’est envoyé à l’éditeur de l’appli.</div></div>`;
+    h += box('📴','Fiche du jour','Billets, horaires, adresses, téléphones et références d’aujourd’hui et de demain, sur une seule page lisible même sans réseau.',
+      `<button class="v-btn" onclick="CV.tlDay()">📴 Ouvrir la fiche du jour</button>`);
+    h += box('🔔','Rappels dans le calendrier','Échéances de paiement, enregistrement des vols (24 h avant), arrivées à l’hôtel : ajoutés en un geste au calendrier de ton téléphone, avec alertes. Pas de notification de l’appli.',
+      `<button class="v-btn sec" onclick="CV.tlIcs()">📅 Rappels dans mon calendrier</button>`);
+    h += box('💱','Convertisseur de devises','Saisis un montant en monnaie locale, l’appli le convertit en euros (aussi dans chaque fiche, sous « Prix réel »).',
+      `<div class="cv-fx"><input class="v-in" id="fxo-a" inputmode="decimal" placeholder="Montant"><select class="v-in" id="fxo-c">${fxOpts(M.fxLast||'USD')}</select><button type="button" class="v-btn sec" onclick="CV.fxTool()">= €</button></div><div class="v-sum-small" id="fxo-r"></div>`);
+    h += box('🌤️','Météo des étapes','Prévisions si le départ est proche, sinon le temps qu’il faisait l’an dernier aux mêmes dates.',
+      `<button class="v-btn sec" onclick="CV.tlMeteo()">🌤️ Voir la météo</button>`);
+    h += box('🧾','Ticket ou reçu','Prends l’addition en photo, l’appli essaie de lire le montant et crée la dépense pour le « qui doit quoi ».' + (nRec ? ` <b>${nRec} reçu${nRec>1?'s':''}</b> enregistré${nRec>1?'s':''}.` : ''),
+      `<button class="v-btn" onclick="CV.tlReceipt()">🧾 Ajouter un ticket</button>${nRec ? `<button class="v-btn sec" onclick="CV.tlReceipts()">🗂️ Voir les reçus</button>` : ''}`);
+    h += box('🛒','Liste de courses','Partagée avec le groupe : pique-nique, apéro, pharmacie… chacun ajoute et coche.', `<button class="v-btn sec" onclick="CV.shopSheet()">🛒 Ouvrir la liste</button>`);
+    h += box('💶','Plafond de dépenses','Fixe un budget par jour sur place : l’accueil du voyage affiche ce qui est dépensé aujourd’hui et prévient en cas de dépassement.' + (num(trip().plafond) ? ` Actuel : <b>${eur(num(trip().plafond))} / jour</b>.` : ''), `<button class="v-btn sec" onclick="CV.capSet()">💶 ${num(trip().plafond) ? 'Modifier' : 'Fixer'} le plafond</button>`);
+    h += box('🗺️','Carte du voyage','Toutes les étapes reliées dans l’ordre, avec les distances. Elle s’ajoute aussi au carnet de route PDF.',
+      `<button class="v-btn sec" onclick="CV.tlMap()">🗺️ Voir la carte</button>`);
+    h += box('🧳','Liste de bagages','Générée selon la durée, la météo et vos activités, pour tout le monde ou pour un voyageur. Elle s’ajoute à la checklist.',
+      `<button class="v-btn sec" onclick="CV.tlBags()">🧳 Préparer la liste</button>`);
+    h += box('🛂','Documents de voyage', di.length ? `<span class="cv-warnline">⚠️ ${di.length} document${di.length>1?'s':''} à vérifier : ${di.map(x=>esc(x)).join(' · ')}</span>` : 'Passeports, cartes d’identité, visas, assurances : dates d’expiration et alertes avant le départ.',
+      `<button class="v-btn sec" onclick="CV.tlDocs()">🛂 Gérer les documents</button>`);
+    h += box('📖','Journal de voyage','Un album à imprimer ou garder en PDF : la carte, chaque jour avec ses souvenirs et ses photos, et le bilan.',
+      `<button class="v-btn sec" onclick="CV.pdfJournal()">📖 Créer le journal (PDF)</button>`);
+    h += box('📦','Partager sans serveur','Pour ceux qui ne veulent pas de la synchro en ligne : un fichier chiffré à s’envoyer (WhatsApp, Messages, AirDrop…). Voir Partage &amp; profils.',
+      `<button class="v-btn sec" onclick="CV.tab('reglages')">📦 Paquets sans serveur</button>`);
+    document.getElementById('cv-body').innerHTML = h;
+  }
+
+  /* ---------- 📴 Fiche du jour ---------- */
+  function tlDay(){
+    const ds = tlDays(); if(!ds.length){ alert('Ajoute d’abord les dates du voyage.'); return; }
+    const td = isoToday(); let i = ds.indexOf(td); if(i < 0) i = td < ds[0] ? 0 : ds.length - 1;
+    const show = ds.slice(i, i+2);
+    const tel = s => s ? `<a href="tel:${esc(String(s).replace(/[^+\d]/g,''))}">☎ ${esc(s)}</a>` : '';
+    const map = s => s ? `<a href="https://maps.apple.com/?q=${encodeURIComponent(s)}">📍 ${esc(s)}</a>` : '';
+    let h = `<h2>📴 Fiche du jour</h2><div class="v-sum-small" style="margin-bottom:8px">Enregistrée dans ton téléphone : elle s’ouvre même sans réseau. Astuce : fais une capture d’écran avant de partir.</div>`;
+    show.forEach(d=>{
+      const k = ds.indexOf(d), info = dayInfo(d), {own, night} = itemsForDay(d);
+      h += `<div class="cv-dayc"><h3>J${k+1} · ${longDate(d)}${info.titre ? ' — ' + esc(info.titre) : ''}</h3>`;
+      if(info.plan) h += `<p class="v-sum-small">${esc(info.plan)}</p>`;
+      [...own, ...night].forEach(it=>{
+        h += `<div class="cv-dayi"><b>${icon(it)} ${esc(it.titre)}</b>${it.heureDep||it.heure ? ` · ${esc(it.heureDep||it.heure)}${it.heureArr ? ' → ' + esc(it.heureArr) : ''}` : ''}
+          <div>${[it.compagnie, it.nom && it.cat==='hotel' ? it.nom : '', it.ref ? 'Réf. <b>' + esc(it.ref) + '</b>' : ''].filter(Boolean).map(x=>x.startsWith('Réf.') ? x : esc(x)).join(' · ')}</div>
+          <div class="cv-dayl">${map(it.adresse)} ${tel(it.tel)} ${it.lien ? `<a href="${esc(it.lien)}">🔗 réservation</a>` : ''}</div></div>`;
+      });
+      const pl = placesOf(d); if(pl.length) h += `<div class="v-sum-small">À voir : ${pl.map((p,n)=>`${n+1}. ${esc(p.nom)}`).join(' · ')}</div>`;
+      if(!own.length && !night.length && !pl.length) h += `<div class="v-sum-small">Rien de prévu.</div>`;
+      h += `</div>`;
+    });
+    h += `<div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.close()">Fermer</button></div>`;
+    openSheet(h);
+  }
+
+  /* ---------- 🔔 Rappels dans le calendrier (même mécanisme que le menu de SimulHeures) ----------
+     Pas de notification de l'appli : les rappels vont dans le calendrier du téléphone.
+     • iPhone (Safari / appli installée) : l'appli ouvre une vraie adresse « rappels.ics » fabriquée
+       sur le téléphone par le service worker → Calendrier s'ouvre et propose « Ajouter tout ».
+     • Sinon, ou en secours : le fichier .ics est envoyé par le menu Partager (Mail, Fichiers…). */
+  const ICS_KINDS = [['ech','💶 Échéances de paiement (la veille)'], ['chk','🛫 Enregistrement en ligne (24 h avant le vol)'], ['vol','✈️ Vols et trajets (alerte 3 h avant)'], ['htl','🏨 Arrivées à l’hôtel'], ['act','🎟️ Visites et réservations à heure fixe']];
+  const rpIsIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  function tlIcsBuild(on){
+    const t = trip(), ev = [], z = n => String(n).padStart(2,'0'), dt = iso => iso.replace(/-/g,'');
+    const stampNow = new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d+Z$/,'Z');
+    const esc2 = s => String(s||'').replace(/\\/g,'\\\\').replace(/[,;]/g, m=>'\\' + m).replace(/\n/g,'\\n');
+    const add = (uid, sum, start, allDay, desc, alarm) => ev.push(['BEGIN:VEVENT', 'UID:' + uid + '@carnet-voyage', 'DTSTAMP:' + stampNow,
+      allDay ? 'DTSTART;VALUE=DATE:' + start : 'DTSTART:' + start, allDay ? '' : 'DURATION:PT30M', 'SUMMARY:' + esc2(sum), desc ? 'DESCRIPTION:' + esc2(desc) : '',
+      'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + esc2(sum), 'TRIGGER:' + (alarm || '-PT2H'), 'END:VALARM', 'END:VEVENT'].filter(Boolean).join('\r\n'));
+    items().forEach(it=>{
+      if(on.ech) (it.echeances||[]).forEach((e,k)=>{ if(e.fait || !e.date) return; const d = e.date.length === 7 ? e.date + '-05' : e.date;
+        add('ech-' + it.id + '-' + k, '💶 ' + (it.titre||'Paiement') + ' : ' + eur(num(e.montant)), dt(d), true, t.titre, '-P1D'); });
+      if(it.cat==='transport' && it.date && it.heureDep){
+        if(on.chk && it.mode==='Avion'){ const d = new Date(it.date + 'T' + it.heureDep + ':00'); d.setDate(d.getDate() - 1);
+          add('chk-' + it.id, '🛫 Enregistrement en ligne : ' + it.titre + (it.compagnie ? ' (' + it.compagnie + ')' : ''), d.getFullYear() + z(d.getMonth()+1) + z(d.getDate()) + 'T' + z(d.getHours()) + z(d.getMinutes()) + '00', false, it.ref ? 'Réf. ' + it.ref : '', '-PT0M'); }
+        if(on.vol) add('vol-' + it.id, icon(it) + ' ' + it.titre + (it.compagnie ? ' · ' + it.compagnie : ''), dt(it.date) + 'T' + it.heureDep.replace(':','') + '00', false, [it.ref ? 'Réf. ' + it.ref : '', it.adresse].filter(Boolean).join(' · '), '-PT3H');
+      }
+      if(on.htl && it.cat==='hotel' && it.date) add('htl-' + it.id, '🏨 Arrivée : ' + (it.nom || it.titre), it.heure ? dt(it.date) + 'T' + it.heure.replace(':','') + '00' : dt(it.date), !it.heure, [it.adresse, it.ref ? 'Réf. ' + it.ref : ''].filter(Boolean).join(' · '), it.heure ? '-PT2H' : '-PT9H');
+      if(on.act && it.cat==='activite' && it.date && it.heure) add('act-' + it.id, '🎟️ ' + it.titre, dt(it.date) + 'T' + it.heure.replace(':','') + '00', false, it.adresse || '', '-PT1H');
+    });
+    return {n: ev.length, txt: ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Carnet de voyage//Rappels//FR','CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:' + esc2(t.titre), ...ev, 'END:VCALENDAR'].join('\r\n')};
+  }
+  function tlIcs(){
+    const t = trip(); if(!t) return;
+    const on = M.icsOn || {ech:1, chk:1, vol:1, htl:1, act:1};
+    openSheet(`<h2>📅 Rappels dans mon calendrier</h2>
+      <div class="v-sum-small" style="margin-bottom:8px">Pas de notification de l’appli : tes rappels vont dans le calendrier de ton téléphone. Tu les modifies ou les supprimes là-bas, comme tes autres rendez-vous.</div>
+      <div class="v-f">${ICS_KINDS.map(([k,l])=>`<label class="cv-checkline"><input type="checkbox" id="ics-${k}"${on[k]?' checked':''}> ${l}</label>`).join('')}</div>
+      <div id="ics-msg" class="v-sum-small" style="margin:6px 0"></div>
+      <button type="button" class="v-btn" onclick="CV.tlIcsGo()">📅 Ajouter à mon calendrier</button>
+      <button type="button" class="v-btn sec" id="ics-share" style="${rpIsIOS() ? 'display:none' : ''}" onclick="CV.tlIcsGo(true)">📤 Envoyer le fichier (Mail, Fichiers…)</button>
+      <div class="v-sum-small" style="text-align:center;margin-top:6px">Pour arrêter un rappel, supprime-le dans ton calendrier.</div>
+      <div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.close()">Fermer</button></div>`);
+  }
+  const icsMsg = (m, ok) => { const e = document.getElementById('ics-msg'); if(e){ e.innerHTML = m; e.style.color = ok ? '#15803d' : '#b45309'; } };
+  const rpB64 = txt => btoa(unescape(encodeURIComponent(txt))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  function tlIcsGo(share){
+    const on = {}; ICS_KINDS.forEach(([k])=>{ const e = document.getElementById('ics-' + k); on[k] = e && e.checked ? 1 : 0; });
+    M.icsOn = on; persist();
+    const r = tlIcsBuild(on);
+    if(!r.n){ icsMsg('Rien à rappeler : coche au moins un type, ou ajoute des dates, des horaires ou un échéancier à tes fiches.'); return; }
+    const t = trip(), fn = 'rappels-' + (t.titre||'voyage').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') + '.ics';
+    const iosOther = rpIsIOS() && /CriOS|FxiOS|EdgiOS|OPiOS/.test(navigator.userAgent || '');   // Chrome, Firefox… sur iPhone n'ouvrent pas Calendrier
+    if(rpIsIOS() && !iosOther && !share){
+      const sh = document.getElementById('ics-share'); if(sh) sh.style.display = 'block';
+      if(!(navigator.serviceWorker && navigator.serviceWorker.controller)){ icsMsg('Ouverture directe pas encore prête (l’appli doit avoir été ouverte une fois avec du réseau). Utilise « Envoyer le fichier » → Mail vers toi, puis touche le fichier.'); return; }
+      icsMsg(`Ouverture de Calendrier… touche <b>« Ajouter tout »</b> (${r.n} rappel${r.n>1?'s':''}).`, true);
+      location.href = 'rappels.ics?c=' + rpB64(r.txt);
+      return;
+    }
+    const f = new File([r.txt], fn, {type:'text/calendar'});
+    if(navigator.share && navigator.canShare && navigator.canShare({files:[f]})){
+      navigator.share({files:[f], title:'Rappels ' + (t.titre||'')}).then(()=>icsMsg(`${r.n} rappel(s) prêt(s). Choisis Calendrier ou ton agenda pour les ajouter.`, true))
+        .catch(e=>{ if(e && e.name === 'AbortError') icsMsg('Ajout annulé.'); else tlShareFile(f, fn); });
+      return;
+    }
+    tlShareFile(f, fn); icsMsg(`${r.n} rappel(s) prêt(s) : ouvre le fichier ${esc(fn)} pour les ajouter à ton calendrier.`, true);
+  }
+
+  /* ---------- 💱 Devises ---------- */
+  const FX_LIST = ['USD','GBP','CHF','JPY','MAD','EGP','TND','TRY','THB','CAD','AUD','NZD','SEK','NOK','DKK','ISK','CZK','HUF','PLN','RON','BGN','MXN','BRL','ARS','CNY','HKD','KRW','INR','IDR','VND','PHP','SGD','MYR','AED','QAR','ILS','JOD','ZAR','KES','XOF','XPF'];
+  const fxOpts = sel => FX_LIST.map(c=>`<option${c===sel?' selected':''}>${c}</option>`).join('');
+  async function fxRates(){
+    if(M.fx && Date.now() - M.fx.t < 12*3600e3) return M.fx.rates;
+    let rates = null;
+    try { const r = await fetch('https://open.er-api.com/v6/latest/EUR'); const j = await r.json(); if(j && j.rates) rates = j.rates; } catch(e){}
+    if(!rates) try { const r = await fetch('https://api.frankfurter.app/latest?from=EUR'); const j = await r.json(); if(j && j.rates) rates = Object.assign({EUR:1}, j.rates); } catch(e){}
+    if(rates){ M.fx = {t:Date.now(), rates}; persist(); return rates; }
+    if(M.fx) return M.fx.rates;   // hors ligne : derniers taux connus
+    throw new Error('Taux de change indisponibles (pas de réseau ?).');
+  }
+  async function fxToEur(amount, cur){ const r = await fxRates(); if(!r[cur]) throw new Error('Devise non disponible : ' + cur); return amount / r[cur]; }
+  async function fxTool(){
+    const a = num((document.getElementById('fxo-a')||{}).value), c = (document.getElementById('fxo-c')||{}).value, out = document.getElementById('fxo-r');
+    if(!a){ out.textContent = 'Saisis un montant.'; return; }
+    try { const e = await fxToEur(a, c); M.fxLast = c; persist(); out.innerHTML = `<b>${a.toLocaleString('fr-FR')} ${c} = ${eur(e)}</b> · taux du ${new Date(M.fx.t).toLocaleDateString('fr-FR')}`; }
+    catch(e){ out.textContent = '⚠️ ' + e.message; }
+  }
+  async function fxFill(){
+    const a = num((document.getElementById('fx-a')||{}).value), c = (document.getElementById('fx-c')||{}).value, f = document.querySelector('#v-form [name=prix]');
+    if(!a || !f) return;
+    try { const e = await fxToEur(a, c); M.fxLast = c; persist(); f.value = String(Math.round(e*100)/100).replace('.', ','); f.dispatchEvent(new Event('input', {bubbles:true}));
+      const n = document.getElementById('fx-n'); if(n) n.textContent = `${a.toLocaleString('fr-FR')} ${c} ≈ ${eur(e)} (taux du ${new Date(M.fx.t).toLocaleDateString('fr-FR')})`; }
+    catch(e){ alert(e.message); }
+  }
+  const fxFormRow = () => `<div class="cv-fx"><span>💱</span><input class="v-in" id="fx-a" inputmode="decimal" placeholder="Montant en devise"><select class="v-in" id="fx-c">${fxOpts(M.fxLast||'USD')}</select><button type="button" class="v-btn sec" onclick="CV.fxFill()">→ €</button></div><div class="v-sum-small" id="fx-n" style="margin:-4px 0 8px"></div>`;
+
+  /* ---------- 🌤️ Météo ---------- */
+  function tlStages(){
+    const seen = []; items(i=>i.cat==='hotel' && i.date).sort((a,b)=>a.date.localeCompare(b.date)).forEach(h=>{
+      const c = cityOf(h.titre||''); if(!c) return;
+      const last = seen[seen.length-1];
+      if(last && normQ(last.city) === normQ(c)) last.fin = h.dateFin || last.fin; else seen.push({city:c, debut:h.date, fin:h.dateFin || h.date, h});
+    });
+    return seen;
+  }
+  async function meteoFor(st){
+    const key = 'mt:' + normQ(st.city) + ':' + st.debut + ':' + st.fin; M.meteo = M.meteo || {};
+    const hit = M.meteo[key]; if(hit && Date.now() - hit.t < 6*3600e3) return hit.v;
+    const c = await geocode(st.city, null); if(!c) throw new Error('ville introuvable');
+    const days = (new Date(st.debut) - new Date(isoToday())) / 864e5;
+    let v;
+    if(days >= -1 && days <= 14){
+      const end = st.fin > st.debut ? st.fin : st.debut;
+      const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${c.lat}&longitude=${c.lng}&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weathercode&timezone=auto&start_date=${st.debut}&end_date=${end}`);
+      const j = await r.json(); const d = j.daily || {};
+      v = {kind:'prev', max:Math.round(Math.max(...d.temperature_2m_max)), min:Math.round(Math.min(...d.temperature_2m_min)), pluie:Math.max(...(d.precipitation_probability_max||[0])), code:(d.weathercode||[])[0]};
+    } else {
+      const y = new Date().getFullYear() - (st.debut.slice(5) > isoToday().slice(5) ? 1 : 0);
+      const shift = s => (y + s.slice(4));
+      const r = await fetch(`https://archive-api.open-meteo.com/v1/archive?latitude=${c.lat}&longitude=${c.lng}&start_date=${shift(st.debut)}&end_date=${shift(st.fin > st.debut ? st.fin : st.debut)}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=auto`);
+      const j = await r.json(); const d = j.daily || {}; const mx = d.temperature_2m_max||[], mn = d.temperature_2m_min||[];
+      if(!mx.length) throw new Error('pas de données');
+      const avg = a => Math.round(a.reduce((s,x)=>s+(x||0),0)/a.length);
+      v = {kind:'clim', year:y, max:avg(mx), min:avg(mn), jp:(d.precipitation_sum||[]).filter(x=>x>=1).length, n:mx.length};
+    }
+    M.meteo[key] = {t:Date.now(), v}; persist(); return v;
+  }
+  const meteoIcon = v => v.max >= 28 ? '☀️' : v.max >= 18 ? '🌤️' : v.max >= 8 ? '🌥️' : '❄️';
+  async function tlMeteo(){
+    const st = tlStages(); if(!st.length){ alert('Ajoute des hébergements (avec ville et dates) pour voir la météo des étapes.'); return; }
+    openSheet(`<h2>🌤️ Météo des étapes</h2><div id="mt-list">${st.map((s,i)=>`<div class="cv-dayi" id="mt-${i}"><b>${esc(s.city)}</b> · ${fshort(s.debut)} → ${fshort(s.fin)}<div class="v-sum-small">…</div></div>`).join('')}</div>
+      <div class="v-sum-small" style="margin-top:8px">Données Open-Meteo. Prévisions jusqu’à 14 jours ; au-delà, relevés de l’an dernier aux mêmes dates.</div>
+      <div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.close()">Fermer</button></div>`);
+    for(let i=0;i<st.length;i++){
+      const el = document.querySelector('#mt-' + i + ' .v-sum-small'); if(!el) return;
+      try { const v = await meteoFor(st[i]);
+        el.innerHTML = v.kind === 'prev' ? `${meteoIcon(v)} <b>${v.min}° → ${v.max}°</b> · risque de pluie jusqu’à ${v.pluie} % <i>(prévisions)</i>`
+          : `${meteoIcon(v)} <b>${v.min}° → ${v.max}°</b> en moyenne · ${v.jp} jour${v.jp>1?'s':''} de pluie sur ${v.n} <i>(relevés ${v.year})</i>`;
+      } catch(e){ el.textContent = '⚠️ indisponible (' + e.message + ')'; }
+    }
+  }
+
+  /* ---------- 🧾 Tickets et reçus ---------- */
+  let rcpt = null;
+  function tlReceipt(){
+    rcpt = {photo:null, blob:null};
+    const v = tv();
+    openSheet(`<h2>🧾 Ticket ou reçu</h2>
+      <button type="button" class="v-btn sec" onclick="CV.tlRcPhoto()">📷 Prendre la photo du ticket</button>
+      <div id="rc-prev" class="v-sum-small" style="margin:8px 0"></div>
+      <form id="v-form" onsubmit="event.preventDefault();CV.tlRcSave()">
+        ${field('Quoi ?','titre','','text','placeholder="Ex. Dîner à Trastevere" required')}
+        <div class="cv-fx"><input class="v-in" name="montant" id="rc-m" inputmode="decimal" placeholder="Montant" required><select class="v-in" id="rc-c"><option>EUR</option>${fxOpts(M.fxLast||'')}</select></div>
+        <div class="v-f"><label>Payé par</label><select class="v-in" id="rc-p">${v.map(p=>`<option value="${p}"${p===M.me?' selected':''}>${esc(pname(p))}</option>`).join('')}</select></div>
+        <div class="v-f"><label>Partagé entre</label><select class="v-in" id="rc-s"><option value="all">Tout le monde (parts égales)</option>${v.map(p=>`<option value="${p}">${esc(pname(p))} seul(e)</option>`).join('')}</select></div>
+        ${actions('')}
+      </form>`);
+  }
+  function tlRcPhoto(){
+    tlPickFile('image/*', async f => {
+      rcpt.blob = f; const pv = document.getElementById('rc-prev');
+      pv.innerHTML = `<img src="${URL.createObjectURL(f)}" style="max-width:100%;max-height:180px;border-radius:10px;display:block;margin-bottom:6px"><button type="button" class="v-btn sec" onclick="CV.tlRcOcr()">🔍 Lire le montant automatiquement</button><span id="rc-ocr"></span>`;
+    }, true);
+  }
+  async function tlRcOcr(){
+    const o = document.getElementById('rc-ocr'); if(!rcpt || !rcpt.blob) return;
+    o.textContent = ' ⏳ Lecture du ticket… (la 1re fois, l’outil se télécharge : ~15 s)';
+    try {
+      if(!window.Tesseract) await new Promise((res, rej)=>{ const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'; s.onload = res; s.onerror = ()=>rej(new Error('outil de lecture indisponible')); document.head.appendChild(s); });
+      const small = await shrink(rcpt.blob, 1600, 0.85);
+      const {data} = await Tesseract.recognize(small, 'fra+eng');
+      const txt = (data && data.text) || '';
+      const nums = l => (l.match(/\d{1,5}(?:[ .]\d{3})*[.,]\d{2}\b/g) || []).map(x=>parseFloat(x.replace(/[ .](?=\d{3}\b)/g,'').replace(',', '.')));
+      let val = null;
+      txt.split('\n').some(l => { if(/total|à payer|a payer|montant|net|amount|importe|totale/i.test(l)){ const n = nums(l); if(n.length){ val = Math.max(...n); return true; } } return false; });
+      if(val == null){ const all = nums(txt); if(all.length) val = Math.max(...all); }
+      if(val == null) throw new Error('aucun montant reconnu');
+      document.getElementById('rc-m').value = String(val).replace('.', ',');
+      o.textContent = ' ✓ ' + val.toLocaleString('fr-FR') + ' lu — vérifie avant d’enregistrer.';
+    } catch(e){ o.textContent = ' ⚠️ ' + e.message + ' : saisis le montant à la main.'; }
+  }
+  async function tlRcSave(){
+    const f = document.getElementById('v-form'), titre = f.titre.value.trim(); let m = num(f.montant.value); const cur = document.getElementById('rc-c').value;
+    if(!titre || !m) return;
+    let note = '';
+    if(cur !== 'EUR'){ try { const e = await fxToEur(m, cur); note = m.toLocaleString('fr-FR') + ' ' + cur; m = Math.round(e*100)/100; } catch(e){ alert(e.message); return; } }
+    const payeur = document.getElementById('rc-p').value, share = document.getElementById('rc-s').value;
+    const it = {id:'i'+uid(), type:'item', trip:M.trip, cat:'divers', titre, date:isoToday(), statut:'paid', prix:String(m), partage:'grp', payeur, qui: share==='all' ? [] : [share], note};
+    if(rcpt && rcpt.blob){ const pid = 'rc' + uid(); try { await storePhoto(rcpt.blob, pid); it.recu = pid; } catch(e){} }
+    put(it, '🧾 Dépense ajoutée' + (note ? ' (' + note + ')' : '')); closeSheet(true); refresh(); uploadQueue(); capWarn();
+  }
+  function tlReceipts(){
+    const l = items(i=>i.recu).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    openSheet(`<h2>🗂️ Reçus</h2><div class="cv-grid">${l.map(it=>`<div class="cv-th" title="${esc(it.titre)}"><img data-ph="${esc(it.recu)}.t" alt=""></div>`).join('')}</div>
+      <div class="v-sum-small" style="margin-top:6px">${l.map(it=>`${esc(it.titre)} · ${eur(num(it.prix))}`).join('<br>')}</div>
+      <div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.close()">Fermer</button></div>`);
+    hydrate();
+  }
+
+  /* ---------- 🗺️ Carte du voyage ---------- */
+  function geoCached(city){ const r = R['geo:' + normQ(city)]; return r && !r.deleted && r.lat != null ? {lat:r.lat, lng:r.lng} : null; }
+  function tripMapSVG(pts){
+    if(pts.length < 1) return '';
+    const W = 600, H = 300, pad = 34, lat0 = pts.reduce((s,p)=>s+p.lat,0)/pts.length, kx = Math.cos(lat0*Math.PI/180);
+    const X = pts.map(p=>p.lng*kx), Y = pts.map(p=>-p.lat), mnX = Math.min(...X), mxX = Math.max(...X), mnY = Math.min(...Y), mxY = Math.max(...Y);
+    const sc = Math.min((W-2*pad)/Math.max(mxX-mnX,1e-3), (H-2*pad)/Math.max(mxY-mnY,1e-3)), ox = (W-(mxX-mnX)*sc)/2, oy = (H-(mxY-mnY)*sc)/2;
+    const P = pts.map((_,i)=>[Math.round(((X[i]-mnX)*sc+ox)*10)/10, Math.round(((Y[i]-mnY)*sc+oy)*10)/10]);
+    let tot = 0; for(let i=1;i<pts.length;i++) tot += km(pts[i-1], pts[i]);
+    let g = `<rect width="${W}" height="${H}" rx="12" fill="#f4f1fb"/>`;
+    for(let x=0;x<=W;x+=60) g += `<line x1="${x}" y1="0" x2="${x}" y2="${H}" stroke="#e7e0f3"/>`; for(let y=0;y<=H;y+=60) g += `<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="#e7e0f3"/>`;
+    g += `<polyline points="${P.map(p=>p.join(',')).join(' ')}" fill="none" stroke="#7C3AED" stroke-width="3" stroke-dasharray="7 5" stroke-linecap="round"/>`;
+    P.forEach(([a,b],i)=>{ const right = a < W - 140;
+      g += `<circle cx="${a}" cy="${b}" r="12" fill="#2A1238"/><text x="${a}" y="${b+4.5}" font-size="12" font-weight="700" fill="#fff" text-anchor="middle" font-family="sans-serif">${i+1}</text>
+        <text x="${right ? a+16 : a-16}" y="${b+4}" font-size="13" font-weight="700" fill="#2A1238" text-anchor="${right?'start':'end'}" font-family="sans-serif" paint-order="stroke" stroke="#f4f1fb" stroke-width="4">${esc(pts[i].lbl)}</text>`; });
+    return `<figure class="pr-map"><svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Carte du voyage">${g}</svg>
+      <figcaption>🗺️ ${pts.length} étape${pts.length>1?'s':''} · ≈ ${Math.round(tot).toLocaleString('fr-FR')} km à vol d’oiseau entre les étapes</figcaption></figure>`;
+  }
+  function tripMapCached(){
+    const st = tlStages(); if(st.length < 2) return '';
+    const pts = st.map(s=>{ const c = geoCached(s.city); return c ? {lat:c.lat, lng:c.lng, lbl:s.city} : null; });
+    return pts.every(Boolean) ? tripMapSVG(pts) : '';
+  }
+  function tlMap(){
+    if(!tlStages().length){ alert('Ajoute des hébergements avec leur ville pour dessiner la carte.'); return; }
+    openSheet(`<h2>🗺️ Carte du voyage</h2><div data-tmap="1"></div><div class="v-sum-small">Fond de carte © contributeurs OpenStreetMap. Elle est aussi ajoutée au carnet de route PDF.</div><div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.close()">Fermer</button></div>`);
+  }
+  /* ---------- 🧳 Bagages ---------- */
+  function tlBags(){
+    const t = trip(), v = tv(), n = Math.max(1, nights(t.debut, t.fin || t.debut));
+    openSheet(`<h2>🧳 Liste de bagages</h2><div class="v-sum-small" style="margin-bottom:8px">${n} nuit${n>1?'s':''}. La liste s’ajoute à la ✅ Checklist, cochable par chacun.</div>
+      <div class="v-f"><label>Pour qui ?</label><select class="v-in" id="bg-who"><option value="">Tout le monde (une liste commune)</option>${v.map(p=>`<option value="${p}">${esc(pname(p))}</option>`).join('')}<option value="each">Une liste par voyageur</option></select></div>
+      <div class="v-f"><label>Climat</label><select class="v-in" id="bg-cl"><option value="auto">Automatique (météo des étapes)</option><option value="chaud">Chaud</option><option value="doux">Tempéré</option><option value="froid">Froid</option></select></div>
+      <div class="v-f"><label>Activités</label>${[['plage','🏖️ Plage / piscine'],['rando','🥾 Randonnée'],['ville','🏙️ Ville & soirées'],['sport','⛷️ Sport / ski'],['pro','💼 Travail'],['enfant','👶 Avec enfants']].map(([k,l])=>`<label class="cv-checkline"><input type="checkbox" id="bg-${k}"${k==='ville'?' checked':''}> ${l}</label>`).join('')}</div>
+      <div class="v-actions"><button type="button" class="v-btn" onclick="CV.tlBagsGo()">🧳 Ajouter à la checklist</button><button type="button" class="v-btn sec cv-sq" onclick="CV.close()">✕</button></div>`);
+  }
+  async function tlBagsGo(){
+    const t = trip(), n = Math.max(1, nights(t.debut, t.fin || t.debut)), q = k => Math.min(n + 1, k);
+    const on = k => { const e = document.getElementById('bg-' + k); return e && e.checked; };
+    let cl = document.getElementById('bg-cl').value; const who = document.getElementById('bg-who').value;
+    if(cl === 'auto'){ cl = 'doux'; try { const st = tlStages(); if(st.length){ const vs = []; for(const s of st.slice(0,4)) vs.push(await meteoFor(s)); const mx = Math.max(...vs.map(v=>v.max)), mn = Math.min(...vs.map(v=>v.min)); cl = mx >= 25 ? 'chaud' : mn <= 5 ? 'froid' : 'doux'; } } catch(e){} }
+    const L = [['🧳 Vêtements', `Sous-vêtements ×${q(8)}`], ['🧳 Vêtements', `Chaussettes ×${q(8)}`], ['🧳 Vêtements', `Tee-shirts / hauts ×${q(7)}`], ['🧳 Vêtements', `Pantalons / jupes ×${Math.min(4, Math.ceil(n/3)+1)}`],
+      ['🧳 Vêtements', 'Pyjama'], ['🧳 Vêtements', 'Chaussures confortables'], ['🧴 Toilette', 'Trousse de toilette (brosse à dents, dentifrice, déodorant)'], ['🧴 Toilette', 'Médicaments personnels + ordonnances'],
+      ['🔌 Tech', 'Chargeurs + batterie externe'], ['🔌 Tech', 'Adaptateur de prise'], ['📄 Papiers', 'Pièce d’identité / passeport'], ['📄 Papiers', 'Carte bancaire + un peu d’espèces']];
+    if(cl==='chaud') L.push(['🧳 Vêtements','Shorts / robes légères'], ['🧴 Toilette','Crème solaire indice 50'], ['🧳 Vêtements','Chapeau / casquette'], ['🧳 Vêtements','Lunettes de soleil'], ['🧴 Toilette','Anti-moustiques']);
+    if(cl==='doux') L.push(['🧳 Vêtements','Pull ou sweat'], ['🧳 Vêtements','Veste légère imperméable']);
+    if(cl==='froid') L.push(['🧳 Vêtements','Manteau chaud'], ['🧳 Vêtements','Bonnet, gants, écharpe'], ['🧳 Vêtements','Sous-couche thermique'], ['🧴 Toilette','Baume à lèvres']);
+    if(on('plage')) L.push(['🏖️ Plage','Maillot de bain ×2'], ['🏖️ Plage','Serviette de plage'], ['🏖️ Plage','Tongs / sandales'], ['🏖️ Plage','Sac étanche']);
+    if(on('rando')) L.push(['🥾 Rando','Chaussures de marche'], ['🥾 Rando','Gourde'], ['🥾 Rando','Petit sac à dos'], ['🥾 Rando','Coupe-vent'], ['🥾 Rando','Pansements anti-ampoules']);
+    if(on('ville')) L.push(['🏙️ Ville','Tenue pour sortir le soir'], ['🏙️ Ville','Sac banane / antivol']);
+    if(on('sport')) L.push(['⛷️ Sport','Tenue de sport'], ['⛷️ Sport','Masque / gants / lunettes de ski'], ['⛷️ Sport','Assurance activités sportives']);
+    if(on('pro')) L.push(['💼 Travail','Ordinateur + chargeur'], ['💼 Travail','Tenue professionnelle'], ['💼 Travail','Cartes de visite / badges']);
+    if(on('enfant')) L.push(['👶 Enfants','Doudou / jouets'], ['👶 Enfants','Couches / lingettes'], ['👶 Enfants','Carnet de santé'], ['👶 Enfants','Goûters pour le trajet']);
+    const owners = who === 'each' ? tv() : [who];
+    const out = [];
+    owners.forEach(pid => L.forEach(([cat,label],i) => out.push({id:'c'+uid()+i, type:'check', trip:M.trip, cat: pid ? cat + ' · ' + pname(pid) : cat, label, done:false})));
+    putMany(out, '🧳 ' + out.length + ' élément(s) ajoutés à la checklist'); closeSheet(true); M.tab = 'check'; refresh();
+  }
+
+  /* ---------- 🛂 Documents de voyage ---------- */
+  const DOC_KINDS = ['Passeport','Carte d’identité','Visa / ESTA / eVisa','Permis de conduire','Assurance voyage','Carte européenne d’assurance maladie','Vaccination','Autre'];
+  const docsOf = pid => list('doc', d=>d.pid===pid).sort((a,b)=>(a.expire||'').localeCompare(b.expire||''));
+  function docIssues(){
+    const t = trip(); if(!t || !t.fin) return [];
+    const out = [], fin = t.fin, plus6 = (()=>{ const d = new Date(fin); d.setMonth(d.getMonth()+6); return d.toISOString().slice(0,10); })();
+    tv().forEach(pid=>docsOf(pid).forEach(d=>{
+      if(!d.expire) return;
+      if(d.expire < fin) out.push(`${d.kind} de ${pname(pid)} expiré avant le retour (${fdate(d.expire)})`);
+      else if(d.kind === 'Passeport' && d.expire < plus6) out.push(`passeport de ${pname(pid)} valable moins de 6 mois après le retour`);
+    }));
+    return out;
+  }
+  function tlDocs(){
+    const v = tv(), di = docIssues();
+    openSheet(`<h2>🛂 Documents de voyage</h2>
+      ${di.length ? `<div class="cv-warnline" style="margin-bottom:8px">⚠️ ${di.map(esc).join('<br>⚠️ ')}</div>` : ''}
+      ${v.map(pid=>`<div class="cv-dayc"><h3>${esc(pname(pid))}</h3>${docsOf(pid).map(d=>`<div class="cv-dayi"><b>${esc(d.kind)}</b>${d.expire ? ' · expire le ' + fdate(d.expire) : ''}${d.num ? ' · n° ' + esc(d.num) : ''}${d.note ? '<div class="v-sum-small">' + esc(d.note) + '</div>' : ''}
+        <button type="button" class="v-day-edit" onclick="CV.tlDocEdit('${pid}','${d.id}')">modifier</button></div>`).join('') || '<div class="v-sum-small">Aucun document.</div>'}
+        <button type="button" class="v-day-edit" onclick="CV.tlDocEdit('${pid}','')">＋ Ajouter un document</button></div>`).join('')}
+      <div class="v-sum-small" style="margin-top:8px">Règle courante : passeport valable au moins 6 mois après le retour pour de nombreux pays hors UE. Vérifie toujours sur diplomatie.gouv.fr (fiches Conseils aux voyageurs).${E2E ? '' : ' <b>Version perso</b> : le numéro est facultatif et, si tu l’indiques, il est stocké en clair sur le serveur de synchro.'}</div>
+      <div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.close()">Fermer</button></div>`);
+  }
+  function tlDocEdit(pid, id){
+    const d = id ? R[id] : {kind:'Passeport', expire:'', num:'', note:''};
+    openSheet(`<h2>🛂 ${esc(pname(pid))}</h2><form id="v-form" onsubmit="event.preventDefault();CV.tlDocSave('${pid}','${id}')">
+      <div class="v-f"><label>Document</label><select class="v-in" name="kind">${DOC_KINDS.map(k=>`<option${k===d.kind?' selected':''}>${k}</option>`).join('')}</select></div>
+      ${field('Date d’expiration','expire',d.expire,'date')}
+      ${field('Numéro (facultatif)','num',d.num,'text','autocomplete="off"')}
+      ${field('Note','note',d.note,'text','placeholder="Ex. ESTA validé, n° de contrat d’assurance…"')}
+      <div class="v-actions"><button class="v-btn" type="submit">Enregistrer</button>${id ? `<button type="button" class="v-btn sec cv-sq" onclick="CV.tlDocDel('${id}','${pid}')">🗑</button>` : ''}<button type="button" class="v-btn sec cv-sq" onclick="CV.tlDocs()">✕</button></div></form>`);
+  }
+  function tlDocSave(pid, id){
+    const f = document.getElementById('v-form');
+    put(Object.assign(id ? clone(R[id]) : {id:'d'+uid(), type:'doc', pid}, {kind:f.kind.value, expire:f.expire.value, num:f.num.value.trim(), note:f.note.value.trim()}), '🛂 Document enregistré');
+    tlDocs();
+  }
+  function tlDocDel(id, pid){ if(!confirm('Supprimer ce document ?')) return; const d = clone(R[id]); d.deleted = true; put(d, '🗑 Supprimé'); tlDocs(); }
+
+  /* ---------- 📖 Journal de voyage ---------- */
+  function tlJournal(){
+    const t = trip(); if(!t) return;
+    const ds = tlDays(), all = souvs(), v = tv(), tot = items().reduce((s,i)=>s+totalOf(i),0), nph = all.reduce((s,x)=>s+(x.photos||[]).length,0);
+    let d = `<header class="pr-cover"><div class="pr-kicker">Journal de voyage</div><h1>${esc(t.titre)}</h1><p class="pr-dates">${tripDatesLong(t)}</p>${t.sous ? `<p class="pr-route">${esc(t.sous)}</p>` : ''}<p class="pr-who">${v.map(pname).map(esc).join(' · ')}</p></header>`;
+    d += tripMapCached();
+    ds.forEach((day, i)=>{
+      const sv = all.filter(s=>s.date===day), info = dayInfo(day);
+      if(!sv.length && !info.plan) return;
+      d += `<section class="pr-day jr-day"><h3><span>J${i+1}</span>${longDate(day)}${info.titre ? ' — ' + esc(info.titre) : ''}</h3>${info.plan ? `<p class="pr-plan">${esc(info.plan)}</p>` : ''}
+        ${sv.map(s=>`<div class="jr-s"><h4>${esc(s.titre||'')}</h4>${s.lieu ? `<p class="pr-small">📍 ${esc(s.lieu)}</p>` : ''}${s.texte ? `<p>${esc(s.texte).replace(/\n/g,'<br>')}</p>` : ''}
+          ${(s.photos||[]).length ? `<div class="jr-ph">${s.photos.slice(0,6).map(p=>`<img data-ph="${esc(p)}" alt="">`).join('')}</div>` : ''}</div>`).join('')}</section>`;
+    });
+    const off = all.filter(s=>!ds.includes(s.date));
+    if(off.length) d += `<section class="pr-day jr-day"><h3>Autres souvenirs</h3>${off.map(s=>`<div class="jr-s"><h4>${esc(s.titre||'')}</h4>${s.texte ? `<p>${esc(s.texte)}</p>` : ''}${(s.photos||[]).length ? `<div class="jr-ph">${s.photos.slice(0,6).map(p=>`<img data-ph="${esc(p)}" alt="">`).join('')}</div>` : ''}</div>`).join('')}</section>`;
+    d += `<section class="pr-day"><h3>Le voyage en chiffres</h3><p>${ds.length} jours · ${tlStages().length} étapes · ${all.length} souvenirs · ${nph} photos · ${eur(tot)} au total${v.length>1 ? ' (' + eur(tot/v.length) + ' par personne)' : ''}</p></section>`;
+    d += `<footer class="pr-foot">Journal créé le ${new Date().toLocaleDateString('fr-FR', {day:'numeric', month:'long', year:'numeric'})} · Carnet de voyage</footer>`;
+    let ov = document.getElementById('cv-print'); if(!ov){ ov = document.createElement('div'); ov.id = 'cv-print'; document.body.appendChild(ov); }
+    ov.innerHTML = `<div class="pr-bar"><button onclick="window.print()">🖨️ Imprimer / PDF</button><button class="x" onclick="CV.pdfClose()">✕ Fermer</button></div><div class="pr-doc jr-doc">${d}</div>`;
+    ov.style.display = 'block'; document.body.classList.add('printing'); closeSheet(true);
+    hydrate();
+  }
+
+  /* ---------- 📦 Paquets sans serveur ---------- */
+  async function pkgKey(pass, salt){
+    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass.trim()), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey({name:'PBKDF2', salt, iterations:200000, hash:'SHA-256'}, base, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']);
+  }
+  function pkgSheet(){
+    openSheet(`<h2>📦 Envoyer un paquet</h2>
+      <div class="v-sum-small" style="margin-bottom:8px">Le paquet contient tes voyages et profils, <b>chiffrés avec la phrase du groupe</b>. Envoie-le dans votre conversation (WhatsApp, Messages, AirDrop…) : chacun l’ouvre avec « Recevoir un paquet » et tout se fusionne (la version la plus récente de chaque fiche gagne).</div>
+      <div class="v-f"><label>Phrase du groupe (la même pour tous)</label><input class="v-in" id="pk-pass" type="text" autocomplete="off" value="${esc(M.pkgPass||'')}" placeholder="Ex. ciel-orange-rome-2027"></div>
+      <label class="cv-checkline"><input type="checkbox" id="pk-ph" checked> Inclure les photos (vignettes)</label>
+      <label class="cv-checkline"><input type="checkbox" id="pk-full"> Photos en grand format (fichier plus lourd)</label>
+      <div class="v-actions"><button type="button" class="v-btn" onclick="CV.pkgExport()">📤 Créer et envoyer</button><button type="button" class="v-btn sec cv-sq" onclick="CV.close()">✕</button></div>`);
+  }
+  async function pkgExport(){
+    const pass = (document.getElementById('pk-pass')||{}).value || ''; if(pass.trim().length < 6){ alert('Choisis une phrase d’au moins 6 caractères, la même pour tout le groupe.'); return; }
+    M.pkgPass = pass.trim(); persist();
+    const withPh = document.getElementById('pk-ph').checked, full = document.getElementById('pk-full').checked;
+    const recs = Object.values(R).filter(r=>!r.demo);
+    const photos = {};
+    if(withPh){
+      const ids = new Set(); recs.forEach(r=>{ (r.photos||[]).forEach(p=>ids.add(p)); if(r.recu) ids.add(r.recu); });
+      for(const id of ids){ for(const k of full ? [id + '.t', id] : [id + '.t']){ try { const o = await IDB.get(k); if(o && o.blob) photos[k] = tlB64.enc(await o.blob.arrayBuffer()); } catch(e){} } }
+    }
+    const plain = new TextEncoder().encode(JSON.stringify({app:'carnet-voyage', v:1, t:Date.now(), from:M.me ? pname(M.me) : '', records:recs, photos}));
+    const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+    const enc = await crypto.subtle.encrypt({name:'AES-GCM', iv}, await pkgKey(pass, salt), plain);
+    const file = JSON.stringify({carnetPaquet:1, salt:tlB64.enc(salt), iv:tlB64.enc(iv), data:tlB64.enc(enc)});
+    const d = new Date(), name = `carnet-${d.toISOString().slice(0,10)}-${(M.me ? pname(M.me) : 'moi').toLowerCase().replace(/[^\w]+/g,'')}.carnet`;
+    closeSheet(true);
+    await tlShareFile(new Blob([file], {type:'application/octet-stream'}), name, 'Paquet Carnet de voyage');
+    M.pkgLast = Date.now(); pkgSnap(); persist(); toast('📦 Paquet prêt (' + Math.round(file.length/1024) + ' Ko)');
+  }
+  function pkgImport(){ tlPickFile('.carnet,application/octet-stream,application/json,text/plain', f => pkgOpen(f)); }
+  /* ---------- 📦 Fusion intelligente des paquets ----------
+     Chaque fiche (vol, hôtel, note, dépense, souvenir…) porte sa date de modification.
+     M.pkgBase garde, pour chaque fiche, la version connue au dernier échange (envoi ou réception).
+     À la réception :
+       • fiche nouvelle chez l'autre          → ajoutée
+       • modifiée seulement chez l'autre      → mise à jour
+       • modifiée seulement chez moi          → gardée telle quelle
+       • modifiée des deux côtés (conflit)    → fusion champ par champ (la plus récente, complétée par
+                                                ce que l'autre a rempli et que la récente a laissé vide,
+                                                photos réunies), ou choix « la mienne / la sienne ».
+     Rien n'est effacé, sauf ce que l'autre a explicitement supprimé (et que tu n'as pas retouché depuis). */
+  function pkgSnap(){ M.pkgBase = M.pkgBase || {}; Object.values(R).forEach(r=>{ if(r && r.id && !r.demo) M.pkgBase[r.id] = r.updatedAt || 0; }); }
+  const SKIP_F = ['updatedAt','updatedBy','createdAt','createdBy'];
+  function pkgFuse(mine, theirs){
+    const newer = (theirs.updatedAt||0) >= (mine.updatedAt||0) ? theirs : mine, older = newer === theirs ? mine : theirs;
+    const out = clone(newer);
+    Object.keys(older).forEach(k=>{
+      if(SKIP_F.includes(k) || k === 'deleted') return;
+      const a = out[k], b = older[k];
+      if((a == null || a === '' || (Array.isArray(a) && !a.length)) && b != null && b !== '') out[k] = clone(b);
+      else if(k === 'photos' && Array.isArray(a) && Array.isArray(b)) out[k] = [...new Set([...a, ...b])];
+    });
+    if(mine.deleted !== theirs.deleted) out.deleted = newer.deleted;
+    out.updatedAt = Math.max(mine.updatedAt||0, theirs.updatedAt||0) + 1;
+    return out;
+  }
+  const sameRec = (a, b) => { const s = r => JSON.stringify(Object.keys(r).filter(k=>!SKIP_F.includes(k)).sort().map(k=>[k, r[k]])); return s(a) === s(b); };
+  const recLabel = r => (r.type==='item' ? icon(r) + ' ' + (r.titre||'') : r.type==='note' ? '📌 ' + (r.texte||'').slice(0,40) : r.type==='souv' ? '📸 ' + (r.titre||'souvenir') : r.type==='trip' ? '🧭 ' + (r.titre||'voyage') : r.type==='day' ? '🗓️ ' + (r.titre || r.date || 'jour') : r.type==='check' ? '✅ ' + (r.label||'') : r.type==='profile' ? '👤 ' + (r.nom||'') : r.type==='doc' ? '🛂 ' + (r.kind||'') : r.type) + (r.deleted ? ' (supprimé)' : '');
+  let pkgPending = null;
+  async function pkgOpen(f){
+    let o; try { o = JSON.parse(await f.text()); } catch(e){ alert('Ce fichier n’est pas un paquet du carnet.'); return; }
+    if(!o || !o.carnetPaquet){ alert('Ce fichier n’est pas un paquet du carnet.'); return; }
+    const pass = prompt('Phrase du groupe :', M.pkgPass || ''); if(pass === null) return;
+    let data;
+    try { const plain = await crypto.subtle.decrypt({name:'AES-GCM', iv:tlB64.dec(o.iv)}, await pkgKey(pass, tlB64.dec(o.salt)), tlB64.dec(o.data)); data = JSON.parse(new TextDecoder().decode(plain)); }
+    catch(e){ alert('Phrase incorrecte : impossible d’ouvrir ce paquet.'); return; }
+    M.pkgPass = pass.trim(); M.pkgBase = M.pkgBase || {};
+    const add = [], upd = [], keep = [], conf = [];
+    (data.records||[]).forEach(r=>{
+      if(!r || !r.id || r.demo) return;
+      const cur = R[r.id], base = M.pkgBase[r.id] || 0;
+      if(!cur) return add.push(r);
+      if(sameRec(cur, r)) return;
+      const iChanged = (cur.updatedAt||0) > base, theyChanged = (r.updatedAt||0) > base;
+      if(theyChanged && !iChanged) upd.push(r);
+      else if(iChanged && !theyChanged) keep.push(r);
+      else if((r.updatedAt||0) === (cur.updatedAt||0)) keep.push(r);
+      else conf.push({mine:cur, theirs:r, pick:'fuse'});
+    });
+    pkgPending = {data, add, upd, keep, conf};
+    if(!conf.length) return pkgApply();
+    openSheet(`<h2>📦 Paquet de ${esc(data.from || 'ton ami')}</h2>
+      <div class="v-sum-small" style="margin-bottom:8px">${add.length} nouvelle(s) fiche(s) · ${upd.length} mise(s) à jour · ${keep.length} gardée(s) chez toi.<br>
+      <b>${conf.length} fiche(s) modifiée(s) des deux côtés</b> : choisis pour chacune. « Fusionner » garde la version la plus récente et la complète avec ce que l’autre avait rempli.</div>
+      ${conf.map((c,i)=>`<div class="cv-dayi"><b>${esc(recLabel(c.mine))}</b><div class="v-sum-small">chez toi : ${new Date(c.mine.updatedAt||0).toLocaleString('fr-FR')} · chez ${esc(data.from||'lui')} : ${new Date(c.theirs.updatedAt||0).toLocaleString('fr-FR')}</div>
+        <select class="v-in" onchange="CV.pkgPick(${i}, this.value)"><option value="fuse">🔀 Fusionner (recommandé)</option><option value="mine">✋ Garder la mienne</option><option value="theirs">📥 Prendre la sienne</option></select></div>`).join('')}
+      <div class="v-actions"><button type="button" class="v-btn" onclick="CV.pkgApply()">✅ Appliquer</button><button type="button" class="v-btn sec cv-sq" onclick="CV.close()">✕</button></div>`);
+  }
+  function pkgPick(i, v){ if(pkgPending && pkgPending.conf[i]) pkgPending.conf[i].pick = v; }
+  async function pkgApply(){
+    const P = pkgPending; if(!P) return; pkgPending = null;
+    const touch = r => { R[r.id] = r; markDirty(r.id); };
+    P.add.forEach(touch); P.upd.forEach(touch);
+    let nf = 0; P.conf.forEach(c=>{ if(c.pick === 'theirs') touch(c.theirs); else if(c.pick === 'fuse'){ touch(pkgFuse(c.mine, c.theirs)); nf++; } });
+    let np = 0;
+    for(const [id, s] of Object.entries(P.data.photos||{})){
+      try { const ex = await IDB.get(id); if(ex && ex.blob) continue; await IDB.put({id, blob:new Blob([tlB64.dec(s)], {type:'image/jpeg'}), up:0}); np++; if(M.sync && M.sync.on){ M.pq = M.pq || []; M.pq.push(id); } } catch(e){}
+    }
+    pkgSnap();
+    if(!M.trip || !R[M.trip]){ const tt = trips()[0]; if(tt) M.trip = tt.id; }
+    persist(); closeSheet(true); refresh(); if(M.sync && M.sync.on){ queueSync(); uploadQueue(); }
+    alert(`📥 Paquet de ${P.data.from || 'quelqu’un'} fusionné :\n• ${P.add.length} fiche(s) ajoutée(s)\n• ${P.upd.length} mise(s) à jour\n• ${P.keep.length} gardée(s) telles quelles chez toi\n• ${P.conf.length} conflit(s) réglé(s)${nf ? ' (' + nf + ' fusionnée(s))' : ''}\n• ${np} photo(s) ajoutée(s)\n\nRien de ce que tu avais saisi n’a été perdu.`);
+  }
+  const pkgBox = () => `<div class="v-box"><h3>📦 Sans serveur : paquets à échanger</h3>
+    <p>Pour ceux qui ne veulent pas passer par la synchro en ligne : après tes modifications, envoie un <b>paquet chiffré</b> dans votre conversation de groupe ; les autres le reçoivent et tout se fusionne. Rien ne passe par le serveur de l’appli.</p>
+    <button class="v-btn" onclick="CV.pkgSheet()">📤 Envoyer un paquet</button><button class="v-btn sec" onclick="CV.pkgImport()">📥 Recevoir un paquet</button>
+    ${M.pkgLast ? `<div class="v-sum-small" style="margin-top:6px">Dernier paquet envoyé le ${new Date(M.pkgLast).toLocaleString('fr-FR')}.</div>` : ''}
+    <div class="v-sum-small" style="margin-top:6px">Les deux modes cohabitent : un membre synchronisé peut aussi recevoir un paquet, il sera ensuite partagé avec les autres via la synchro.</div></div>`;
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     🗺️ CARTES « type Google Maps » (fond de carte CARTO / OpenStreetMap)
+     + 📄 PDF généré sur le téléphone (pdf-lib) : un vrai fichier, bien cadré,
+       à enregistrer, imprimer ou envoyer depuis le menu Partager.
+     ══════════════════════════════════════════════════════════════════════════ */
+  // Fonds de carte gratuits, sans clé : OpenStreetMap, puis Esri en secours (CARTO exige désormais une clé).
+  const TILES = [
+    {url:(z,x,y)=>`https://tile.openstreetmap.org/${z}/${x}/${y}.png`, by:'© contributeurs OpenStreetMap'},
+    {url:(z,x,y)=>`https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/${z}/${y}/${x}`, by:'© Esri, HERE, OpenStreetMap'}
+  ];
+  const tileImg = {}; let tileBy = TILES[0].by;
+  function loadOne(src){ return new Promise(res=>{ const im = new Image(); im.crossOrigin = 'anonymous'; let done = false; const end = v => { if(!done){ done = true; res(v); } };
+    im.onload = ()=>end(im); im.onerror = ()=>end(null); im.src = src; setTimeout(()=>end(null), 8000); }); }
+  function loadTile(z,x,y){
+    const k = z+'/'+x+'/'+y; if(tileImg[k]) return tileImg[k];
+    return tileImg[k] = (async()=>{ for(const t of TILES){ const im = await loadOne(t.url(z,x,y)); if(im){ tileBy = t.by; return im; } } return null; })();
+  }
+  const lon2x = (lng,z) => (lng+180)/360*Math.pow(2,z)*256;
+  const lat2y = (lat,z) => { const r = lat*Math.PI/180; return (1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*Math.pow(2,z)*256; };
+  // Dessine une carte : fond de carte + tracé + repères. Renvoie un <canvas> (fond uni si hors ligne).
+  async function drawMap(o){
+    const W = o.w || 640, H = o.h || 380, S = 2, pad = o.pad || 46;
+    const all = [...(o.markers||[]), ...((o.line||[]).map(p=>({lat:p[0], lng:p[1]})))].filter(p=>p && p.lat != null && p.lng != null);
+    const c = document.createElement('canvas'); c.width = W*S; c.height = H*S; const g = c.getContext('2d'); g.scale(S,S);
+    g.fillStyle = '#eef0f3'; g.fillRect(0,0,W,H);
+    if(!all.length) return c;
+    let z = 17;
+    const mnLat = Math.min(...all.map(p=>p.lat)), mxLat = Math.max(...all.map(p=>p.lat)), mnLng = Math.min(...all.map(p=>p.lng)), mxLng = Math.max(...all.map(p=>p.lng));
+    for(; z > 1; z--){ if(lon2x(mxLng,z)-lon2x(mnLng,z) <= W-2*pad && lat2y(mnLat,z)-lat2y(mxLat,z) <= H-2*pad) break; }
+    if(o.maxZoom) z = Math.min(z, o.maxZoom);
+    const cx = (lon2x(mnLng,z)+lon2x(mxLng,z))/2, cy = (lat2y(mnLat,z)+lat2y(mxLat,z))/2, x0 = cx - W/2, y0 = cy - H/2;
+    const P = p => [lon2x(p.lng,z)-x0, lat2y(p.lat,z)-y0];
+    let tilesOk = 0;
+    if(o.tiles !== false){
+      const n = Math.pow(2,z), jobs = [];
+      for(let tx = Math.floor(x0/256); tx <= Math.floor((x0+W)/256); tx++) for(let ty = Math.floor(y0/256); ty <= Math.floor((y0+H)/256); ty++){
+        if(ty < 0 || ty >= n) continue; const wx = ((tx % n) + n) % n;
+        jobs.push(loadTile(z,wx,ty).then(im=>{ if(im){ g.drawImage(im, tx*256-x0, ty*256-y0, 256, 256); tilesOk++; } }));
+      }
+      await Promise.all(jobs);
+    }
+    if(!tilesOk){ g.strokeStyle = '#dde1e7'; g.lineWidth = 1; for(let x=0;x<W;x+=40){ g.beginPath(); g.moveTo(x,0); g.lineTo(x,H); g.stroke(); } for(let y=0;y<H;y+=40){ g.beginPath(); g.moveTo(0,y); g.lineTo(W,y); g.stroke(); } }
+    const line = (o.line||[]).map(p=>P({lat:p[0], lng:p[1]}));
+    if(line.length > 1){
+      g.lineJoin = 'round'; g.lineCap = 'round';
+      g.strokeStyle = 'rgba(255,255,255,.95)'; g.lineWidth = 8; g.setLineDash(o.dashed ? [12,9] : []); g.beginPath(); line.forEach(([a,b],i)=> i ? g.lineTo(a,b) : g.moveTo(a,b)); g.stroke();
+      g.strokeStyle = o.color || '#4f46e5'; g.lineWidth = 4.5; g.beginPath(); line.forEach(([a,b],i)=> i ? g.lineTo(a,b) : g.moveTo(a,b)); g.stroke(); g.setLineDash([]);
+    }
+    (o.markers||[]).forEach(m=>{
+      const [a,b] = P(m), home = m.kind === 'home';
+      g.fillStyle = home ? '#111827' : (m.color || '#dc2626'); g.strokeStyle = '#fff'; g.lineWidth = 2.5;
+      g.beginPath(); g.moveTo(a, b); g.bezierCurveTo(a-12, b-14, a-12, b-30, a, b-30); g.bezierCurveTo(a+12, b-30, a+12, b-14, a, b); g.fill(); g.stroke();
+      g.fillStyle = '#fff'; g.font = 'bold 12px -apple-system,Helvetica,Arial,sans-serif'; g.textAlign = 'center'; g.fillText(m.label != null ? String(m.label) : '', a, b-17);
+      if(m.name){ g.font = '600 12px -apple-system,Helvetica,Arial,sans-serif'; g.textAlign = 'left'; g.lineWidth = 4; g.strokeStyle = 'rgba(255,255,255,.95)'; g.strokeText(m.name, a+13, b-12); g.fillStyle = '#111827'; g.fillText(m.name, a+13, b-12); }
+    });
+    g.font = '10px -apple-system,Helvetica,Arial,sans-serif'; g.textAlign = 'right'; const at = tilesOk ? tileBy : 'Carte hors ligne (fond indisponible)';
+    g.fillStyle = 'rgba(255,255,255,.85)'; g.fillRect(W - g.measureText(at).width - 12, H-16, g.measureText(at).width + 12, 16); g.fillStyle = '#374151'; g.fillText(at, W-6, H-4);
+    return c;
+  }
+  // Tracé à pied par les rues (serveur public FOSSGIS / OSRM), mis en cache dans la fiche du jour ; sinon lignes droites.
+  async function walkLine(stops){
+    const pts = stops.filter(p=>p && p.lat != null);
+    if(pts.length < 2) return pts.map(p=>[p.lat,p.lng]);
+    try {
+      const u = 'https://routing.openstreetmap.de/routed-foot/route/v1/foot/' + pts.map(p=>(+p.lng).toFixed(5)+','+(+p.lat).toFixed(5)).join(';') + '?overview=full&geometries=geojson';
+      const r = await withTimeout(fetch(u), 12000); const j = await r.json();
+      const co = j && j.routes && j.routes[0] && j.routes[0].geometry.coordinates;
+      if(co && co.length > 1){ const step = Math.max(1, Math.ceil(co.length/400)); return co.filter((_,i)=>i%step===0 || i===co.length-1).map(c=>[+c[1].toFixed(5), +c[0].toFixed(5)]); }
+    } catch(e){}
+    return pts.map(p=>[p.lat,p.lng]);
+  }
+  async function dayMapCanvas(d, w, h){
+    const info = dayInfo(d), r = info.route; if(!r || !r.ids || !r.ids.length) return null;
+    const pl = placesOf(d), byId = Object.fromEntries(pl.map(p=>[p.id,p]));
+    const stops = [r.start, ...r.ids.map(id=>r.pts[id]), r.loop ? r.start : r.end].filter(p=>p && p.lat != null);
+    let line = r.geom;
+    const sig = stops.map(p=>(+p.lat).toFixed(4)+','+(+p.lng).toFixed(4)).join(';');
+    if(!line || r.geomSig !== sig){ line = await walkLine(stops);
+      if(line.length > stops.length){ const rec = clone(R[dayId(d)]); if(rec && rec.route){ rec.route.geom = line; rec.route.geomSig = sig; R[rec.id] = rec; stamp(rec); markDirty(rec.id); persist(); } } }
+    const markers = [Object.assign({kind:'home', label:'D'}, r.start)];
+    r.ids.forEach((id,i)=>{ const p = r.pts[id]; if(p) markers.push({lat:p.lat, lng:p.lng, label:i+1, name: byId[id] ? byId[id].nom : ''}); });
+    if(!r.loop && r.end && r.end.lat != null) markers.push(Object.assign({kind:'home', label:'A'}, r.end));
+    return drawMap({w, h, line, markers});
+  }
+  async function tripMapCanvas(w, h){
+    const st = tlStages(); if(!st.length) return null;
+    const pts = []; for(const s of st){ const c = geoCached(s.city) || await geocode(s.city, null).catch(()=>null); if(c) pts.push({lat:c.lat, lng:c.lng, name:s.city}); }
+    if(!pts.length) return null;
+    return drawMap({w, h, line: pts.map(p=>[p.lat,p.lng]), dashed:true, color:'#7C3AED', maxZoom:12, markers: pts.map((p,i)=>Object.assign({label:i+1, color:'#7C3AED'}, p))});
+  }
+  async function hydrateMaps(){
+    for(const el of [...document.querySelectorAll('[data-rmap]:not([data-ok]),[data-tmap]:not([data-ok])')]){
+      el.dataset.ok = '1'; el.innerHTML = '<div class="v-sum-small">🗺️ Carte en cours…</div>';
+      try { const c = el.dataset.rmap ? await dayMapCanvas(el.dataset.rmap, 640, 380) : await tripMapCanvas(640, 400);
+        el.innerHTML = c ? `<img src="${c.toDataURL('image/jpeg', .86)}" alt="Carte" style="width:100%;border-radius:12px;display:block">` : ''; }
+      catch(e){ el.innerHTML = ''; }
+    }
+  }
+
+  /* ---------- 📄 Moteur PDF ---------- */
+  async function loadPdfLib(){
+    if(window.PDFLib) return window.PDFLib;
+    await new Promise((res, rej)=>{ const s = document.createElement('script'); s.src = 'vendor/pdf-lib.min.js'; s.onload = res; s.onerror = ()=>rej(new Error('Outil PDF introuvable (vendor/pdf-lib.min.js).')); document.head.appendChild(s); });
+    return window.PDFLib;
+  }
+  const WIN = '€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ';
+  function pdfTxt(s){
+    return String(s == null ? '' : s).replace(/[\u202F\u2009\u00A0]/g, ' ').replace(/→|➜|⟶/g, '->').replace(/←/g, '<-').replace(/≈/g, 'env. ').replace(/[✓✔☑]/g, 'x').replace(/☐/g, 'o').replace(/[‐‑]/g,'-').replace(/ /g,' ').replace(/[\u2028\u2029]/g,' ')
+      .split('').filter(ch => ch === '\n' || (ch.charCodeAt(0) >= 32 && ch.charCodeAt(0) <= 255) || WIN.includes(ch)).join('').replace(/[ \t]{2,}/g,' ').trim().replace(/€ ?/g, '€\u00A0 ');   // espace sûre après €, certains lecteurs PDF la mangent
+  }
+  async function newPdf(title){
+    const L = await loadPdfLib();
+    const pdf = await L.PDFDocument.create(); pdf.setTitle(title); pdf.setCreator('Carnet de voyage'); pdf.setProducer('Carnet de voyage');
+    const D = {L, pdf, F:{r: await pdf.embedFont(L.StandardFonts.Helvetica), b: await pdf.embedFont(L.StandardFonts.HelveticaBold), i: await pdf.embedFont(L.StandardFonts.HelveticaOblique)},
+      W:595.28, H:841.89, M:42, page:null, y:0, n:0, C:{ink:L.rgb(.13,.07,.2), mut:L.rgb(.42,.38,.46), acc:L.rgb(.49,.23,.93), line:L.rgb(.88,.85,.9), soft:L.rgb(.96,.94,.99), white:L.rgb(1,1,1)}};
+    D.add = () => { D.page = pdf.addPage([D.W, D.H]); D.y = D.H - D.M; D.n++; const t = pdfTxt(title); D.page.drawText(t, {x:D.M, y:18, size:7.5, font:D.F.r, color:D.C.mut}); D.page.drawText(String(D.n), {x:D.W-D.M-10, y:18, size:7.5, font:D.F.r, color:D.C.mut}); };
+    D.need = h => { if(!D.page || D.y - h < D.M + 14) D.add(); };
+    D.wrap = (s, font, size, w) => { const out = []; pdfTxt(s).split('\n').forEach(par=>{ let line = ''; par.split(' ').forEach(word=>{ const t = line ? line + ' ' + word : word; if(font.widthOfTextAtSize(t, size) <= w) line = t; else { if(line) out.push(line); while(font.widthOfTextAtSize(word, size) > w && word.length > 1){ let k = word.length; while(k > 1 && font.widthOfTextAtSize(word.slice(0,k), size) > w) k--; out.push(word.slice(0,k)); word = word.slice(k); } line = word; } }); out.push(line); }); return out; };
+    D.text = (s, o={}) => { const size = o.size || 10, font = o.font || D.F.r, x = D.M + (o.indent||0), w = (o.w || (D.W - 2*D.M)) - (o.indent||0), lh = size * (o.lh || 1.35);
+      D.wrap(s, font, size, w).forEach(l=>{ D.need(lh); D.page.drawText(l, {x, y:D.y - size, size, font, color:o.color || D.C.ink}); D.y -= lh; }); if(o.gap) D.y -= o.gap; };
+    D.h1 = s => { D.need(40); D.page.drawRectangle({x:D.M, y:D.y-26, width:D.W-2*D.M, height:26, color:D.C.acc}); D.page.drawText(pdfTxt(s), {x:D.M+10, y:D.y-18, size:13, font:D.F.b, color:D.C.white}); D.y -= 36; };
+    D.h2 = (s, right) => { D.need(28); D.page.drawRectangle({x:D.M, y:D.y-20, width:D.W-2*D.M, height:20, color:D.C.soft}); D.page.drawText(pdfTxt(s), {x:D.M+8, y:D.y-14, size:11, font:D.F.b, color:D.C.ink}); if(right){ const t = pdfTxt(right), w = D.F.r.widthOfTextAtSize(t, 9); D.page.drawText(t, {x:D.W-D.M-8-w, y:D.y-14, size:9, font:D.F.r, color:D.C.mut}); } D.y -= 26; };
+    D.rule = () => { D.need(8); D.page.drawLine({start:{x:D.M, y:D.y-3}, end:{x:D.W-D.M, y:D.y-3}, thickness:.6, color:D.C.line}); D.y -= 8; };
+    D.img = async (canvas, maxH) => { if(!canvas) return; const bytes = new Uint8Array(await (await new Promise(r=>canvas.toBlob(r, 'image/jpeg', .85))).arrayBuffer()); const im = await pdf.embedJpg(bytes);
+      let w = D.W - 2*D.M, h = w * canvas.height / canvas.width; if(maxH && h > maxH){ h = maxH; w = h * canvas.width / canvas.height; } D.need(h + 8); D.page.drawImage(im, {x:D.M + (D.W-2*D.M-w)/2, y:D.y-h, width:w, height:h}); D.y -= h + 8; };
+    D.photo = async (blob, x, w, h) => { try { const im = await pdf.embedJpg(new Uint8Array(await blob.arrayBuffer())); const r = Math.min(w/im.width, h/im.height), dw = im.width*r, dh = im.height*r; D.page.drawImage(im, {x:x+(w-dw)/2, y:D.y-h+(h-dh)/2, width:dw, height:dh}); } catch(e){} };
+    D.table = (cols, head, rows) => { const tw = D.W - 2*D.M, ws = cols.map(c=>c*tw), size = 8.6, lh = size*1.3;
+      const row = (cells, bold, fill) => { const lines = cells.map((c,i)=>D.wrap(c, bold ? D.F.b : D.F.r, size, ws[i]-8)); const h = Math.max(...lines.map(l=>l.length))*lh + 6; D.need(h);
+        if(fill) D.page.drawRectangle({x:D.M, y:D.y-h, width:tw, height:h, color:fill});
+        let x = D.M; lines.forEach((ls,i)=>{ ls.forEach((l,k)=>D.page.drawText(l, {x:x+4, y:D.y-4-size-k*lh, size, font: bold ? D.F.b : D.F.r, color:D.C.ink})); x += ws[i]; });
+        D.page.drawLine({start:{x:D.M, y:D.y-h}, end:{x:D.M+tw, y:D.y-h}, thickness:.5, color:D.C.line}); D.y -= h; };
+      row(head, true, D.C.soft); rows.forEach(r=>row(r)); D.y -= 8; };
+    D.lines = n => { for(let i=0;i<n;i++){ D.need(18); D.page.drawLine({start:{x:D.M, y:D.y-15}, end:{x:D.W-D.M, y:D.y-15}, thickness:.4, color:D.C.line, dashArray:[2,3]}); D.y -= 18; } };
+    D.cover = (kicker, t, sub, who) => { D.add(); D.page.drawRectangle({x:0, y:D.H-230, width:D.W, height:230, color:D.L.rgb(.16,.07,.22)});
+      D.page.drawText(pdfTxt(kicker).toUpperCase(), {x:D.M, y:D.H-70, size:10, font:D.F.b, color:D.L.rgb(.98,.75,.55)});
+      let y = D.H-104; D.wrap(t, D.F.b, 30, D.W-2*D.M).forEach(l=>{ D.page.drawText(l, {x:D.M, y, size:30, font:D.F.b, color:D.C.white}); y -= 34; });
+      D.wrap(sub, D.F.r, 12, D.W-2*D.M).forEach(l=>{ D.page.drawText(l, {x:D.M, y:y-4, size:12, font:D.F.r, color:D.L.rgb(.93,.88,.97)}); y -= 16; });
+      if(who) D.page.drawText(pdfTxt(who), {x:D.M, y:D.H-218, size:10.5, font:D.F.r, color:D.L.rgb(.93,.88,.97)}); D.y = D.H - 250; };
+    D.save = async name => { const bytes = await pdf.save(); return new File([bytes], name, {type:'application/pdf'}); };
+    return D;
+  }
+  const kindLbl = it => it.cat==='transport' ? (it.mode || 'Trajet') : it.cat==='hotel' ? 'Hôtel' : it.cat==='activite' ? 'Visite' : 'Divers';
+  const stTxt = it => it.statut==='paid' ? '[payé]' : it.statut==='booked' ? '[réservé]' : '[à réserver]';
+  let lastPdf = null;
+  function pdfReady(file){
+    lastPdf = file;
+    openSheet(`<h2>📄 PDF prêt</h2><div class="v-sum-small" style="margin-bottom:10px"><b>${esc(file.name)}</b> · ${Math.max(1, Math.round(file.size/1024))} Ko. Touche « Enregistrer / imprimer » puis choisis <b>Enregistrer dans Fichiers</b>, <b>Imprimer</b> ou une appli (WhatsApp, Mail…).</div>
+      <button type="button" class="v-btn" onclick="CV.pdfShare()">📤 Enregistrer / imprimer / envoyer</button>
+      <button type="button" class="v-btn sec" onclick="CV.pdfOpen()">👁️ Ouvrir le PDF</button>
+      <div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.close()">Fermer</button></div>`);
+  }
+  async function pdfShare(){ if(lastPdf) await tlShareFile(lastPdf, lastPdf.name, lastPdf.name); }
+  function pdfOpen(){ if(!lastPdf) return; const u = URL.createObjectURL(lastPdf); const w = window.open(u, '_blank'); if(!w) location.href = u; }
+  function pdfBusy(msg){ openSheet(`<h2>📄 PDF</h2><div class="cv-route-load" id="pdf-msg">${esc(msg)}</div>`); }
+  const pdfSay = m => { const e = document.getElementById('pdf-msg'); if(e) e.textContent = m; };
+  const pdfName = (kind, t) => kind + '-' + (t.titre||'voyage').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') + '.pdf';
+
+  async function pdfRoute(){
+    const t = trip(); if(!t) return;
+    const on = k => { const e = document.getElementById('pr-'+k); return e ? e.checked : false; };
+    const whoSel = (document.getElementById('pr-who') || {}).value || 'all', lines = on('lines'), maps = on('maps');
+    const sec = Object.fromEntries(PR_SECTIONS.map(([k])=>[k, on(k)]));
+    pdfBusy('Préparation du carnet de route…');
+    try {
+      const keepWho = M.who; M.who = whoSel; const its = items(forWho);
+      const D = await newPdf('Carnet de route · ' + t.titre);
+      D.cover('Carnet de route', t.titre, [tripDatesLong(t), t.sous||''].filter(Boolean).join(' · '), whoSel==='all' ? tv().map(pname).join(' · ') : pname(whoSel));
+      if(maps){ pdfSay('Carte du voyage…'); D.text('Le voyage en un coup d’œil', {font:D.F.b, size:12, gap:4}); await D.img(await tripMapCanvas(700, 470), 360); }
+      if(sec.prog){
+        D.add(); D.h1('Programme jour par jour');
+        const ds = dayList();
+        for(let i=0;i<ds.length;i++){
+          const day = ds[i], info = dayInfo(day), {own, night} = itemsForDay(day), pl = placesOf(day);
+          pdfSay(`Jour ${i+1} / ${ds.length}…`);
+          D.h2(`J${i+1} · ${longDate(day)}${info.titre ? ' - ' + info.titre : ''}`);
+          if(info.plan) D.text(info.plan, {font:D.F.i, size:9.5, color:D.C.mut, gap:2});
+          own.forEach(it=>D.text(`${it.heureDep || it.heure || ''}${it.heureArr ? ' -> ' + it.heureArr : ''}  ${kindLbl(it)} : ${it.titre}${[it.compagnie, it.ref ? 'Réf. ' + it.ref : '', it.adresse, it.tel].filter(Boolean).map(x=>' · ' + x).join('')}  ${stTxt(it)}`, {size:9.5, indent:6}));
+          night.forEach(it=>D.text(`Nuit : ${it.nom || it.titre}${[it.adresse, it.tel, it.ref ? 'Réf. ' + it.ref : ''].filter(Boolean).map(x=>' · ' + x).join('')}  ${stTxt(it)}`, {size:9.5, indent:6}));
+          if(pl.length) D.text('À voir : ' + pl.map((p,k)=>`${k+1}. ${p.nom}`).join('  '), {size:9.5, indent:6});
+          const nts = notesFor('day:'+day); nts.forEach(n=>D.text('Note : ' + n.texte, {size:9, indent:6, color:D.C.mut}));
+          if(maps && info.route && (info.route.ids||[]).length){ pdfSay(`Jour ${i+1} : carte de l’itinéraire…`); await D.img(await dayMapCanvas(day, 700, 400), 300); }
+          if(lines) D.lines(3);
+          D.y -= 6;
+        }
+      }
+      const tab = (cat, title, cols, head, row) => { const l = its.filter(i=>i.cat===cat).sort(sortItems); if(!l.length) return; D.need(80); D.h1(title); D.table(cols, head, l.map(row)); };
+      if(sec.hotel) tab('hotel', 'Hébergements', [.17,.17,.22,.26,.1,.08], ['Ville','Dates','Hôtel','Adresse & tél.','Réf.','État'],
+        it=>[it.titre, fshort(it.date) + (it.dateFin ? ' -> ' + fshort(it.dateFin) : ''), it.nom||'', [it.adresse, it.tel].filter(Boolean).join(' · '), it.ref||'', stTxt(it)]);
+      if(sec.transport) tab('transport', 'Trajets', [.16,.14,.28,.2,.12,.1], ['Date','Horaires','Trajet','Compagnie','Réf.','État'],
+        it=>[it.date ? fdate(it.date) : '', (it.heureDep||'') + (it.heureArr ? ' -> ' + it.heureArr : ''), it.titre, it.compagnie||'', it.ref||'', stTxt(it)]);
+      if(sec.activite) tab('activite', 'Visites & réservations', [.16,.1,.3,.24,.1,.1], ['Date','Heure','Visite','Lieu','Réf.','État'],
+        it=>[it.date ? fdate(it.date) : '', it.heure||'', it.titre, it.adresse||'', it.ref||'', stTxt(it)]);
+      if(sec.notes){ const ns = list('note', n=>n.trip===M.trip).sort(noteSort); if(ns.length){ D.need(80); D.h1('Notes'); ns.forEach(n=>{ D.text(refLabel(n.ref).replace(/<[^>]+>/g,''), {font:D.F.b, size:9.5}); D.text(n.texte, {size:9.5, gap:5}); }); } }
+      if(sec.budget){ const all = items(), v = whoSel==='all' ? tv() : [whoSel]; D.need(80); D.h1('Budget');
+        D.table([.4,.2,.2,.2], ['Voyageur','Sa part','Déjà réglé','Reste'], v.map(pid=>{ const pr = all.reduce((s,i)=>s+shareOf(i,pid),0), pa = all.reduce((s,i)=>s+shareOfPaid(i,pid),0); return [pname(pid), eur(pr), eur(pa), eur(pr-pa)]; }));
+        if(whoSel==='all') D.text('Total du voyage : ' + eur(all.reduce((s,i)=>s+totalOf(i),0)) + '. Montants réels quand ils sont saisis, sinon estimations.', {size:9, color:D.C.mut}); }
+      if(sec.check){ const cl = list('check', c=>c.trip===M.trip).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)); if(cl.length){ D.need(80); D.h1('Checklist');
+        [...new Set(cl.map(c=>c.cat))].forEach(cat=>{ D.text(cat, {font:D.F.b, size:10}); cl.filter(x=>x.cat===cat).forEach(x=>D.text((x.done ? '[x] ' : '[  ] ') + x.label, {size:9.5, indent:8})); D.y -= 4; }); } }
+      M.who = keepWho;
+      pdfReady(await D.save(pdfName('carnet-de-route', t)));
+    } catch(e){ pdfSay('⚠️ ' + e.message); }
+  }
+  async function pdfJournal(){
+    const t = trip(); if(!t) return;
+    pdfBusy('Préparation du journal…');
+    try {
+      const ds = dayList(), all = souvs(), v = tv(), tot = items().reduce((s,i)=>s+totalOf(i),0), nph = all.reduce((s,x)=>s+(x.photos||[]).length,0);
+      const D = await newPdf('Journal · ' + t.titre);
+      D.cover('Journal de voyage', t.titre, [tripDatesLong(t), t.sous||''].filter(Boolean).join(' · '), v.map(pname).join(' · '));
+      pdfSay('Carte du voyage…'); await D.img(await tripMapCanvas(700, 470), 380);
+      D.text(`${ds.length} jours · ${tlStages().length} étapes · ${all.length} souvenirs · ${nph} photos · ${eur(tot)} au total${v.length>1 ? ' (' + eur(tot/v.length) + ' par personne)' : ''}`, {size:10, color:D.C.mut});
+      const daysWith = ds.map((day,i)=>({day, i, sv: all.filter(s=>s.date===day), info: dayInfo(day)})).filter(x=>x.sv.length || x.info.plan);
+      if(daysWith.length) D.add();
+      for(const x of daysWith){
+        pdfSay(`Jour ${x.i+1}…`);
+        D.h2(`J${x.i+1} · ${longDate(x.day)}${x.info.titre ? ' - ' + x.info.titre : ''}`);
+        if(x.info.plan) D.text(x.info.plan, {font:D.F.i, size:9.5, color:D.C.mut, gap:3});
+        for(const s of x.sv){
+          D.text(s.titre || 'Souvenir', {font:D.F.b, size:11}); if(s.lieu) D.text(s.lieu, {size:9, color:D.C.mut}); if(s.texte) D.text(s.texte, {size:10, gap:4});
+          const ph = (s.photos||[]).slice(0,6);
+          for(let k=0;k<ph.length;k+=3){
+            const cw = (D.W - 2*D.M - 16)/3, chh = cw*0.75; D.need(chh + 6);
+            for(let j=0;j<3 && k+j<ph.length;j++){ const b = await photoBlob(ph[k+j]) || await photoBlob(ph[k+j] + '.t'); if(b) await D.photo(b, D.M + j*(cw+8), cw, chh); }
+            D.y -= chh + 6;
+          }
+          D.y -= 6;
+        }
+      }
+      pdfReady(await D.save(pdfName('journal', t)));
+    } catch(e){ pdfSay('⚠️ ' + e.message); }
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     ✈️ VOYAGE EN COURS · 💶 PLAFOND DU JOUR · 🛒 COURSES · 💸 REMBOURSEMENTS · 🗳️ SONDAGES
+     ══════════════════════════════════════════════════════════════════════════ */
+  const hhmm = ms => { const m = Math.max(0, Math.round(ms/60000)), d = Math.floor(m/1440), h = Math.floor((m%1440)/60), mm = m%60; return (d ? d + ' j ' : '') + (h || d ? h + ' h ' : '') + String(mm).padStart(d||h ? 2 : 1,'0') + ' min'; };
+  function nextMoves(){
+    const now = Date.now();
+    return items(i=>i.date && (i.cat==='transport' || i.cat==='activite' || i.cat==='hotel')).map(it=>{
+      const tm = it.cat==='transport' ? it.heureDep : it.heure;
+      return {it, at: new Date(it.date + 'T' + (tm || (it.cat==='hotel' ? '15:00' : '09:00')) + ':00').getTime(), timed: !!tm};
+    }).filter(x=>x.at >= now - 30*60000).sort((a,b)=>a.at-b.at);
+  }
+  const spentOn = d => items(i=>i.date===d && i.cat==='divers').reduce((s,i)=>s+totalOf(i),0);
+  function liveCard(){
+    const t = trip(); if(!t || !t.debut || t.archived) return '';
+    const td = isoToday(), fin = t.fin || t.debut, ds = dayList();
+    const nx = nextMoves()[0];
+    if(td < t.debut){
+      const ms = new Date(t.debut + 'T00:00:00') - Date.now(); if(ms > 3*864e5) return '';
+      return `<div class="cv-live"><div class="lk">✈️ Départ imminent</div><div class="lt">${nx ? `${icon(nx.it)} ${esc(nx.it.titre)} dans <b>${hhmm(nx.at - Date.now())}</b>` : 'Le voyage commence dans ' + hhmm(ms)}</div>
+        <div class="lb"><button type="button" onclick="CV.tlDay()">📴 Fiche du jour</button><button type="button" onclick="CV.tab('check')">✅ Checklist</button></div></div>`;
+    }
+    if(td > fin){
+      const ago = (Date.now() - new Date(fin + 'T23:59:00')) / 864e5; if(ago > 30) return '';
+      const tr = settle(balances());
+      return `<div class="cv-live done"><div class="lk">🏁 Voyage terminé</div><div class="lt">${tr.length ? `${tr.length} remboursement${tr.length>1?'s':''} à faire pour solder les comptes.` : 'Les comptes sont soldés. 🎉'}</div>
+        <div class="lb"><button type="button" onclick="CV.tab('budget')">💸 Bilan et remboursements</button><button type="button" onclick="CV.pdfJournal()">📖 Journal</button></div></div>`;
+    }
+    const k = ds.indexOf(td), info = dayInfo(td), spent = spentOn(td), cap = num(t.plafond);
+    const bar = cap ? `<div class="lcap${spent > cap ? ' over' : ''}"><span style="width:${Math.min(100, spent/cap*100)}%"></span></div>` : '';
+    return `<div class="cv-live"><div class="lk">📍 Voyage en cours · J${k+1}${info.titre ? ' · ' + esc(info.titre) : ''}</div>
+      <div class="lt">${nx ? `Prochain : ${icon(nx.it)} <b>${esc(nx.it.titre)}</b>${nx.timed ? ` à ${esc(nx.it.cat==='transport' ? nx.it.heureDep : nx.it.heure)}` : ''}${nx.it.date !== td ? ' (' + fshort(nx.it.date) + ')' : ''} · dans <b>${hhmm(nx.at - Date.now())}</b>` : 'Plus rien de prévu : profite !'}</div>
+      <div class="lsp">💶 Dépenses du jour : <b>${eur(spent)}</b>${cap ? ` / ${eur(cap)}${spent > cap ? ' · <b class="red">plafond dépassé de ' + eur(spent - cap) + '</b>' : ' · reste ' + eur(cap - spent)}` : ''} <button type="button" class="lmini" onclick="CV.capSet()">${cap ? 'modifier' : 'fixer un plafond'}</button></div>${bar}
+      <div class="lb"><button type="button" onclick="CV.tlDay()">📴 Fiche du jour</button><button type="button" onclick="CV.tlReceipt()">🧾 Dépense</button><button type="button" onclick="CV.shopSheet()">🛒 Courses</button></div></div>`;
+  }
+  function capSet(){
+    const t = trip(); const v = prompt('Plafond de dépenses sur place, par jour, pour tout le groupe (en €) — vide pour aucun :', t.plafond || '');
+    if(v === null) return; t.plafond = v.trim() ? String(num(v)) : ''; put(t, t.plafond ? '💶 Plafond : ' + eur(num(t.plafond)) + ' / jour' : 'Plafond retiré'); refresh();
+  }
+  function capWarn(){ const t = trip(); if(!t || !num(t.plafond)) return; const s = spentOn(isoToday()); if(s > num(t.plafond)) setTimeout(()=>alert(`⚠️ Plafond du jour dépassé : ${eur(s)} dépensés pour ${eur(num(t.plafond))} prévus.`), 400); }
+
+  /* ---------- 🛒 Liste de courses partagée (dans la checklist, catégorie « 🛒 Courses ») ---------- */
+  const SHOP = '🛒 Courses';
+  function shopSheet(){
+    const l = list('check', c=>c.trip===M.trip && c.cat===SHOP).sort((a,b)=>(a.done-b.done) || (a.createdAt||0)-(b.createdAt||0));
+    openSheet(`<h2>🛒 Liste de courses</h2><div class="v-sum-small" style="margin-bottom:8px">Partagée avec le groupe : chacun ajoute et coche (pique-nique, apéro, pharmacie…).</div>
+      <form onsubmit="event.preventDefault();CV.shopAdd()"><div class="cv-fx"><input class="v-in" id="sh-new" placeholder="Ex. pain, fromage, eau ×6" autocomplete="off"><button class="v-btn" type="submit">＋</button></div></form>
+      <div id="sh-list">${l.map(c=>`<label class="cv-checkline cv-shop${c.done?' done':''}"><input type="checkbox"${c.done?' checked':''} onchange="CV.shopTick('${c.id}')"> ${esc(c.label)}${c.createdBy ? ` <span class="v-sum-small">· ${esc(pname(c.createdBy))}</span>` : ''}</label>`).join('') || '<div class="v-sum-small">Liste vide.</div>'}</div>
+      <div class="v-actions">${l.some(c=>c.done) ? `<button type="button" class="v-btn sec" onclick="CV.shopClear()">🧹 Retirer les cochés</button>` : ''}<button type="button" class="v-btn sec cv-sq" onclick="CV.close()">✕</button></div>`);
+  }
+  function shopAdd(){ const i = document.getElementById('sh-new'); const v = (i.value||'').trim(); if(!v) return; v.split(/[,;\n]+/).map(x=>x.trim()).filter(Boolean).forEach((x,k)=>put({id:'c'+uid()+k, type:'check', trip:M.trip, cat:SHOP, label:x, done:false})); shopSheet(); }
+  function shopTick(id){ const c = clone(R[id]); c.done = !c.done; put(c); }
+  function shopClear(){ const out = list('check', c=>c.trip===M.trip && c.cat===SHOP && c.done).map(c=>Object.assign(clone(c), {deleted:true})); if(out.length) putMany(out, '🧹 ' + out.length + ' retiré(s)'); shopSheet(); }
+
+  /* ---------- 💸 Demander / envoyer un remboursement ---------- */
+  function rembAsk(de, a, v){
+    const t = trip(), pa = prof(a) || {}, how = (pa.rembours || '').trim();
+    const txt = `Bonjour ${pname(de)} ! Pour « ${t ? t.titre : 'le voyage'} », d’après le carnet tu dois ${eur(v)} à ${pname(a)}.`
+      + (how ? `\nPour rembourser : ${how}` : '') + `\nMerci ! 🙏`;
+    const go = async () => { try { if(navigator.share){ await navigator.share({text:txt}); return; } } catch(e){ if(e && e.name === 'AbortError') return; }
+      try { await navigator.clipboard.writeText(txt); toast('📋 Message copié'); } catch(e){ prompt('Copie ce message :', txt); } };
+    if(!how && a === M.me && confirm('Tu n’as pas encore indiqué comment on te rembourse (Lydia, Wero, numéro, IBAN…). L’ajouter maintenant dans ton profil ?')){ editProfile(a); return; }
+    go();
+  }
+
+  /* ---------- 🗳️ Sondages (dans les Envies) ---------- */
+  const polls = () => list('poll').sort((a,b)=>(a.closed?1:0)-(b.closed?1:0) || (b.createdAt||0)-(a.createdAt||0));
+  function pollsHTML(){
+    const ps = polls();
+    return `<div class="v-box cv-polls"><div class="cv-row" style="justify-content:space-between;align-items:center"><h3 style="margin:0">🗳️ Sondages</h3><button type="button" class="v-day-edit" onclick="CV.pollNew()">＋ Sondage</button></div>
+      ${ps.length ? ps.map(p=>{ const votes = p.votes || {}, n = Object.keys(votes).length, mine = votes[M.me];
+        const cnt = p.options.map((_,i)=>Object.values(votes).filter(v=>v===i).length), best = Math.max(0, ...cnt);
+        return `<div class="cv-poll${p.closed?' closed':''}"><div class="pq"><b>${esc(p.question)}</b> <span class="v-sum-small">· ${n} vote${n>1?'s':''}${p.closed?' · clos':''}</span></div>
+          ${p.options.map((o,i)=>`<button type="button" class="po${mine===i?' me':''}${p.closed && cnt[i]===best && best ? ' win' : ''}" ${p.closed?'disabled':''} onclick="CV.pollVote('${p.id}',${i})"><span class="pb" style="width:${n ? cnt[i]/n*100 : 0}%"></span><span class="pl">${esc(o)}</span><span class="pc">${cnt[i]}${n ? ' · ' + Math.round(cnt[i]/n*100) + ' %' : ''}</span></button>`).join('')}
+          <div class="v-sum-small">${Object.entries(votes).map(([pid,v])=>esc(pname(pid)) + ' → ' + esc(p.options[v]||'?')).join(' · ')}</div>
+          ${p.createdBy === M.me ? `<div class="cv-row"><button type="button" class="v-day-edit" onclick="CV.pollClose('${p.id}')">${p.closed ? '↺ Rouvrir' : '🔒 Clore'}</button><button type="button" class="v-day-edit" onclick="CV.pollDel('${p.id}')">🗑</button></div>` : ''}</div>`; }).join('')
+        : '<div class="v-sum-small">Une question pour le groupe ? « Rome ou Lisbonne ? », « Resto japonais ou italien ce soir ? »… Chacun vote avec son profil.</div>'}</div>`;
+  }
+  function pollNew(){
+    openSheet(`<h2>🗳️ Nouveau sondage</h2><form id="v-form" onsubmit="event.preventDefault();CV.pollSave()">
+      ${field('Question','q','','text','placeholder="Ex. Où partir en mai ?" required')}
+      <div class="v-f"><label>Choix (un par ligne, 2 à 8)</label><textarea class="v-in" name="opts" rows="4" placeholder="Rome&#10;Lisbonne&#10;Séville"></textarea></div>
+      ${actions('')}</form>`);
+  }
+  function pollSave(){
+    const f = document.getElementById('v-form'), q = f.q.value.trim(), o = f.opts.value.split('\n').map(x=>x.trim()).filter(Boolean).slice(0,8);
+    if(!q || o.length < 2){ alert('Une question et au moins 2 choix.'); return; }
+    put({id:'po'+uid(), type:'poll', question:q, options:o, votes:{}, closed:false}, '🗳️ Sondage créé'); closeSheet(true); refresh();
+  }
+  function pollVote(id, i){ if(!M.me) return; const p = clone(R[id]); p.votes = Object.assign({}, p.votes); if(p.votes[M.me] === i) delete p.votes[M.me]; else p.votes[M.me] = i; put(p); refresh(); }
+  function pollClose(id){ const p = clone(R[id]); p.closed = !p.closed; put(p); refresh(); }
+  function pollDel(id){ if(!confirm('Supprimer ce sondage ?')) return; const p = clone(R[id]); p.deleted = true; put(p, '🗑 Sondage supprimé'); refresh(); }
+
   function infoHTML(){
     return `<div class="cv-info">
       ${tutoBtn()}
@@ -3774,7 +6055,7 @@ const CV = (function(){
     envF:setEnvF, envP:setEnvP, like, editWish, saveWish, delWish, wishToTrip,
     editTrip, saveTrip, delTrip, closeTrip, reopenTrip,
     live, one, echAdd, echDel, echSpread, echToggle, lisser, echReset, echRange, echRangeReset,
-    planDay, plCfg, plAdd, plDel, plOpt, wizard, askErase, tutoSheet, escaleTuto, demoLoad, demoDel, demoReset, wzGo, wzDates, wzEt, wzSum, wzTpl, wzCreate,
+    planDay, plCfg, plAdd, plDel, plOpt, wizard, tlIcsGo, capSet, shopSheet, shopAdd, shopTick, shopClear, rembAsk, pollNew, pollSave, pollVote, pollClose, pollDel, pdfRoute, pdfJournal, pdfShare, pdfOpen, pkgPick, pkgApply, hydrateMaps, renderOutils, tlDay, tlIcs, fxTool, fxFill, tlMeteo, tlReceipt, tlRcPhoto, tlRcOcr, tlRcSave, tlReceipts, tlMap, tlBags, tlBagsGo, tlDocs, tlDocEdit, tlDocSave, tlDocDel, tlJournal, pkgSheet, pkgExport, pkgImport, pinToggle, shareSheet, shareLink, askErase, tutoSheet, escaleTuto, demoLoad, demoDel, demoReset, wzGo, wzDates, wzEt, wzSum, wzTpl, wzCreate,
     pickColor, newProfile, editProfile, saveProfile, delProfile, whoSheet, setMe,
     genCode, syncOn, syncOff, syncNow, shareCode, exportShare, exportDownload, importPick, wipe, obCreate, obJoin,
     _R:()=>R, _M:()=>M};

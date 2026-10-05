@@ -1,7 +1,7 @@
 // Carnet de voyage — fonctionnement hors ligne
 // Pages et fichiers de l'appli : réseau d'abord (toujours la dernière version), copie locale si pas de réseau.
 // La synchro (/api/…) passe toujours par le réseau : les données restent dans le téléphone en attendant.
-const CACHE = 'carnet-2026-10-04c';
+const CACHE = 'carnet-2026-10-05b';
 const CORE = ['./', './index.html', './manifest.json', './apple-touch-icon.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -19,7 +19,15 @@ self.addEventListener('fetch', e => {
   const req = e.request; if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin === self.location.origin) {
+    // Rappels : « rappels.ics?c=… » est fabriqué ici, sur le téléphone, pour que l'iPhone ouvre Calendrier (« Ajouter tout »)
+    if (url.pathname.endsWith('/rappels.ics') && url.searchParams.get('c')) {
+      let b = url.searchParams.get('c').replace(/-/g, '+').replace(/_/g, '/'); while (b.length % 4) b += '=';
+      let txt = ''; try { txt = decodeURIComponent(escape(atob(b))); } catch (_) {}
+      e.respondWith(new Response(txt, {headers: {'Content-Type': 'text/calendar; charset=utf-8', 'Content-Disposition': 'inline; filename="rappels.ics"', 'Cache-Control': 'no-store'}}));
+      return;
+    }
     if (url.pathname.startsWith('/api/')) return;
+    if (url.pathname.startsWith('/escale/')) return;   // Escale a son propre service worker
     if (url.pathname.endsWith('.mp4')) return;   // vidéo du tuto : lue en direct (pas de cache, lecture par morceaux)
     e.respondWith(timeout(fetch(req), 6000)
       .then(r => { if (r && r.ok) { const cp = r.clone(); caches.open(CACHE).then(c => c.put(req, cp)); } return r; })
