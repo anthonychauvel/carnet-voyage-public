@@ -1030,6 +1030,12 @@ try { sessionStorage.setItem('app_started','1'); localStorage.setItem('app_last'
   .cv-topbar .navmenu-btn{position:static!important;top:auto!important;left:auto!important}
   .cv-topbar-t{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
   .navmenu{top:calc(env(safe-area-inset-top,0px) + 62px)!important}
+  .overlay{z-index:600!important;padding-top:env(safe-area-inset-top,0px)!important}
+  .ov-head{position:sticky;top:0;z-index:3;background:rgba(6,14,19,.97);margin:-16px -16px 8px;padding:12px 16px}
+  .ov-close{width:44px!important;height:44px!important;font-size:24px!important;flex:0 0 44px}
+  input[type=month],input[type=date]{min-width:0;max-width:100%;box-sizing:border-box}
+  .pgrid,.pgrid-sk{grid-template-columns:repeat(7,minmax(0,1fr))!important;gap:4px!important}
+  .pday{min-width:0;overflow:hidden}
   .cv-switch{position:static;height:44px;padding:0 14px;border-radius:12px;
     display:flex;align-items:center;gap:6px;text-decoration:none;font:700 14px/1 -apple-system,system-ui,sans-serif;
     background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--brass-rim);color:var(--brass,#e8c27a);box-shadow:0 4px 14px rgba(0,0,0,.35)}
