@@ -821,7 +821,9 @@ body.is-legacy .hero{border-radius:0}
 .cv-rbs{margin-top:8px}
 .cv-rb{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:.8rem;padding:6px 0;border-top:1px solid #f3efe6}
 .cv-rb .cv-x{margin-left:auto}
-.cv-range{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:2px 0 10px}
+.cv-range{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin:2px 0 10px}
+.cv-range label{min-width:0}
+.cv-range input,input.v-in[type=month],input.v-in[type=date],input.v-in[type=time],input.v-in[type=datetime-local]{min-width:0;width:100%;max-width:100%;box-sizing:border-box}
 .cv-range label{display:flex;flex-direction:column;gap:4px;font-size:.78rem;font-weight:600;color:#6b5670}
 /* iPhone : champs date/heure qui débordent */
 .v-f2{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
@@ -947,6 +949,11 @@ a.v-btn.cv-escale{display:block;text-align:center;text-decoration:none}
 .cv-share-qr{display:block;margin:6px auto 10px;width:min(64vw,240px);height:auto;background:#fff;border-radius:14px;padding:10px}
 .cv-share-url{font-size:.78rem;text-align:center;word-break:break-all;color:var(--gray);margin-bottom:10px}
 .cv-rmap{margin-top:10px}
+.cv-rcl{display:flex;flex-direction:column;gap:8px}
+.cv-rc{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#fff;border:1px solid #eadfe6;border-radius:14px;padding:8px;font:inherit;color:inherit}
+.cv-rc img{width:64px;height:64px;object-fit:cover;border-radius:10px;background:#eee;flex:0 0 64px}
+.cv-rc b{display:block;font-size:.9rem}
+.cv-rc small{display:block;font-size:.76rem;color:#6b5670;margin-top:2px}
 .cv-live{background:linear-gradient(135deg,#1e1b4b,#4c1d95);color:#fff;border-radius:18px;padding:14px;margin:4px 0 14px;box-shadow:0 6px 18px rgba(76,29,149,.25)}
 .cv-live.done{background:linear-gradient(135deg,#064e3b,#047857)}
 .cv-live .lk{font-size:.7rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
@@ -1421,7 +1428,8 @@ const CV = (function(){
       <button class="v-btn sec" onclick="CV.psPick()">📥 Importer des voyages Polarsteps</button>
       ${!PUBLIC && !(R.t2025 && !R.t2025.deleted) ? `<button class="v-btn sec" onclick="CV.seedUSA2025()">📦 Ajouter l’archive USA 2025</button>` : ''}
       ${ESCALE ? `<a class="v-btn sec cv-escale" href="${ESCALE}">✈️ Chercher des vols avec Escale</a><button class="v-btn sec" onclick="CV.escaleTuto()">🎓 Tuto Escale premium</button>` : ''}
-      ${trip() ? `<button class="v-btn sec" onclick="CV.editTrip('${M.trip}')">✏️ Modifier « ${esc(trip().titre)} »</button>` : ''}`);
+      ${trip() ? `<button class="v-btn sec" onclick="CV.editTrip('${M.trip}')">✏️ Modifier « ${esc(trip().titre)} »</button>` : ''}
+      <div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.close()">✕ Fermer</button></div>`);
   }
   function buildTabs(){
     const g = groupOf(M.tab);
@@ -1649,6 +1657,7 @@ const CV = (function(){
     document.body.appendChild(bg);
     document.body.style.overflow = 'hidden';
     if(/data-[rt]map=/.test(html)) setTimeout(hydrateMaps, 30);
+    if(/data-ph=/.test(html)) setTimeout(hydrate, 30);
   }
   function closeSheet(force){
     const bg = document.getElementById('v-sheet-bg');
@@ -1707,6 +1716,8 @@ const CV = (function(){
     }
     h += `<div class="v-f2">${field('Prix réel (€)','prix',it.prix,'text','inputmode="decimal" placeholder="à saisir"')}${field('Estimation (€)','estime',it.estime,'text','inputmode="decimal"')}</div>`;
     h += fxFormRow();
+    if(id && it.cat==='divers') h += it.recu ? `<div class="v-f"><label>🧾 Ticket</label><button type="button" class="cv-rc" onclick="CV.rcView('${id}')"><img data-ph="${esc(it.recu)}.t" alt=""><span><b>Voir le ticket</b><small>touche pour l’agrandir</small></span></button></div>`
+      : `<div class="v-f"><button type="button" class="v-day-edit" onclick="CV.rcAttach('${id}')">📷 Joindre la photo du ticket</button></div>`;
     h += `<div class="v-f"><label>Le prix saisi est</label>${segBtns('cv-part', [['pp','Par personne'],['grp','Global, partagé']], partage(it))}
       <div class="v-sum-small" style="margin-top:4px">Par personne : compté pour chaque voyageur concerné (vol, billet). Global : divisé entre eux (chambre, guide privé).</div></div>`;
     h += payForm(it);
@@ -5184,7 +5195,7 @@ const CV = (function(){
     h += box('🌤️','Météo des étapes','Prévisions si le départ est proche, sinon le temps qu’il faisait l’an dernier aux mêmes dates.',
       `<button class="v-btn sec" onclick="CV.tlMeteo()">🌤️ Voir la météo</button>`);
     h += box('🧾','Ticket ou reçu','Prends l’addition en photo, l’appli essaie de lire le montant et crée la dépense pour le « qui doit quoi ».' + (nRec ? ` <b>${nRec} reçu${nRec>1?'s':''}</b> enregistré${nRec>1?'s':''}.` : ''),
-      `<button class="v-btn" onclick="CV.tlReceipt()">🧾 Ajouter un ticket</button>${nRec ? `<button class="v-btn sec" onclick="CV.tlReceipts()">🗂️ Voir les reçus</button>` : ''}`);
+      `<button class="v-btn" onclick="CV.tlReceipt()">🧾 Ajouter un ticket</button>${nRec ? `<button class="v-btn sec" onclick="CV.tlReceipts()">🗂️ Mes tickets (${nRec})</button>` : ''}`);
     h += box('🛒','Liste de courses','Partagée avec le groupe : pique-nique, apéro, pharmacie… chacun ajoute et coche.', `<button class="v-btn sec" onclick="CV.shopSheet()">🛒 Ouvrir la liste</button>`);
     h += box('💶','Plafond de dépenses','Fixe un budget par jour sur place : l’accueil du voyage affiche ce qui est dépensé aujourd’hui et prévient en cas de dépassement.' + (num(trip().plafond) ? ` Actuel : <b>${eur(num(trip().plafond))} / jour</b>.` : ''), `<button class="v-btn sec" onclick="CV.capSet()">💶 ${num(trip().plafond) ? 'Modifier' : 'Fixer'} le plafond</button>`);
     h += box('🗺️','Carte du voyage','Toutes les étapes reliées dans l’ordre, avec les distances. Elle s’ajoute aussi au carnet de route PDF.',
@@ -5413,13 +5424,23 @@ const CV = (function(){
     put(it, '🧾 Dépense ajoutée' + (note ? ' (' + note + ')' : '')); closeSheet(true); refresh(); uploadQueue(); capWarn();
   }
   function tlReceipts(){
-    const l = items(i=>i.recu).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
-    openSheet(`<h2>🗂️ Reçus</h2><div class="cv-grid">${l.map(it=>`<div class="cv-th" title="${esc(it.titre)}"><img data-ph="${esc(it.recu)}.t" alt=""></div>`).join('')}</div>
-      <div class="v-sum-small" style="margin-top:6px">${l.map(it=>`${esc(it.titre)} · ${eur(num(it.prix))}`).join('<br>')}</div>
-      <div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.close()">Fermer</button></div>`);
+    const l = items(i=>i.recu).sort((a,b)=>(b.date||'').localeCompare(a.date||'') || (b.createdAt||0)-(a.createdAt||0));
+    openSheet(`<h2>🗂️ Mes tickets</h2><div class="v-sum-small" style="margin-bottom:8px">${l.length} ticket${l.length>1?'s':''} · touche une photo pour l’agrandir.</div>
+      <div class="cv-rcl">${l.map(it=>`<button type="button" class="cv-rc" onclick="CV.rcView('${it.id}')"><img data-ph="${esc(it.recu)}.t" alt=""><span><b>${esc(it.titre)}</b><small>${it.date ? fshort(it.date) + ' · ' : ''}${eur(num(it.prix))}${it.note ? ' · ' + esc(it.note) : ''}${it.payeur && it.payeur !== 'chacun' ? ' · payé par ' + esc(pname(it.payeur)) : ''}</small></span></button>`).join('') || '<div class="v-sum-small">Aucun ticket.</div>'}</div>
+      <div class="v-actions"><button type="button" class="v-btn" onclick="CV.tlReceipt()">🧾 Ajouter un ticket</button><button type="button" class="v-btn sec cv-sq" onclick="CV.close()">✕</button></div>`);
     hydrate();
   }
-
+  function rcView(id){
+    const it = R[id]; if(!it || !it.recu) return;
+    openSheet(`<h2>🧾 ${esc(it.titre)}</h2><div class="v-sum-small" style="margin-bottom:8px">${it.date ? fdate(it.date) + ' · ' : ''}<b>${eur(num(it.prix))}</b>${it.note ? ' (' + esc(it.note) + ')' : ''}</div>
+      <img data-ph="${esc(it.recu)}" alt="Ticket" style="width:100%;border-radius:12px;display:block;background:#eee;min-height:120px">
+      <div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.tlReceipts()">← Mes tickets</button><button type="button" class="v-btn sec" onclick="CV.edit('${id}')">✏️ Dépense</button><button type="button" class="v-btn sec cv-sq" onclick="CV.close()">✕</button></div>`);
+    hydrate();
+  }
+  async function rcAttach(id){
+    tlPickFile('image/*', async f => { const pid = 'rc' + uid(); try { await storePhoto(f, pid); } catch(e){ alert('Photo impossible à enregistrer.'); return; }
+      const it = clone(R[id]); it.recu = pid; put(it, '🧾 Ticket ajouté'); uploadQueue(); rcView(id); }, true);
+  }
   /* ---------- 🗺️ Carte du voyage ---------- */
   function geoCached(city){ const r = R['geo:' + normQ(city)]; return r && !r.deleted && r.lat != null ? {lat:r.lat, lng:r.lng} : null; }
   function tripMapSVG(pts){
@@ -6055,7 +6076,7 @@ const CV = (function(){
     envF:setEnvF, envP:setEnvP, like, editWish, saveWish, delWish, wishToTrip,
     editTrip, saveTrip, delTrip, closeTrip, reopenTrip,
     live, one, echAdd, echDel, echSpread, echToggle, lisser, echReset, echRange, echRangeReset,
-    planDay, plCfg, plAdd, plDel, plOpt, wizard, tlIcsGo, capSet, shopSheet, shopAdd, shopTick, shopClear, rembAsk, pollNew, pollSave, pollVote, pollClose, pollDel, pdfRoute, pdfJournal, pdfShare, pdfOpen, pkgPick, pkgApply, hydrateMaps, renderOutils, tlDay, tlIcs, fxTool, fxFill, tlMeteo, tlReceipt, tlRcPhoto, tlRcOcr, tlRcSave, tlReceipts, tlMap, tlBags, tlBagsGo, tlDocs, tlDocEdit, tlDocSave, tlDocDel, tlJournal, pkgSheet, pkgExport, pkgImport, pinToggle, shareSheet, shareLink, askErase, tutoSheet, escaleTuto, demoLoad, demoDel, demoReset, wzGo, wzDates, wzEt, wzSum, wzTpl, wzCreate,
+    planDay, plCfg, plAdd, plDel, plOpt, wizard, rcView, rcAttach, tlIcsGo, capSet, shopSheet, shopAdd, shopTick, shopClear, rembAsk, pollNew, pollSave, pollVote, pollClose, pollDel, pdfRoute, pdfJournal, pdfShare, pdfOpen, pkgPick, pkgApply, hydrateMaps, renderOutils, tlDay, tlIcs, fxTool, fxFill, tlMeteo, tlReceipt, tlRcPhoto, tlRcOcr, tlRcSave, tlReceipts, tlMap, tlBags, tlBagsGo, tlDocs, tlDocEdit, tlDocSave, tlDocDel, tlJournal, pkgSheet, pkgExport, pkgImport, pinToggle, shareSheet, shareLink, askErase, tutoSheet, escaleTuto, demoLoad, demoDel, demoReset, wzGo, wzDates, wzEt, wzSum, wzTpl, wzCreate,
     pickColor, newProfile, editProfile, saveProfile, delProfile, whoSheet, setMe,
     genCode, syncOn, syncOff, syncNow, shareCode, exportShare, exportDownload, importPick, wipe, obCreate, obJoin,
     _R:()=>R, _M:()=>M};
