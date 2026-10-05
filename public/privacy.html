@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="robots" content="noindex">
+    <title>Politique de Confidentialité - Carnet de voyage</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; padding-top: calc(20px + env(safe-area-inset-top)); }
+        h1 { color: #2c3e50; }
+        h2 { color: #34495e; margin-top: 30px; }
+        h3 { color: #7C3AED; margin-top: 20px; font-size: 1em; }
+        .box { background: #f9f9f9; padding: 15px; border-radius: 5px; margin: 12px 0; }
+        .ok { background: #ecfdf3; border-left: 3px solid #2e9e6a; padding: 12px 15px; border-radius: 0 5px 5px 0; margin: 12px 0; }
+        .warn { background: #fff8e8; border-left: 3px solid #e0a020; padding: 12px 15px; border-radius: 0 5px 5px 0; margin: 12px 0; }
+        .contact { background: #f5f0ff; border-left: 3px solid #7C3AED; padding: 15px; border-radius: 0 5px 5px 0; }
+        a { color: #5B21B6; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 4px; }
+        table { border-collapse: collapse; width: 100%; font-size: .92em; }
+        td, th { border-top: 1px solid #e5e5e5; padding: 7px 6px; text-align: left; vertical-align: top; }
+        th { color: #666; font-weight: 600; }
+        .updated { color: #888; font-size: 0.9em; }
+        .back-btn{display:inline-block;margin-bottom:18px;padding:9px 16px;background:#7C3AED;color:#fff;
+          text-decoration:none;border-radius:10px;font-size:14px;font-weight:600;transition:background .2s;cursor:pointer;border:none;font-family:inherit;}
+        .back-btn:hover{background:#5B21B6;}
+    </style>
+</head>
+<body>
+
+    <a href="mentions-legales.html" class="back-btn">← Retour aux mentions légales</a>
+
+    <h1>Politique de Confidentialité</h1>
+    <p class="updated">Dernière mise à jour : 5 octobre 2026</p>
+
+    <p>Cette Politique de Confidentialité décrit comment l'application <strong>Carnet de voyage</strong> traite vos informations. Elle est partagée gratuitement dans un cercle privé (famille, amis), sans publicité ni but lucratif.</p>
+
+    <div class="ok">
+        <ul>
+            <li>Vos voyages, notes, dépenses et photos sont <strong>chiffrés sur votre téléphone</strong> avant tout envoi. Ni l'éditeur ni l'hébergeur ne peuvent les lire.</li>
+            <li>Aucune publicité, aucun traceur, aucune mesure d'audience.</li>
+            <li>Vous pouvez tout effacer : sur votre téléphone en un geste, sur le serveur sur simple demande.</li>
+        </ul>
+    </div>
+
+    <h2>1. Responsable du traitement</h2>
+    <div class="box">
+        <p>Anthony Chauvel, éditeur non professionnel de l'Application — <a href="mailto:appareils.treves6g@icloud.com">appareils.treves6g@icloud.com</a>.</p>
+    </div>
+
+    <h2>2. Données traitées</h2>
+    <div class="box">
+        <table>
+            <tr><th>Données</th><th>Où</th><th>Pourquoi</th></tr>
+            <tr><td>Prénom et couleur de profil, voyages, étapes, réservations, dépenses, notes, checklist, souvenirs et photos</td><td>Sur votre appareil. Si la synchro est activée : aussi sur le serveur, <strong>chiffrées</strong></td><td>Faire fonctionner le carnet et le partager avec les membres du groupe</td></tr>
+            <tr><td>Empreinte du code du carnet (le code lui-même n'est jamais envoyé)</td><td>Serveur</td><td>Ranger séparément les données de chaque carnet</td></tr>
+            <tr><td>Adresse IP, date et taille des envois</td><td>Serveur et journaux techniques de l'hébergeur</td><td>Acheminer les données, sécurité, protection contre les abus</td></tr>
+        </table>
+        <p style="font-size:0.9em;color:#666;">Bases légales : exécution du service demandé (art. 6.1.b du RGPD) et intérêt légitime à sécuriser le service (art. 6.1.f).</p>
+        <p>Le voyage de démo reste uniquement sur votre appareil : il n'est jamais envoyé au serveur.</p>
+    </div>
+
+    <h2>3. Chiffrement de bout en bout</h2>
+    <div class="box">
+        <p>Avant tout envoi, votre appareil chiffre les données avec <strong>AES-256-GCM</strong>, à l'aide d'une clé dérivée du code de votre carnet (PBKDF2, 200 000 itérations). Le serveur ne reçoit qu'une empreinte de ce code, qui ne permet pas de déchiffrer. Les noms des photos sont eux aussi remplacés par des identifiants chiffrés.</p>
+    </div>
+    <div class="warn">
+        <p><strong>Code perdu = carnet irrécupérable</strong> depuis le serveur. Personne, pas même l'éditeur, ne peut le retrouver. Conservez votre code en lieu sûr et faites des exports réguliers.</p>
+    </div>
+
+    <h2>4. Hébergement et sous-traitant</h2>
+    <div class="box">
+        <p>Les données synchronisées sont hébergées par <strong>Cloudflare, Inc.</strong> (services Pages, D1 et R2), en qualité de sous-traitant. Cloudflare étant une société américaine, les données peuvent être stockées hors de l'Union européenne. Ce transfert est encadré par l'accord de traitement des données de Cloudflare (clauses contractuelles types de la Commission européenne) et par sa certification au cadre de protection des données UE–États-Unis (Data Privacy Framework).</p>
+        <p>Les contenus étant chiffrés sur votre appareil, Cloudflare ne peut pas les lire. Pour en savoir plus : <a href="https://www.cloudflare.com/fr-fr/privacypolicy/" target="_blank" rel="noopener">politique de confidentialité de Cloudflare</a>.</p>
+    </div>
+
+    <h2>5. Services tiers appelés par votre appareil</h2>
+    <div class="box">
+        <p>Certaines fonctions contactent directement des services tiers. Ils reçoivent alors votre adresse IP et des informations techniques standard (type de navigateur, langue), comme pour toute requête Internet, mais <strong>aucun contenu de votre carnet</strong> :</p>
+        <ul>
+            <li><strong>Carte, itinéraires et « Que voir ? »</strong> : OpenStreetMap (Nominatim, Overpass) et Photon (Komoot) reçoivent le nom du lieu recherché.</li>
+            <li><strong>Import d'un export Polarsteps</strong> : l'outil de lecture des fichiers ZIP est chargé depuis jsDelivr ou unpkg. Votre fichier, lui, n'est jamais envoyé.</li>
+            <li><strong>Liens externes</strong> (Escale, compagnies aériennes, Booking, Google Maps…) : en les ouvrant, vous quittez l'Application et les règles de ces sites s'appliquent.</li>
+        </ul>
+        <p>Ces services sont indépendants de l'éditeur, qui ne reçoit aucune information à ce sujet.</p>
+    </div>
+
+    <h2>6. Stockage local, cookies et suivi</h2>
+    <div class="box">
+        <p>L'Application utilise le stockage de votre navigateur (LocalStorage, IndexedDB) pour fonctionner, y compris hors ligne. Ce stockage est strictement nécessaire au service et ne demande pas de consentement.</p>
+        <p>Nous n'utilisons <strong>aucun outil de suivi</strong>, aucun cookie publicitaire et aucun service d'analyse tiers. Aucune donnée n'est vendue, louée ou utilisée à des fins publicitaires.</p>
+    </div>
+
+    <h2>7. Durée de conservation</h2>
+    <div class="box">
+        <ul>
+            <li><strong>Sur votre appareil</strong> : jusqu'à ce que vous effaciez le carnet ou les données du navigateur.</li>
+            <li><strong>Sur le serveur</strong> : tant que le carnet est utilisé. Un carnet sans aucune activité depuis 24 mois peut être supprimé.</li>
+            <li><strong>Journaux techniques de l'hébergeur</strong> : selon la politique de Cloudflare, en général quelques jours.</li>
+        </ul>
+    </div>
+
+    <h2>8. Vos droits</h2>
+    <div class="box">
+        <p>Vous disposez d'un droit d'accès, de rectification, d'effacement, de limitation, d'opposition et de portabilité de vos données :</p>
+        <ul>
+            <li><strong>Accès et portabilité</strong> : Plus → Partage &amp; profils → Exporter (fichier .json lisible).</li>
+            <li><strong>Rectification</strong> : modifiez directement vos fiches et votre profil dans l'Application.</li>
+            <li><strong>Effacement sur l'appareil</strong> : Plus → Partage &amp; profils → « Effacer ce téléphone ».</li>
+            <li><strong>Effacement sur le serveur</strong> : Plus → Partage &amp; profils → « Demander l'effacement sur le serveur ». Un e-mail est préparé avec l'identifiant chiffré du carnet (jamais son code) ; toutes les données de ce carnet sont supprimées sous 30 jours. Attention : cela efface le carnet pour tous ses membres.</li>
+        </ul>
+        <p>Si vous estimez que vos droits ne sont pas respectés, vous pouvez adresser une réclamation à la CNIL : <a href="https://www.cnil.fr/fr/plaintes" target="_blank" rel="noopener">cnil.fr/fr/plaintes</a>.</p>
+    </div>
+
+    <h2>9. Mineurs</h2>
+    <div class="box">
+        <p>L'Application s'adresse aux adultes et aux familles. Un enfant peut figurer dans un carnet familial sous la responsabilité de ses parents.</p>
+    </div>
+
+    <h2>10. Modifications de cette politique</h2>
+    <div class="box">
+        <p>Cette politique peut évoluer avec l'Application. Toute modification est publiée sur cette page, avec sa date de mise à jour.</p>
+    </div>
+
+    <h2>11. Contact</h2>
+    <div class="contact">
+        <p>Pour toute question concernant cette politique : <a href="mailto:appareils.treves6g@icloud.com">appareils.treves6g@icloud.com</a></p>
+        <p style="font-size:0.9em;color:#666;">Si vous nous écrivez, nous recevons votre adresse e-mail et votre message, uniquement pour vous répondre. Ces échanges sont conservés le temps de traiter votre demande et au plus 12 mois, puis supprimés.</p>
+    </div>
+
+    <p style="margin-top:28px"><a href="mentions-legales.html" class="back-btn">← Retour aux mentions légales</a></p>
+
+</body>
+</html>

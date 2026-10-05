@@ -1715,7 +1715,7 @@ const CV = (function(){
         <span class="ed">Compare les prix des compagnies en quelques secondes, puis ajoute ton vol ici.</span>
         <span class="eb">Chercher avec Escale ↗</span>
         ${PUBLIC ? '<small>Prix indicatifs : vérifie toujours le tarif final chez la compagnie.</small>' : ''}
-      </a><button type="button" class="cv-escale-tuto" onclick="CV.escaleTuto()">🎓 Tuto : utiliser Escale en mode premium</button>`;
+      </a><button type="button" class="cv-escale-tuto" onclick="CV.escaleTuto()">🎓 Tuto vidéo : utiliser Escale en mode premium</button>`;
     if(!ds.length) h += '<div class="v-empty">Aucun jour. Ajoute des dates au voyage (⚙️ Partage → Modifier le voyage) ou un trajet daté.</div>';
     h += ds.map((d,idx)=>{
       const info = dayInfo(d);
@@ -2207,7 +2207,9 @@ const CV = (function(){
         <button class="v-btn sec" onclick="CV.exportShare()">📤 Exporter / envoyer (.json)</button>
         <button class="v-btn sec" onclick="CV.exportDownload()">⬇️ Télécharger le fichier</button>
         <button class="v-btn sec" onclick="CV.importPick()">📥 Importer un export (ancien ou nouveau format)</button>
-        <button class="v-btn danger" onclick="CV.wipe()">Effacer ce téléphone</button></div>`;
+        <button class="v-btn danger" onclick="CV.wipe()">Effacer ce téléphone</button>
+        ${s.on ? `<button class="v-btn sec" onclick="CV.askErase()">🗑 Demander l’effacement sur le serveur</button>` : ''}
+        <a class="v-btn sec" href="mentions-legales.html" style="display:block;text-align:center;text-decoration:none">🔒 Mentions légales et confidentialité</a></div>`;
     document.getElementById('cv-body').innerHTML = h;
   }
   async function syncOn(){
@@ -2292,6 +2294,14 @@ const CV = (function(){
       rd.readAsText(f);
     };
     inp.click();
+  }
+  const CONTACT = 'appareils.treves6g@icloud.com';   // contact de l'éditeur (aussi dans mentions-legales.html et privacy.html)
+  async function askErase(){
+    if(!M.sync.on){ alert('Ce carnet n’est pas synchronisé : rien n’est stocké sur le serveur.'); return; }
+    if(!confirm('Demander l’effacement de ce carnet sur le serveur ?\n\nToutes ses données en ligne seront supprimées, pour TOUS ses membres. Un e-mail va être préparé : il contient seulement l’identifiant chiffré du carnet, jamais son code.')) return;
+    const id = hex(await crypto.subtle.digest('SHA-256', te.encode('carnet-voyage:' + await authCode())));
+    const body = 'Bonjour,\n\nJe demande l’effacement des données de mon carnet sur le serveur.\n\nIdentifiant du carnet : ' + id + '\n\nMerci.';
+    location.href = 'mailto:' + CONTACT + '?subject=' + encodeURIComponent('Carnet de voyage : effacement des données') + '&body=' + encodeURIComponent(body);
   }
   function wipe(){
     if(!confirm('Effacer le carnet de ce téléphone ? ' + (M.sync.on ? 'Les données restent sur le serveur partagé, tu pourras le rejoindre à nouveau avec le code.' : 'Sans synchro, tout sera perdu : exporte avant !'))) return;
@@ -3665,6 +3675,8 @@ const CV = (function(){
   }
   function escaleTuto(){
     openSheet(`<h2>🎓 Escale en mode premium</h2>
+      <div class="cv-tuto" style="margin-bottom:8px"><video src="escale-tuto.mp4" controls playsinline preload="metadata"></video></div>
+      <div class="v-sum-small" style="margin-bottom:10px">🎬 La vidéo (3 min) montre tout le parcours sur un voyage fictif Paris → Tokyo : menu, passage en premium, dates, calendrier de prix, prix live, hôtels, voiture, activités, puis la saisie dans le carnet. Le détail écrit est juste en dessous.</div>
       <div class="cv-info">
       <p>Escale cherche les vols les moins chers. En <b>mode soft</b> (par défaut), les prix viennent d’un cache gratuit : ce sont des <b>prix indicatifs</b>. Le <b>mode premium</b> interroge les sources en direct.</p>
       <h3>1. Passer en premium</h3>
@@ -3687,6 +3699,7 @@ const CV = (function(){
   function infoHTML(){
     return `<div class="cv-info">
       ${tutoBtn()}
+      <p style="text-align:center;margin:6px 0 10px"><a href="mentions-legales.html">🔒 Mentions légales et confidentialité</a></p>
       ${installHTML(false)}
       <h3>🔐 Vos données restent à vous</h3>
       <p>Vos voyages, notes, dépenses et photos sont <b>chiffrés sur votre téléphone</b>, avec le code de votre carnet, avant d’être envoyés sur le serveur.</p>
@@ -3761,7 +3774,7 @@ const CV = (function(){
     envF:setEnvF, envP:setEnvP, like, editWish, saveWish, delWish, wishToTrip,
     editTrip, saveTrip, delTrip, closeTrip, reopenTrip,
     live, one, echAdd, echDel, echSpread, echToggle, lisser, echReset, echRange, echRangeReset,
-    planDay, plCfg, plAdd, plDel, plOpt, wizard, tutoSheet, escaleTuto, demoLoad, demoDel, demoReset, wzGo, wzDates, wzEt, wzSum, wzTpl, wzCreate,
+    planDay, plCfg, plAdd, plDel, plOpt, wizard, askErase, tutoSheet, escaleTuto, demoLoad, demoDel, demoReset, wzGo, wzDates, wzEt, wzSum, wzTpl, wzCreate,
     pickColor, newProfile, editProfile, saveProfile, delProfile, whoSheet, setMe,
     genCode, syncOn, syncOff, syncNow, shareCode, exportShare, exportDownload, importPick, wipe, obCreate, obJoin,
     _R:()=>R, _M:()=>M};
