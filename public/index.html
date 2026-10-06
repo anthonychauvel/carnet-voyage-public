@@ -972,7 +972,42 @@ a.v-btn.cv-escale{display:block;text-align:center;text-decoration:none}
 .cv-choice i{font-style:normal;font-size:1.7rem}
 .cv-choice b{display:block}
 .cv-choice small{display:block;color:#6b5670;font-size:.78rem}
-.cv-idea{background:#fff;border:1px solid #eadfe6;border-radius:16px;padding:10px 12px;margin:8px 0}
+.cv-idea{background:#fff;border:1px solid #eadfe6;border-radius:18px;padding:0 0 12px;margin:10px 0;overflow:hidden;box-shadow:0 4px 14px rgba(42,18,56,.06)}
+.cv-idea.focus{border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,.25)}
+.cv-idea>*:not(.im){margin-left:12px;margin-right:12px}
+.cv-idea .im{position:relative;height:150px;background:linear-gradient(135deg,#c4b5fd,#f9a8d4);margin-bottom:8px}
+.cv-idea .im img{width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .4s}
+.cv-idea .im.has img{opacity:1}
+.cv-idea .pc{position:absolute;left:10px;top:10px;background:rgba(42,18,56,.85);color:#fff;border-radius:12px;padding:3px 9px;font-size:.74rem;font-weight:800}
+.cv-idea .fav{position:absolute;right:10px;top:8px;width:38px;height:38px;border-radius:50%;border:0;background:rgba(255,255,255,.92);font-size:1.1rem}
+.cv-idea .chips{display:flex;flex-wrap:wrap;gap:5px;margin:6px 12px}
+.cv-idea .chips span{background:#f5f0fb;border-radius:10px;padding:3px 8px;font-size:.72rem}
+.cv-idea .warn{margin:4px 12px;font-size:.76rem;color:#a16207}
+.cv-idea .iti{margin:6px 12px;font-size:.8rem}
+.cv-idea .iti small{color:#6b5670}
+.cv-idea .bud{margin:2px 12px;font-size:.74rem;color:#6b5670}
+.cv-idea .chips span.live{background:#dcfce7;color:#14532d}
+.cv-idea .chips span.hide{display:none}
+.cv-idea .cp-go{background:#2a1238;color:#fff;border-color:#2a1238}
+.cv-deals{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.cv-deal{flex:0 0 auto;border:1px solid #e4d9f2;background:#fff;border-radius:14px;padding:8px 12px;font:inherit;text-align:left}
+.cv-deal b{display:block;font-size:.86rem}.cv-deal span{display:block;color:#15803d;font-weight:800;font-size:.82rem}.cv-deal small{color:#6b5670;font-size:.7rem}
+.cp-hero{height:170px;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#c4b5fd,#f9a8d4);margin-bottom:8px}
+.cp-hero img{width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .4s}.cp-hero.has img{opacity:1}
+.cp-stop{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #eadfe6;border-radius:12px;padding:8px 10px;margin:5px 0}
+.cp-stop b{flex:1}.cp-n{display:flex;align-items:center;gap:6px;font-size:.84rem}
+.cp-n button{width:30px;height:30px;border-radius:50%;border:1px solid #e4d9f2;background:#faf7fd;font-weight:800}
+.cp-near{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.cp-city{flex:0 0 112px;border:1px solid #eadfe6;background:#fff;border-radius:14px;padding:0 0 6px;overflow:hidden;font:inherit;text-align:center}
+.cp-city img,.cp-city i{display:block;width:100%;height:72px;object-fit:cover;font-style:normal;font-size:1.6rem;line-height:72px;background:#f3eefc}
+.cp-city span{display:block;font-size:.78rem;font-weight:700;padding:4px 4px 0}.cp-city small{color:#7c3aed;font-size:.68rem}
+.cp-pl{margin:8px 0 12px}
+.cp-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:4px}
+.cp-place{position:relative;border:2px solid transparent;background:#fff;border-radius:12px;padding:0 0 4px;overflow:hidden;font:inherit;text-align:left}
+.cp-place img,.cp-place i{display:block;width:100%;height:70px;object-fit:cover;font-style:normal;font-size:1.4rem;line-height:70px;text-align:center;background:#f3eefc}
+.cp-place span{display:block;font-size:.7rem;font-weight:600;padding:3px 5px 0;line-height:1.2;max-height:2.5em;overflow:hidden}
+.cp-place em{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.92);font-style:normal;font-weight:800;font-size:.75rem;display:flex;align-items:center;justify-content:center}
+.cp-place.on{border-color:#7c3aed}.cp-place.on em{background:#7c3aed;color:#fff}
 .cv-idea .hd b{display:block;font-size:1rem}
 .cv-idea .hd small{color:#6b5670;font-size:.74rem}
 .cv-idea .why{margin:6px 0 2px;font-size:.8rem;color:#4c1d95;font-weight:600}
@@ -7370,97 +7405,190 @@ ${pm.join('\n')}</Document></kml>`;
     closeSheet(true); M.mode = 'prep'; M.tab = 'prog'; go(tid);
     setTimeout(()=>CV.editTrip && CV.editTrip(tid), 300);
   }
-  // Base d'idées (ordres de grandeur depuis la France ; à vérifier avec Escale pour les prix réels)
-  // [nom, pays, cc, tags, meilleurs mois, heures de vol depuis Paris, budget sur place €/jour/pers, durée idéale, conseil, climat]
+  /* ══════════ 💡 « Je ne sais pas où aller » — moteur de propositions ══════════
+     Destinations avec coordonnées, températures moyennes (max) mois par mois, meilleures périodes,
+     budget sur place, durée idéale, itinéraire type, formalités. Ordres de grandeur, à vérifier
+     (prix réels avec Escale, formalités sur diplomatie.gouv.fr). */
+  // [nom, pays, cc, lat, lng, tags, meilleurs mois, €/jour/pers (confort), [durée min,max], itinéraire [[ville,nuits]], conseil, formalités, temp. max °C (jan→déc), article Wikipédia]
   const DESTS = [
-    ['Lisbonne','Portugal','PT','ville culture gastronomie mer',[3,4,5,6,9,10],2.5,90,'4–5 j','Tramway 28 tôt le matin, miradouros au coucher du soleil, Sintra en excursion.','doux'],
-    ['Porto','Portugal','PT','ville gastronomie culture',[4,5,6,9,10],2,80,'3–4 j','Caves de porto à Gaia, vallée du Douro en train.','doux'],
-    ['Açores','Portugal','PT','nature randonnée mer aventure',[5,6,7,8,9],4,90,'7–10 j','Louer une voiture ; météo changeante, prévoir des couches.','doux'],
-    ['Séville','Espagne','ES','ville culture gastronomie',[3,4,5,10,11],2,90,'3–4 j','Éviter juillet-août (40 °C) ; flamenco à Triana.','chaud'],
-    ['Barcelone','Espagne','ES','ville plage culture fête',[4,5,6,9,10],1.7,110,'4 j','Réserver la Sagrada Família à l’avance.','chaud'],
-    ['Majorque','Espagne','ES','plage détente nature',[5,6,9,10],2,110,'7 j','Criques de l’est hors juillet-août ; Serra de Tramuntana à pied.','chaud'],
-    ['Canaries (Tenerife)','Espagne','ES','plage nature randonnée détente',[1,2,3,4,10,11,12],4.3,90,'7 j','Le soleil d’hiver à 4 h : Teide au lever du jour.','chaud'],
-    ['Rome','Italie','IT','ville culture histoire gastronomie',[3,4,5,9,10,11],2,120,'4–5 j','Colisée et Vatican réservés en ligne ; Trastevere le soir.','doux'],
-    ['Pouilles','Italie','IT','mer gastronomie détente culture',[5,6,9,10],2.2,100,'7–10 j','Voiture indispensable ; Polignano, Alberobello, Lecce.','chaud'],
-    ['Sicile','Italie','IT','mer culture gastronomie nature',[4,5,6,9,10],2.5,100,'8–10 j','Etna, Taormine, Palerme : boucle en voiture.','chaud'],
-    ['Dolomites','Italie','IT','montagne randonnée nature',[6,7,8,9],1.5,130,'5–7 j','Refuges à réserver tôt ; lacs de Braies et Tre Cime.','frais'],
-    ['Amsterdam','Pays-Bas','NL','ville culture fête',[4,5,6,9],1.3,130,'3 j','Vélo partout ; Rijksmuseum réservé.','frais'],
-    ['Prague','Tchéquie','CZ','ville culture histoire fête',[4,5,6,9,10,12],1.8,80,'3–4 j','Marché de Noël en décembre ; château tôt le matin.','frais'],
-    ['Budapest','Hongrie','HU','ville bains culture fête',[4,5,6,9,10],2.2,75,'3–4 j','Bains Széchenyi, ruin bars, Danube de nuit.','frais'],
-    ['Croatie (Split & Dubrovnik)','Croatie','HR','mer plage culture bateau',[5,6,9],2.2,110,'7–10 j','Ferries entre les îles ; Dubrovnik tôt avant les croisiéristes.','chaud'],
-    ['Athènes & Cyclades','Grèce','GR','mer plage histoire détente',[5,6,9,10],3.3,100,'8–10 j','Acropole à l’ouverture ; ferries vers Naxos, Paros, Milos.','chaud'],
-    ['Crète','Grèce','GR','plage nature randonnée gastronomie',[5,6,9,10],3.5,85,'8–10 j','Gorges de Samaria, plages de Balos et Elafonissi.','chaud'],
-    ['Malte','Malte','MT','mer histoire plongée',[4,5,6,9,10,11],2.7,90,'4–6 j','La Valette, Gozo, Blue Lagoon tôt le matin.','chaud'],
-    ['Istanbul','Turquie','TR','ville culture histoire gastronomie',[4,5,9,10,11],3.5,70,'4–5 j','Bosphore en ferry public ; Sainte-Sophie hors heures de prière.','doux'],
-    ['Cappadoce','Turquie','TR','nature aventure montgolfière',[4,5,6,9,10],4.5,80,'3–4 j','Montgolfière à réserver ; nuits en hôtel troglodyte.','doux'],
-    ['Marrakech','Maroc','MA','ville culture désert gastronomie',[3,4,5,10,11],3.3,60,'4–5 j','Riad dans la médina ; excursion Atlas ou Agafay.','chaud'],
-    ['Égypte (Nil)','Égypte','EG','histoire culture désert croisière',[10,11,12,1,2,3],4.5,70,'8–10 j','Croisière Louxor–Assouan ; éviter l’été (très chaud).','chaud'],
-    ['Islande','Islande','IS','nature aventure aurores randonnée',[6,7,8,9,2,3],3.3,180,'8–10 j','Route 1 en van ; aurores de septembre à mars.','frais'],
-    ['Norvège (fjords)','Norvège','NO','nature randonnée bateau',[6,7,8],2.3,170,'7–10 j','Train Flåm, Preikestolen, Lofoten si le temps le permet.','frais'],
-    ['Écosse','Royaume-Uni','GB','nature château randonnée whisky',[5,6,7,8,9],1.7,120,'7–9 j','Highlands en voiture ; Skye ; prévoir l’anti-moustique (midges).','frais'],
-    ['Londres','Royaume-Uni','GB','ville culture musées fête',[4,5,6,7,9,12],1.2,150,'3–4 j','Musées gratuits ; Oyster/contactless dans le métro.','frais'],
-    ['New York','États-Unis','US','ville culture shopping fête',[4,5,6,9,10,12],8.5,200,'5–7 j','ESTA à faire avant ; CityPASS si beaucoup de visites.','doux'],
-    ['Ouest américain','États-Unis','US','nature road-trip parcs aventure',[5,6,9,10],11,170,'14–21 j','Pass « America the Beautiful » ; réserver Yosemite tôt.','chaud'],
-    ['Québec','Canada','CA','nature ville randonnée',[6,7,8,9,10],7.5,130,'10–14 j','AVE obligatoire ; couleurs d’automne fin septembre.','frais'],
-    ['Japon','Japon','JP','culture gastronomie ville nature',[3,4,5,10,11],14,130,'14–21 j','Cerisiers fin mars-avril ; pass régionaux plutôt que JR Pass national.','doux'],
-    ['Thaïlande','Thaïlande','TH','plage culture gastronomie détente',[11,12,1,2,3],12,55,'14–21 j','Bangkok, Chiang Mai, puis îles côté mer d’Andaman en hiver.','chaud'],
-    ['Vietnam','Vietnam','VN','culture gastronomie nature aventure',[2,3,4,10,11],12.5,45,'14–21 j','Du nord au sud ; baie d’Halong en croisière de 2 jours.','chaud'],
-    ['Bali','Indonésie','ID','plage détente nature culture',[5,6,7,8,9],16,55,'12–15 j','Ubud pour les rizières, Nusa Penida en bateau.','chaud'],
-    ['Réunion','France','RE','nature randonnée volcan plage',[5,6,7,8,9,10,11],11,90,'12–15 j','Cirques de Mafate à pied ; pas de passeport nécessaire.','chaud'],
-    ['Guadeloupe','France','GP','plage nature plongée détente',[12,1,2,3,4,5],8.5,100,'10–14 j','Basse-Terre pour la nature, Marie-Galante pour les plages.','chaud'],
-    ['Costa Rica','Costa Rica','CR','nature aventure faune plage',[12,1,2,3,4],12,90,'14–18 j','Saison sèche de décembre à avril ; volcan Arenal, Corcovado.','chaud'],
-    ['Mexique (Yucatán)','Mexique','MX','plage culture histoire plongée',[11,12,1,2,3,4],11.5,75,'12–15 j','Cenotes, Chichén Itzá tôt ; éviter la saison des ouragans.','chaud'],
-    ['Corse','France','FR','mer nature randonnée plage',[5,6,9],1.5,110,'7–10 j','Voiture indispensable ; GR20 pour les marcheurs aguerris.','chaud'],
-    ['Bretagne (Finistère)','France','FR','mer nature randonnée gastronomie',[5,6,7,8,9],0,90,'4–7 j','Presqu’île de Crozon, Ouessant, crêpes et fruits de mer.','frais'],
+    ['Lisbonne & Porto','Portugal','PT',38.72,-9.14,'ville culture gastronomie mer plage',[3,4,5,6,9,10],90,[4,8],[['Lisbonne',3],['Sintra',1],['Porto',3]],'Tramway 28 tôt le matin, coucher de soleil aux miradouros, Sintra en excursion.','UE',[15,16,18,20,22,26,28,28,27,23,18,15],'Lisbonne'],
+    ['Algarve','Portugal','PT',37.02,-7.93,'plage mer détente nature',[5,6,7,9,10],95,[5,8],[['Lagos',3],['Tavira',3]],'Grottes de Benagil en kayak, falaises de Ponta da Piedade.','UE',[16,17,19,21,24,27,30,30,28,24,20,17],'Algarve'],
+    ['Açores','Portugal','PT',37.74,-25.67,'nature randonnée mer aventure',[5,6,7,8,9],90,[7,10],[['Ponta Delgada',4],['Furnas',1],['Pico',3]],'Louer une voiture ; météo changeante, prévoir des couches.','UE',[17,16,17,18,20,22,25,26,25,22,19,18],'Açores'],
+    ['Madère','Portugal','PT',32.65,-16.91,'nature randonnée mer',[3,4,5,6,9,10,11],90,[6,8],[['Funchal',6]],'Levadas à pied, Pico do Arieiro au lever du soleil.','UE',[20,20,20,21,22,24,26,27,27,25,23,21],'Madère'],
+    ['Andalousie','Espagne','ES',37.39,-5.98,'ville culture histoire gastronomie',[3,4,5,10,11],90,[5,8],[['Séville',3],['Cordoue',1],['Grenade',2]],'Alhambra à réserver longtemps à l’avance ; éviter juillet-août (40 °C).','UE',[16,18,22,23,27,33,36,36,32,26,20,16],'Andalousie'],
+    ['Barcelone','Espagne','ES',41.39,2.17,'ville plage culture fête',[4,5,6,9,10],110,[3,5],[['Barcelone',4]],'Sagrada Família réservée en ligne ; quartier de Gràcia le soir.','UE',[14,15,17,19,22,26,29,29,26,22,17,14],'Barcelone'],
+    ['Madrid & Tolède','Espagne','ES',40.42,-3.70,'ville culture musées gastronomie fête',[4,5,6,9,10],100,[3,5],[['Madrid',3],['Tolède',1]],'Prado gratuit en fin de journée ; tapas à La Latina.','UE',[10,12,16,18,22,28,32,31,26,19,13,10],'Madrid'],
+    ['Majorque','Espagne','ES',39.57,2.65,'plage détente nature mer',[5,6,9,10],110,[5,8],[['Palma',2],['Sóller',2],['Cala d’Or',3]],'Criques de l’est hors juillet-août ; Serra de Tramuntana à pied.','UE',[15,15,17,19,23,27,30,31,27,23,19,16],'Majorque'],
+    ['Tenerife','Espagne','ES',28.29,-16.63,'plage nature randonnée détente',[1,2,3,4,10,11,12],90,[5,8],[['Puerto de la Cruz',3],['Los Gigantes',3]],'Le soleil d’hiver à 4 h de vol : Teide au lever du jour.','UE',[21,21,22,23,24,26,28,29,28,26,24,22],'Tenerife'],
+    ['Pays basque espagnol','Espagne','ES',43.32,-1.98,'gastronomie ville plage',[5,6,7,8,9],110,[3,5],[['Saint-Sébastien',3],['Bilbao',1]],'Pintxos dans la vieille ville, musée Guggenheim à Bilbao.','UE',[12,13,15,16,19,22,24,25,23,20,15,13],'Saint-Sébastien'],
+    ['Rome','Italie','IT',41.90,12.50,'ville culture histoire gastronomie romantique',[3,4,5,9,10,11],120,[4,6],[['Rome',4]],'Colisée et Vatican réservés ; Trastevere le soir.','UE',[12,13,16,19,24,28,31,31,27,22,17,13],'Rome'],
+    ['Florence & Toscane','Italie','IT',43.77,11.26,'culture gastronomie vin nature ville romantique',[4,5,6,9,10],120,[5,8],[['Florence',3],['Sienne',2],['Val d’Orcia',2]],'Offices réservés ; collines du Val d’Orcia en voiture.','UE',[11,13,16,19,24,29,32,32,27,21,15,11],'Toscane'],
+    ['Venise','Italie','IT',45.44,12.32,'ville culture romantique',[4,5,6,9,10],140,[2,4],[['Venise',3]],'Se perdre dans Cannaregio, Burano en vaporetto.','UE',[7,9,13,17,22,26,28,28,24,18,12,8],'Venise'],
+    ['Pouilles','Italie','IT',41.12,16.87,'mer gastronomie détente culture plage',[5,6,9,10],100,[7,10],[['Bari',2],['Polignano a Mare',2],['Alberobello',1],['Lecce',3]],'Voiture indispensable ; trulli d’Alberobello tôt le matin.','UE',[13,13,15,18,23,27,30,30,26,22,17,14],'Pouilles'],
+    ['Sicile','Italie','IT',38.12,13.36,'mer culture gastronomie nature plage',[4,5,6,9,10],100,[8,12],[['Palerme',3],['Cefalù',1],['Taormine',2],['Syracuse',3]],'Etna en excursion, marchés de Palerme, cannoli partout.','UE',[15,15,17,20,24,28,31,31,28,24,20,16],'Sicile'],
+    ['Naples & côte amalfitaine','Italie','IT',40.63,14.60,'mer culture gastronomie romantique',[5,6,9,10],140,[5,8],[['Naples',2],['Sorrente',2],['Positano',2]],'Pompéi tôt ; bateaux entre les villages de la côte.','UE',[13,14,16,19,23,27,30,30,27,22,18,14],'Côte amalfitaine'],
+    ['Dolomites','Italie','IT',46.41,11.84,'montagne randonnée nature',[6,7,8,9],130,[5,8],[['Cortina d’Ampezzo',3],['Val Gardena',3]],'Refuges à réserver tôt ; Tre Cime et lac de Braies.','UE',[3,5,9,13,17,21,24,23,19,14,7,3],'Dolomites'],
+    ['Sardaigne','Italie','IT',40.12,9.01,'plage mer nature détente',[6,7,9],120,[7,10],[['Cagliari',2],['Costa Smeralda',3],['Alghero',2]],'Eaux turquoise ; éviter la mi-août (monde, prix).','UE',[14,15,17,19,23,28,31,31,28,23,19,15],'Sardaigne'],
+    ['Corse','France','FR',42.04,9.01,'mer nature randonnée plage',[5,6,9],110,[7,10],[['Ajaccio',2],['Bonifacio',2],['Porto-Vecchio',2],['Calvi',2]],'Voiture indispensable ; calanques de Piana au coucher du soleil.','FR',[13,14,16,18,22,26,29,29,26,22,17,14],'Corse'],
+    ['Bretagne (Finistère)','France','FR',48.10,-4.10,'mer nature randonnée gastronomie',[5,6,7,8,9],90,[3,7],[['Crozon',3],['Ouessant',1],['Quimper',2]],'Presqu’île de Crozon, Ouessant, crêpes et fruits de mer.','FR',[10,10,12,14,17,20,21,22,20,16,13,10],'Finistère'],
+    ['Provence','France','FR',43.95,4.80,'culture gastronomie nature vin',[5,6,9,10],110,[4,7],[['Avignon',2],['Luberon',2],['Aix-en-Provence',2]],'Lavande fin juin – mi-juillet ; marchés provençaux le matin.','FR',[11,13,16,19,23,28,31,30,26,21,15,11],'Provence'],
+    ['Alsace','France','FR',48.08,7.36,'gastronomie vin culture noel',[5,6,9,12],100,[3,5],[['Strasbourg',2],['Colmar',2]],'Marchés de Noël en décembre ; route des vins à vélo.','FR',[4,6,11,16,20,24,26,25,21,15,9,5],'Alsace'],
+    ['Amsterdam','Pays-Bas','NL',52.37,4.90,'ville culture musées fête',[4,5,6,9],140,[3,4],[['Amsterdam',3]],'Vélo partout ; Rijksmuseum réservé ; tulipes en avril.','UE',[6,7,10,14,17,20,22,22,19,15,10,7],'Amsterdam'],
+    ['Londres','Royaume-Uni','GB',51.51,-0.13,'ville culture musées fête shopping',[4,5,6,7,9,12],160,[3,5],[['Londres',4]],'Musées gratuits ; paiement sans contact dans le métro.','E',[8,9,12,15,18,21,24,23,20,16,11,8],'Londres'],
+    ['Écosse','Royaume-Uni','GB',56.49,-4.20,'nature randonnée château montagne',[5,6,7,8,9],120,[7,10],[['Édimbourg',2],['Highlands',2],['Île de Skye',3]],'Highlands en voiture ; anti-moustique pour les midges.','E',[7,7,9,12,15,17,19,19,16,13,9,7],'Écosse'],
+    ['Irlande','Irlande','IE',53.35,-6.26,'nature randonnée fête ville',[5,6,7,8,9],120,[7,10],[['Dublin',2],['Galway',2],['Killarney',2]],'Falaises de Moher, Ring of Kerry, pubs à musique live.','UE',[8,8,10,13,15,18,20,19,17,14,10,8],'Irlande (pays)'],
+    ['Berlin','Allemagne','DE',52.52,13.40,'ville culture histoire fête',[5,6,7,8,9],100,[3,4],[['Berlin',4]],'East Side Gallery, île aux Musées, vie nocturne.','UE',[3,5,9,15,19,23,25,25,20,14,8,4],'Berlin'],
+    ['Prague','Tchéquie','CZ',50.08,14.44,'ville culture histoire fête noel',[4,5,6,9,10,12],80,[3,4],[['Prague',3]],'Château tôt le matin ; marché de Noël en décembre.','UE',[2,4,9,14,19,22,24,24,19,13,7,3],'Prague'],
+    ['Vienne & Budapest','Autriche','AT',48.21,16.37,'ville culture musique bains',[4,5,6,9,10,12],100,[5,7],[['Vienne',3],['Budapest',3]],'Train direct entre les deux ; bains Széchenyi à Budapest.','UE',[3,5,10,16,21,24,27,26,21,15,8,4],'Vienne (Autriche)'],
+    ['Croatie (Split & Dubrovnik)','Croatie','HR',43.51,16.44,'mer plage culture bateau',[5,6,9,10],110,[7,10],[['Split',3],['Hvar',2],['Dubrovnik',3]],'Ferries entre les îles ; Dubrovnik tôt, avant les croisiéristes.','UE',[11,12,14,18,23,27,30,30,26,21,16,12],'Dalmatie'],
+    ['Slovénie','Slovénie','SI',46.06,14.51,'nature randonnée lac montagne',[5,6,7,8,9],90,[5,8],[['Ljubljana',2],['Bled',2],['Piran',2]],'Lac de Bled au lever du jour, gorges de Vintgar.','UE',[3,6,11,16,21,25,27,27,22,16,9,4],'Slovénie'],
+    ['Athènes & Cyclades','Grèce','GR',37.98,23.73,'mer plage histoire détente romantique',[5,6,9,10],100,[8,12],[['Athènes',2],['Naxos',3],['Santorin',2],['Milos',3]],'Acropole à l’ouverture ; ferries à réserver en été.','UE',[14,15,17,21,26,31,34,34,29,24,19,15],'Cyclades'],
+    ['Crète','Grèce','GR',35.24,24.81,'plage nature randonnée gastronomie',[5,6,9,10],85,[7,10],[['Héraklion',2],['Réthymnon',2],['La Canée',3]],'Gorges de Samaria, plages de Balos et Elafonissi.','UE',[16,16,18,21,25,29,31,31,28,25,21,18],'Crète'],
+    ['Malte','Malte','MT',35.90,14.51,'mer histoire plongée',[4,5,6,9,10,11],90,[4,6],[['La Valette',3],['Gozo',2]],'Blue Lagoon tôt le matin ; Mdina au crépuscule.','UE',[16,16,18,20,24,29,32,32,29,25,21,18],'Malte'],
+    ['Istanbul','Turquie','TR',41.01,28.98,'ville culture histoire gastronomie',[4,5,9,10,11],70,[4,5],[['Istanbul',4]],'Bosphore en ferry public ; marchés de Kadıköy côté asiatique.','P',[9,10,12,17,22,27,29,29,25,20,15,11],'Istanbul'],
+    ['Cappadoce','Turquie','TR',38.64,34.83,'nature aventure',[4,5,6,9,10],80,[3,4],[['Göreme',3]],'Montgolfière à réserver ; nuit en hôtel troglodyte.','P',[4,6,11,17,21,26,30,30,26,19,12,6],'Cappadoce'],
+    ['Marrakech & Atlas','Maroc','MA',31.63,-8.00,'ville culture désert gastronomie',[3,4,5,10,11],60,[4,7],[['Marrakech',3],['Imlil (Atlas)',1],['Agafay',1]],'Riad dans la médina ; nuit sous tente dans le désert d’Agafay.','P',[19,20,23,26,29,33,37,37,32,28,23,20],'Marrakech'],
+    ['Fès & désert marocain','Maroc','MA',34.03,-5.00,'désert aventure culture',[3,4,10,11],60,[7,10],[['Fès',2],['Merzouga',2],['Gorges du Todra',1],['Ouarzazate',2]],'Bivouac dans les dunes de l’Erg Chebbi.','P',[16,18,21,23,27,32,36,36,31,26,21,17],'Merzouga'],
+    ['Égypte (Nil)','Égypte','EG',25.69,32.64,'histoire culture désert croisière',[10,11,12,1,2,3],70,[8,12],[['Le Caire',3],['Louxor',3],['Assouan',2]],'Croisière Louxor–Assouan ; éviter l’été, très chaud.','V',[23,25,29,34,38,40,40,40,38,34,28,24],'Louxor'],
+    ['Jordanie','Jordanie','JO',30.33,35.44,'désert histoire aventure',[3,4,5,10,11],90,[6,9],[['Amman',1],['Pétra',2],['Wadi Rum',1],['Aqaba',2]],'Jordan Pass (visa + Pétra) ; nuit étoilée au Wadi Rum.','V',[13,15,19,24,29,32,33,33,31,27,20,15],'Pétra'],
+    ['Islande','Islande','IS',64.15,-21.94,'nature aventure aurores randonnée',[6,7,8,9,2,3],180,[8,12],[['Reykjavik',2],['Vík',2],['Höfn',2],['Akureyri',2]],'Route 1 en van ; aurores de septembre à mars.','UE',[2,3,3,6,10,12,14,14,11,7,4,3],'Islande'],
+    ['Fjords de Norvège','Norvège','NO',60.39,5.32,'nature randonnée bateau montagne',[6,7,8],170,[7,10],[['Bergen',2],['Flåm',2],['Geiranger',2],['Ålesund',2]],'Train de Flåm, Preikestolen, croisière sur le Geirangerfjord.','UE',[3,4,6,10,14,17,19,19,15,11,7,4],'Fjords de Norvège'],
+    ['Laponie finlandaise','Finlande','FI',66.50,25.73,'neige aurores aventure nature noel',[12,1,2,3],160,[4,7],[['Rovaniemi',3],['Saariselkä',2]],'Chiens de traîneau, aurores, village du père Noël.','UE',[-9,-8,-3,3,10,17,20,17,11,3,-3,-7],'Laponie finlandaise'],
+    ['New York','États-Unis','US',40.71,-74.01,'ville culture shopping fête musées',[4,5,6,9,10,12],220,[5,7],[['New York',6]],'ESTA avant de partir ; Brooklyn Bridge au lever du soleil.','E',[4,6,10,17,22,27,29,29,25,18,12,6],'New York'],
+    ['Ouest américain','États-Unis','US',36.17,-115.14,'nature roadtrip parcs aventure',[5,6,9,10],170,[14,21],[['Las Vegas',2],['Grand Canyon',2],['Monument Valley',1],['Bryce Canyon',1],['Zion',2],['San Francisco',3]],'Pass « America the Beautiful » ; réserver les parcs tôt.','E',[14,17,21,25,31,38,41,40,35,27,19,14],'Grand Canyon'],
+    ['Québec','Canada','CA',46.81,-71.21,'nature ville randonnée',[6,7,8,9,10],130,[10,14],[['Montréal',3],['Québec',3],['Tadoussac',2],['Charlevoix',2]],'AVE obligatoire ; baleines à Tadoussac, couleurs d’automne fin septembre.','E',[-8,-6,0,8,17,22,25,24,18,11,3,-4],'Québec (ville)'],
+    ['Japon','Japon','JP',35.68,139.76,'culture gastronomie ville nature',[3,4,5,10,11],130,[14,21],[['Tokyo',4],['Hakone',1],['Kyoto',4],['Hiroshima',2],['Osaka',2]],'Cerisiers fin mars-avril ; pass régionaux plutôt que JR Pass national.','P',[10,10,14,19,23,26,30,31,27,22,17,12],'Japon'],
+    ['Thaïlande','Thaïlande','TH',13.76,100.50,'plage culture gastronomie détente',[11,12,1,2,3],50,[14,21],[['Bangkok',3],['Chiang Mai',3],['Krabi',4],['Koh Lanta',4]],'Côté mer d’Andaman en hiver ; temples de Chiang Mai.','P',[32,33,34,35,34,33,32,32,32,31,31,31],'Thaïlande'],
+    ['Vietnam','Vietnam','VN',21.03,105.85,'culture gastronomie nature aventure',[2,3,4,10,11],45,[14,21],[['Hanoï',3],['Baie d’Halong',2],['Hội An',3],['Hô Chi Minh-Ville',3]],'Du nord au sud ; baie d’Halong en croisière de 2 jours.','P',[20,21,24,28,32,33,33,32,31,29,26,22],'Viêt Nam'],
+    ['Bali','Indonésie','ID',-8.51,115.26,'plage détente nature culture',[5,6,7,8,9],55,[10,15],[['Ubud',4],['Nusa Penida',2],['Uluwatu',3]],'Rizières d’Ubud, temples au coucher du soleil.','V',[31,31,31,32,31,30,30,30,31,32,32,31],'Bali'],
+    ['Sri Lanka','Sri Lanka','LK',7.29,80.63,'culture nature plage faune',[1,2,3,12],50,[12,16],[['Sigiriya',2],['Kandy',2],['Ella',2],['Mirissa',3]],'Train Kandy–Ella, safari à Yala, baleines à Mirissa.','V',[30,31,32,32,31,30,30,30,30,30,30,30],'Sri Lanka'],
+    ['La Réunion','France','RE',-21.12,55.53,'nature randonnée volcan plage',[5,6,7,8,9,10,11],90,[12,16],[['Saint-Gilles',3],['Cilaos',2],['Mafate',2],['Saint-Pierre',3]],'Cirque de Mafate à pied ; Piton de la Fournaise.','FR',[30,30,30,29,27,26,25,25,26,27,28,29],'La Réunion'],
+    ['Guadeloupe','France','GP',16.25,-61.58,'plage nature plongée détente',[12,1,2,3,4,5],100,[10,14],[['Sainte-Anne',4],['Deshaies',3],['Marie-Galante',2]],'Basse-Terre pour la nature, Marie-Galante pour les plages.','FR',[29,29,29,30,31,31,31,32,32,31,30,29],'Guadeloupe'],
+    ['Costa Rica','Costa Rica','CR',9.93,-84.08,'nature aventure faune plage',[12,1,2,3,4],90,[14,18],[['La Fortuna',3],['Monteverde',2],['Manuel Antonio',3],['Tortuguero',2]],'Saison sèche de décembre à avril ; volcan Arenal.','P',[27,28,29,29,28,27,27,27,27,27,26,26],'Costa Rica'],
+    ['Mexique (Yucatán)','Mexique','MX',20.63,-87.08,'plage culture histoire plongée',[11,12,1,2,3,4],75,[12,15],[['Mérida',3],['Valladolid',2],['Tulum',3],['Bacalar',2]],'Cenotes, Chichén Itzá à l’ouverture.','P',[28,29,31,33,34,33,33,33,32,31,29,28],'Yucatán'],
+    ['Cap-Vert','Cap-Vert','CV',16.60,-22.90,'plage détente randonnée',[11,12,1,2,3,4,5,6],70,[7,10],[['Sal',3],['Santo Antão',3]],'Plage à Sal, randonnées spectaculaires à Santo Antão.','E',[25,25,26,26,27,27,28,29,30,29,28,26],'Cap-Vert'],
   ];
-  const INSP_TAGS = [['plage','🏖️ Plage'],['ville','🏙️ Ville'],['culture','🏛️ Culture'],['nature','🌿 Nature'],['randonnée','🥾 Rando'],['gastronomie','🍝 Gastronomie'],['aventure','🧗 Aventure'],['détente','🧘 Détente'],['fête','🎉 Fête'],['mer','⛵ Mer'],['montagne','🏔️ Montagne'],['histoire','🏺 Histoire']];
+  const DEPS = {Paris:[48.86,2.35,1], Nantes:[47.22,-1.55,0], Brest:[48.39,-4.49,0], Rennes:[48.11,-1.68,0], Lyon:[45.76,4.84,1], Marseille:[43.30,5.37,1], Nice:[43.70,7.27,1], Bordeaux:[44.84,-0.58,0], Toulouse:[43.60,1.44,0], Lille:[50.63,3.06,0], Strasbourg:[48.57,7.75,0], Montpellier:[43.61,3.88,0], Bruxelles:[50.85,4.35,1], 'Genève':[46.20,6.15,1]};
+  const VISA = {UE:'🪪 Carte d’identité suffit', FR:'🇫🇷 Comme en France', P:'🛂 Passeport', E:'🛂 Passeport + autorisation en ligne (ESTA, AVE, ETA…)', V:'🛂 Passeport + visa (souvent en ligne ou à l’arrivée)'};
+  const INSP_TAGS = [['plage','🏖️ Plage'],['ville','🏙️ Ville'],['culture','🏛️ Culture'],['nature','🌿 Nature'],['randonnée','🥾 Rando'],['gastronomie','🍝 Gastronomie'],['aventure','🧗 Aventure'],['détente','🧘 Détente'],['fête','🎉 Fête'],['mer','⛵ Mer'],['montagne','🏔️ Montagne'],['histoire','🏺 Histoire'],['romantique','💕 Romantique'],['faune','🐘 Animaux'],['neige','❄️ Neige'],['roadtrip','🚐 Road-trip']];
+  const MOIS_L = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
   function inspire(sample){
-    const S = sample || M.insp || {mois:'', duree:'7', budget:'1200', vol:'6', climat:'', tags:[], qui:'couple'};
-    const MOIS = ['','janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
-    openSheet(`<h2>💡 Où partir ?</h2><div class="v-sum-small" style="margin-bottom:8px">Réponds en 30 secondes, l’appli te propose des destinations qui te ressemblent, avec ses conseils.</div>
-      <div class="v-f2"><div class="v-f"><label>Quand ?</label><select class="v-in" id="in-mois"><option value="">Je suis flexible</option>${MOIS.slice(1).map((m,i)=>`<option value="${i+1}"${+S.mois===i+1?' selected':''}>${m}</option>`).join('')}</select></div>
-        <div class="v-f"><label>Combien de jours ?</label><select class="v-in" id="in-duree">${[['3','Week-end (2–3 j)'],['5','4–5 jours'],['7','1 semaine'],['12','10–14 jours'],['21','3 semaines et +']].map(([v,l])=>`<option value="${v}"${S.duree===v?' selected':''}>${l}</option>`).join('')}</select></div></div>
-      <div class="v-f2"><div class="v-f"><label>Budget total / personne</label><input class="v-in" id="in-budget" inputmode="numeric" value="${esc(S.budget)}" placeholder="€, vols compris"></div>
-        <div class="v-f"><label>Vol au maximum</label><select class="v-in" id="in-vol">${[['3','3 h'],['6','6 h'],['12','12 h'],['99','Peu importe']].map(([v,l])=>`<option value="${v}"${S.vol===v?' selected':''}>${l}</option>`).join('')}</select></div></div>
-      <div class="v-f2"><div class="v-f"><label>Climat</label><select class="v-in" id="in-climat">${[['','Peu importe'],['chaud','Chaud'],['doux','Doux'],['frais','Frais']].map(([v,l])=>`<option value="${v}"${S.climat===v?' selected':''}>${l}</option>`).join('')}</select></div>
-        <div class="v-f"><label>Avec qui ?</label><select class="v-in" id="in-qui">${[['solo','Seul(e)'],['couple','En couple'],['amis','Entre amis'],['famille','En famille']].map(([v,l])=>`<option value="${v}"${S.qui===v?' selected':''}>${l}</option>`).join('')}</select></div></div>
+    const S = sample || M.insp || {};
+    const v = (k, d) => S[k] != null && S[k] !== '' ? S[k] : d;
+    const sel = (id, opts, cur) => `<select class="v-in" id="${id}">${opts.map(([val,l])=>`<option value="${val}"${String(cur)===String(val)?' selected':''}>${l}</option>`).join('')}</select>`;
+    openSheet(`<h2>💡 Où partir ?</h2><div class="v-sum-small" style="margin-bottom:8px">Réponds en 30 secondes : l’appli compare ${DESTS.length} destinations (météo du mois, temps de trajet depuis chez toi, budget, formalités) et te propose les meilleures, avec un itinéraire type.</div>
+      <div class="v-f2"><div class="v-f"><label>Départ de</label>${sel('in-dep', Object.keys(DEPS).map(k=>[k,k]), v('dep','Nantes'))}</div>
+        <div class="v-f"><label>Quand ?</label>${sel('in-mois', [['','Je suis flexible'], ...MOIS_L.map((m,i)=>[i+1, m])], v('mois',''))}</div></div>
+      <div class="v-f2"><div class="v-f"><label>Combien de jours ?</label>${sel('in-duree', [['3','Week-end (2–3 j)'],['5','4–5 jours'],['7','1 semaine'],['10','10 jours'],['14','2 semaines'],['21','3 semaines et +']], v('duree','7'))}</div>
+        <div class="v-f"><label>Combien de voyageurs ?</label>${sel('in-nb', [['1','1'],['2','2'],['3','3'],['4','4'],['5','5'],['6','6 et +']], v('nb','2'))}</div></div>
+      <div class="v-f2"><div class="v-f"><label>Budget total par personne</label><input class="v-in" id="in-budget" inputmode="numeric" value="${esc(v('budget','1200'))}" placeholder="€, transport compris"></div>
+        <div class="v-f"><label>Style</label>${sel('in-style', [['eco','Économique'],['confort','Confort'],['luxe','Petit luxe']], v('style','confort'))}</div></div>
+      <div class="v-f2"><div class="v-f"><label>Trajet au maximum</label>${sel('in-vol', [['2','2 h'],['4','4 h'],['8','8 h'],['99','Peu importe']], v('vol','4'))}</div>
+        <div class="v-f"><label>Climat souhaité</label>${sel('in-climat', [['','Peu importe'],['chaud','Chaud (26 °C et +)'],['doux','Doux (18–25 °C)'],['frais','Frais (< 18 °C)']], v('climat',''))}</div></div>
+      <div class="v-f2"><div class="v-f"><label>Avec qui ?</label>${sel('in-qui', [['solo','Seul(e)'],['couple','En couple'],['amis','Entre amis'],['famille','En famille']], v('qui','couple'))}</div>
+        <div class="v-f"><label>Rythme</label>${sel('in-rythme', [['calme','Tranquille'],['equil','Équilibré'],['intense','J’en veux plein']], v('rythme','equil'))}</div></div>
+      <label class="cv-checkline"><input type="checkbox" id="in-cni"${S.cni?' checked':''}> Uniquement avec la carte d’identité (pas de passeport)</label>
       <div class="v-f"><label>Envies (plusieurs choix)</label><div class="v-filters" style="flex-wrap:wrap">${INSP_TAGS.map(([k,l])=>`<button type="button" class="v-chip${(S.tags||[]).includes(k)?' on':''}" data-tag="${k}" onclick="this.classList.toggle('on')">${l}</button>`).join('')}</div></div>
       <div class="v-actions"><button type="button" class="v-btn" onclick="CV.inspireGo()">✨ Me proposer des destinations</button><button type="button" class="v-btn sec" onclick="CV.inspireDemo()">👀 Exemple</button></div>`);
   }
-  function inspireDemo(){ inspire({mois:'5', duree:'7', budget:'1100', vol:'3', climat:'chaud', tags:['mer','gastronomie','culture'], qui:'couple'}); }
+  function inspireDemo(){ inspire({dep:'Nantes', mois:'5', duree:'7', nb:'2', budget:'1100', style:'confort', vol:'4', climat:'chaud', qui:'couple', rythme:'equil', tags:['mer','gastronomie','culture']}); }
+  function inspCalc(S){
+    const dep = DEPS[S.dep] || DEPS.Nantes, days = +S.duree, bud = num(S.budget), maxH = +S.vol, sty = {eco:0.7, confort:1, luxe:1.8}[S.style] || 1, now = new Date();
+    return DESTS.map((d, i)=>{
+      const [nom, pays, cc, la, lo, tg, best, perDay, dur, itin, tip, visa, temps, wk] = d, tags = tg.split(' ');
+      const km_ = km({lat:dep[0], lng:dep[1]}, {lat:la, lng:lo}), ground = cc === 'FR' && km_ < 900 && !['RE','GP'].includes(cc);
+      const escale = !dep[2] && km_ > 2500, h = ground ? km_ / 85 : km_ / 780 + 0.7 + (escale ? 2.5 : 0);
+      const trans = ground ? Math.round(km_ * 0.24) : km_ < 1000 ? 140 : km_ < 2000 ? 210 : km_ < 3500 ? 320 : km_ < 6000 ? 560 : km_ < 9000 ? 780 : 980;
+      const mo = +S.mois || (best.find(m=>m > now.getMonth()+1) || best[0]), tmp = temps[mo-1];
+      const stay = Math.round(perDay * sty * Math.max(1, days - 1)), est = trans + (escale ? 80 : 0) + stay;
+      let sc = 0; const why = [], warn = [];
+      const hit = (S.tags||[]).filter(t=>tags.includes(t)); sc += Math.min(hit.length, 4) * 3;
+      if(best.includes(mo)){ sc += 4; why.push(`📅 ${MOIS_L[mo-1]} : très bonne période`); } else { sc -= 3; warn.push(`${MOIS_L[mo-1]} n’est pas la meilleure saison`); }
+      const cl = tmp >= 26 ? 'chaud' : tmp >= 18 ? 'doux' : 'frais';
+      if(S.climat){ if(cl === S.climat){ sc += 3; } else { sc -= 3; warn.push(`${tmp} °C en moyenne (${cl})`); } }
+      if(h > maxH){ sc -= 8; warn.push(`trajet ≈ ${hhm(h)}`); }
+      if(bud){ if(est <= bud){ sc += 3; } else if(est <= bud * 1.15){ warn.push('budget un peu juste'); } else { sc -= 4; warn.push(`budget ≈ ${eur(est)}`); } }
+      if(days >= dur[0] && days <= dur[1] + 3) sc += 2; else if(days < dur[0] * 0.6){ sc -= 4; warn.push(`idéal ${dur[0]}–${dur[1]} jours`); }
+      if(S.cni && !['UE','FR'].includes(visa)){ sc -= 10; warn.push('passeport nécessaire'); }
+      if(S.qui === 'famille'){ if(tags.includes('plage')) sc += 1; if(tags.includes('fête')) sc -= 2; }
+      if(S.qui === 'couple' && tags.includes('romantique')) sc += 2;
+      if(S.qui === 'amis' && tags.includes('fête')) sc += 2;
+      if(hit.length) why.unshift('✔︎ ' + hit.join(', '));
+      return {i, d, nom, pays, cc, tip, visa, wk, tags, best, dur, sc, est, trans, stay, h, ground, escale, mo, tmp, why, warn, itin};
+    }).sort((a,b)=>b.sc-a.sc);
+  }
+  const hhm = h => { const H = Math.floor(h), m = Math.round((h - H) * 6) * 10; return m === 60 ? (H+1) + ' h' : H + ' h' + (m ? String(m).padStart(2,'0') : ''); };
+  function inspItin(x, days, rythme){
+    let st = x.itin.map(([c,n])=>[c,n]); const nights = Math.max(1, days - 1);
+    const maxStops = rythme === 'calme' ? Math.max(1, Math.ceil(nights / 5)) : rythme === 'intense' ? st.length : Math.max(1, Math.ceil(nights / 3));
+    st = st.slice(0, Math.max(1, maxStops));
+    const tot = st.reduce((s,a)=>s+a[1],0);
+    st = st.map(([c,n])=>[c, Math.max(1, Math.round(n * nights / tot))]);
+    let diff = nights - st.reduce((s,a)=>s+a[1],0); let k = 0; while(diff !== 0 && k < 50){ const j = k % st.length; if(diff > 0){ st[j][1]++; diff--; } else if(st[j][1] > 1){ st[j][1]--; diff++; } k++; }
+    while(st.length > 1 && st.reduce((s,a)=>s+a[1],0) > nights){ st.pop(); }
+    return st;
+  }
+  let inspRes = [];
   function inspireGo(){
-    const g = id => document.getElementById(id).value;
-    const S = M.insp = {mois:g('in-mois'), duree:g('in-duree'), budget:g('in-budget'), vol:g('in-vol'), climat:g('in-climat'), qui:g('in-qui'), tags:[...document.querySelectorAll('[data-tag].on')].map(b=>b.dataset.tag)}; persist();
-    const days = +S.duree, bud = num(S.budget), mois = +S.mois, maxVol = +S.vol;
-    const scored = DESTS.map(d=>{
-      const [nom, pays, cc, tg, best, vol, perDay, dur, tip, clim] = d, tags = tg.split(' ');
-      const volCost = vol < 0.5 ? 60 : vol < 3 ? 180 : vol < 5 ? 300 : vol < 9 ? 650 : 900, est = Math.round(volCost + perDay * days);
-      let sc = 0; const why = [];
-      const hit = S.tags.filter(t=>tags.includes(t)); sc += hit.length * 3; if(hit.length) why.push('✔︎ ' + hit.join(', '));
-      if(mois){ if(best.includes(mois)){ sc += 4; why.push('📅 très bonne période'); } else sc -= 3; }
-      if(vol > maxVol){ sc -= 6; } else if(maxVol < 99) why.push(vol < 0.5 ? '🚗 sans avion' : `✈️ ${String(vol).replace('.', ',')} h de vol`);
-      if(bud){ if(est <= bud){ sc += 2; why.push(`💶 ≈ ${eur(est)} / pers.`); } else if(est > bud*1.25) sc -= 4; else sc -= 1; }
-      if(S.climat && clim === S.climat) sc += 2;
-      const dmin = parseInt(dur); if(days < dmin * 0.6) sc -= 3;
-      if(S.qui === 'famille' && tags.includes('fête')) sc -= 1;
-      return {d, sc, est, why, nom, pays, cc, dur, tip, best};
-    }).sort((a,b)=>b.sc-a.sc).slice(0, 6);
-    const MO = ['jan','fév','mars','avr','mai','juin','juil','août','sept','oct','nov','déc'];
-    openSheet(`<h2>✨ Mes idées de voyage</h2><div class="v-sum-small" style="margin-bottom:8px">Classées selon tes réponses. Budgets = ordres de grandeur (vols + vie sur place), à vérifier avec Escale.</div>
-      ${scored.map((x,i)=>`<div class="cv-idea"><div class="hd"><b>${flag(x.cc)} ${esc(x.nom)}</b><small>${esc(x.pays)} · idéal ${esc(x.dur)} · meilleurs mois : ${x.best.map(m=>MO[m-1]).join(', ')}</small></div>
-        <div class="why">${x.why.map(esc).join(' · ') || 'Une idée à explorer'}</div><p>💡 ${esc(x.tip)}</p>
-        <div class="cv-row" style="gap:6px;flex-wrap:wrap"><button type="button" class="v-day-edit" onclick="CV.inspireCreate(${DESTS.indexOf(x.d)})">🧳 Créer ce voyage</button><a class="v-day-edit" href="${ESCALE}">✈️ Prix des vols</a><a class="v-day-edit" href="https://fr.wikipedia.org/wiki/${encodeURIComponent(x.nom.split(' (')[0])}" target="_blank" rel="noopener">📖 Découvrir</a></div></div>`).join('')}
-      <div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.inspire()">← Modifier mes réponses</button><button type="button" class="v-btn sec cv-sq" onclick="CV.close()">✕</button></div>`);
+    const g = id => (document.getElementById(id)||{}).value;
+    const S = M.insp = Object.assign({}, M.insp, {dep:g('in-dep'), mois:g('in-mois'), duree:g('in-duree'), nb:g('in-nb'), budget:g('in-budget'), style:g('in-style'), vol:g('in-vol'), climat:g('in-climat'), qui:g('in-qui'), rythme:g('in-rythme'),
+      cni:(document.getElementById('in-cni')||{}).checked, tags:[...document.querySelectorAll('[data-tag].on')].map(b=>b.dataset.tag)}); persist();
+    inspRes = inspCalc(S); inspShow(8);
   }
-  function inspireCreate(i){
-    const d = DESTS[i]; if(!d) return; const S = M.insp || {}, days = +(S.duree||7);
-    const now = new Date(); let y = now.getFullYear(), m = +S.mois || (d[4].find(x=>x > now.getMonth()+1) || d[4][0]); if(m <= now.getMonth()+1) y++;
-    const debut = `${y}-${String(m).padStart(2,'0')}-01`, fin = addDays(debut, days), tid = 't' + uid(), ville = d[0].split(' (')[0];
-    putMany([{id:tid, type:'trip', titre:ville + ' · ' + (days >= 7 ? Math.round(days/7) + ' semaine' + (days >= 14 ? 's' : '') : days + ' jours'), sous:ville, debut, fin, voyageurs:M.me ? [M.me] : [], objectif:num(S.budget)||''},
-      {id:'i'+uid()+'h', type:'item', trip:tid, cat:'hotel', titre:ville, date:debut, dateFin:fin, statut:'todo', partage:'grp', qui:[]}], '🧳 Voyage créé : ' + ville);
+  function inspShow(n, focus){
+    const S = M.insp, days = +S.duree, nb = Math.min(6, +S.nb || 1), fav = new Set(M.inspFav || []);
+    const top = inspRes.slice(0, n), mx = Math.max(1, inspRes[0].sc), mn = inspRes[inspRes.length - 1].sc;
+    const pct = x => Math.max(5, Math.min(99, Math.round((x.sc - mn) / (mx - mn || 1) * 100)));
+    openSheet(`<h2>✨ Mes idées de voyage</h2><div class="v-sum-small" style="margin-bottom:8px">Depuis <b>${esc(S.dep)}</b>, ${days} jours, ${nb} voyageur${nb>1?'s':''}. Budgets et temps de trajet = ordres de grandeur ; prix réels avec Escale, formalités sur diplomatie.gouv.fr.</div>
+      ${top.map(x=>`<div class="cv-idea${focus===x.i?' focus':''}" id="idea-${x.i}" data-i="${x.i}"><div class="im"><img data-wk="fr:${esc(x.wk)}" alt=""><span class="pc">${pct(x)} %</span><button type="button" class="fav${fav.has(x.nom)?' on':''}" onclick="CV.inspFav(${x.i}, this)" aria-label="Garder">${fav.has(x.nom)?'❤️':'🤍'}</button></div>
+        <div class="hd"><b>${flag(x.cc)} ${esc(x.nom)}</b><small>${esc(x.pays)} · idéal ${x.dur[0]}–${x.dur[1]} j</small></div>
+        <div class="chips"><span data-k="t">🌡️ ${x.tmp} °C en ${MOIS_L[x.mo-1]}</span><span>${x.ground ? '🚗' : '✈️'} ≈ ${hhm(x.h)}${x.escale ? ' (escale probable)' : ''}</span><span data-k="p" class="${x.ground ? 'hide' : ''}">✈️ prix réel…</span><span data-k="e">💶 ≈ ${eur(x.est)} / pers.</span><span>${VISA[x.visa]}</span></div>
+        ${x.why.length ? `<div class="why">${x.why.map(esc).join(' · ')}</div>` : ''}${x.warn.length ? `<div class="warn">⚠️ ${x.warn.map(esc).join(' · ')}</div>` : ''}
+        <div class="iti">🗺️ ${inspItin(x, days, S.rythme).map(([c,n])=>`${esc(c)} <small>${n} n.</small>`).join(' → ')}</div>
+        <div class="bud" data-k="b">Trajet ≈ ${eur(x.trans + (x.escale ? 80 : 0))} · sur place ≈ ${eur(x.stay)} · <b>total groupe ≈ ${eur(x.est * nb)}</b></div>
+        <p>💡 ${esc(x.tip)}</p>
+        <div class="cv-row" style="gap:6px;flex-wrap:wrap"><button type="button" class="v-day-edit cp-go" onclick="CV.inspOpen(${x.i})">🧩 Explorer & composer</button><button type="button" class="v-day-edit" onclick="CV.inspireCreate(${x.i})">🧳 Créer tel quel</button><a class="v-day-edit" href="${ESCALE}">✈️ Prix réels</a><a class="v-day-edit" href="https://fr.wikipedia.org/wiki/${encodeURIComponent(x.wk.replace(/ /g,'_'))}" target="_blank" rel="noopener">📖 Découvrir</a></div></div>`).join('')}
+      ${n < 16 ? `<button type="button" class="v-btn sec" onclick="CV.inspMore()">Voir d’autres idées</button>` : ''}<div id="insp-bp"></div>
+      <div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.inspSurprise()">🎲 Surprends-moi</button>${fav.size >= 2 ? `<button type="button" class="v-btn" onclick="CV.inspVote()">🗳️ Faire voter (${fav.size})</button>` : ''}<button type="button" class="v-btn sec" onclick="CV.inspire()">← Réponses</button></div>`);
+    setTimeout(async ()=>{ const imgs = [...document.querySelectorAll('.cv-idea img[data-wk]')]; await wkThumbs(imgs.map(i=>({wiki:i.dataset.wk})));
+      imgs.forEach(i=>{ const w = wkParse(i.dataset.wk), u = w && wkCache[w.lang+':'+w.title]; if(u){ i.src = u.replace(/\/\d+px-/, '/640px-'); i.parentNode.classList.add('has'); } });
+      if(focus != null){ const e = document.getElementById('idea-' + focus); if(e) e.scrollIntoView({behavior:'smooth', block:'start'}); }
+      inspPaint(); inspEnrich(); }, 30);
+  }
+  let inspN = 8;
+  function inspMore(){ inspN = 16; inspShow(16); }
+  function inspFav(i, b){ const nm = DESTS[i][0]; const f = new Set(M.inspFav || []); f.has(nm) ? f.delete(nm) : f.add(nm); M.inspFav = [...f].slice(-8); persist(); b.classList.toggle('on', f.has(nm)); b.textContent = f.has(nm) ? '❤️' : '🤍'; toast(f.has(nm) ? '❤️ Gardé pour le vote' : 'Retiré'); }
+  function inspSurprise(){ const pool = inspRes.slice(0, 12), x = pool[Math.floor(Math.random() * pool.length)]; if(!inspRes.slice(0, inspN).includes(x)) inspShow(16, x.i); else inspShow(inspN, x.i); toast('🎲 ' + x.nom + ' !'); }
+  function inspVote(){
+    const f = (M.inspFav || []).slice(0, 8); if(f.length < 2) return;
+    put({id:'po'+uid(), type:'poll', question:'Où partir ' + (M.insp && M.insp.mois ? 'en ' + MOIS_L[M.insp.mois-1] : 'pour le prochain voyage') + ' ?', options:f, votes:{}, closed:false}, '🗳️ Sondage créé dans les Envies');
+    M.inspFav = []; persist(); closeSheet(true); M.mode = 'prep'; tab('envies');
+  }
+  function inspireCreate(i, custom){
+    const x = inspRes.find(r=>r.i === i) || inspCalc(M.insp || {}).find(r=>r.i === i); if(!x) return;
+    const S = M.insp || {}, days = +(S.duree || 7), st = custom ? custom.stops : inspItin(x, days, S.rythme), now = new Date();
+    let y = now.getFullYear(); const mo = x.mo; if(mo < now.getMonth() + 1 || (mo === now.getMonth() + 1 && now.getDate() > 10)) y++;
+    let debut = `${y}-${String(mo).padStart(2,'0')}-01`; const dow = new Date(debut + 'T12:00:00').getDay(); debut = addDays(debut, (6 - dow + 7) % 7);   // premier samedi
+    const tid = 't' + uid(), out = [], v = M.me ? [M.me] : [];
+    let cur = debut; const stops = st.map(([c,n])=>{ const s = {c, n, d:cur, f:addDays(cur, n)}; cur = s.f; return s; }), fin = cur;
+    out.push({id:tid, type:'trip', titre:x.nom + ' · ' + (days >= 7 ? Math.round(days/7) + ' semaine' + (days >= 14 ? 's' : '') : days + ' jours'), sous:stops.map(s=>s.c).join(' → '), debut, fin, voyageurs:v, objectif:num(S.budget)||''});
+    const mode = x.ground ? 'Voiture' : 'Avion';
+    out.push({id:'i'+uid()+'a', type:'item', trip:tid, cat:'transport', mode, titre:(S.dep||'Départ') + ' → ' + stops[0].c, from:S.dep||'', to:stops[0].c, date:debut, statut:'todo', partage:'pp', qui:[], estime:String(Math.round((x.trans + (x.escale ? 80 : 0))/2))});
+    stops.forEach((s,k)=>{
+      const hid = 'i'+uid()+'h'+k; out.push({id:hid, type:'item', trip:tid, cat:'hotel', titre:s.c, date:s.d, dateFin:s.f, statut:'todo', partage:'grp', qui:[]});
+      const pls = custom && custom.sel && custom.sel[s.c] || [], dd = range(s.d, s.f).slice(0, Math.max(1, s.n)), per = Math.max(1, Math.ceil(pls.length / dd.length));
+      pls.forEach((p,j)=>out.push({id:'pl'+uid()+k+'_'+j, type:'place', trip:tid, stay:hid, date:dd[Math.min(dd.length-1, Math.floor(j/per))], nom:p.nom, adresse:'', lat:p.lat, lng:p.lng, cat:p.cat, lock:false}));
+      out.push({id:'day:'+tid+':'+s.d, type:'day', trip:tid, date:s.d, titre: k === 0 ? 'Arrivée à ' + s.c : stops[k-1].c + ' → ' + s.c, plan:''});
+      range(addDays(s.d,1), addDays(s.f,-1)).forEach(dd=>out.push({id:'day:'+tid+':'+dd, type:'day', trip:tid, date:dd, titre:s.c, plan:''}));
+      if(k > 0) out.push({id:'i'+uid()+'t'+k, type:'item', trip:tid, cat:'transport', mode:'Train', titre:stops[k-1].c + ' → ' + s.c, from:stops[k-1].c, to:s.c, date:s.d, statut:'todo', partage:'pp', qui:[]});
+    });
+    out.push({id:'i'+uid()+'r', type:'item', trip:tid, cat:'transport', mode, titre:stops[stops.length-1].c + ' → ' + (S.dep||'retour'), from:stops[stops.length-1].c, to:S.dep||'', date:fin, statut:'todo', partage:'pp', qui:[], estime:String(Math.round((x.trans + (x.escale ? 80 : 0))/2))});
+    out.push({id:'day:'+tid+':'+fin, type:'day', trip:tid, date:fin, titre:stops[stops.length-1].c + ' → retour', plan:''});
+    putMany(out, '🧳 Voyage créé : ' + x.nom);
     closeSheet(true); M.mode = 'prep'; M.tab = 'prog'; go(tid);
-    setTimeout(()=>alert(`🧳 « ${ville} » est créé, du ${fdate(debut)} au ${fdate(fin)} (dates modifiables).\n\nEnsuite : ✈️ cherche les vols avec Escale, 🔎 « Que voir » pour les visites, 🪄 « Remplir mes journées ».`), 300);
+    setTimeout(()=>alert(`🧳 « ${x.nom} » est prêt, du ${fdate(debut)} au ${fdate(fin)} :\n${stops.map(s=>'• ' + s.c + ' (' + s.n + ' nuit' + (s.n>1?'s':'') + ')').join('\n')}\n\nTout est modifiable. Ensuite : ✈️ prix réels avec Escale, 🔎 « Que voir » à chaque étape, 🪄 « Remplir mes journées ».`), 300);
   }
+
 
   /* ══════════ 📲 Appli à installer obligatoirement (écran d'accueil) + compteur anonyme ══════════ */
   function installGate(){
@@ -7550,6 +7678,134 @@ ${pm.join('\n')}</Document></kml>`;
     }
   }
 
+  /* ══════════ 💡 Propositions enrichies par des API gratuites + composition du voyage ══════════
+     • Prix réels des vols depuis ta ville : API Escale (Travelpayouts, cache des recherches récentes)
+     • Météo réelle du mois : Open-Meteo (relevés de l'an dernier aux mêmes dates)
+     • « Bons plans » : destinations les moins chères depuis ta ville, hors liste
+     • Composer : villes proches (Wikidata), lieux à voir (Wikipédia), photos et résumés */
+  const ESC_API = 'https://vol-bm4.pages.dev';
+  const DIATA = {'Lisbonne & Porto':'LIS','Algarve':'FAO','Açores':'PDL','Madère':'FNC','Andalousie':'SVQ','Barcelone':'BCN','Madrid & Tolède':'MAD','Majorque':'PMI','Tenerife':'TCI','Pays basque espagnol':'BIO',
+    'Rome':'ROM','Florence & Toscane':'FLR','Venise':'VCE','Pouilles':'BRI','Sicile':'PMO','Naples & côte amalfitaine':'NAP','Dolomites':'VRN','Sardaigne':'CAG','Corse':'AJA','Provence':'MRS','Amsterdam':'AMS','Londres':'LON',
+    'Écosse':'EDI','Irlande':'DUB','Berlin':'BER','Prague':'PRG','Vienne & Budapest':'VIE','Croatie (Split & Dubrovnik)':'SPU','Slovénie':'LJU','Athènes & Cyclades':'ATH','Crète':'HER','Malte':'MLA','Istanbul':'IST',
+    'Cappadoce':'NAV','Marrakech & Atlas':'RAK','Fès & désert marocain':'FEZ','Égypte (Nil)':'LXR','Jordanie':'AMM','Islande':'REK','Fjords de Norvège':'BGO','Laponie finlandaise':'RVN','New York':'NYC','Ouest américain':'LAS',
+    'Québec':'YMQ','Japon':'TYO','Thaïlande':'BKK','Vietnam':'HAN','Bali':'DPS','Sri Lanka':'CMB','La Réunion':'RUN','Guadeloupe':'PTP','Costa Rica':'SJO','Mexique (Yucatán)':'CUN','Cap-Vert':'SID'};
+  const DEP_IATA = {Paris:'PAR', Nantes:'NTE', Brest:'BES', Rennes:'RNS', Lyon:'LYS', Marseille:'MRS', Nice:'NCE', Bordeaux:'BOD', Toulouse:'TLS', Lille:'LIL', Strasbourg:'SXB', Montpellier:'MPL', Bruxelles:'BRU', 'Genève':'GVA'};
+  const inspLive = {prices:null, temps:{}, names:null, key:''};
+  const monthKey = S => { const now = new Date(); let m = +S.mois || (now.getMonth() + 2); let y = now.getFullYear(); if(m > 12){ m -= 12; y++; } if(m < now.getMonth() + 1) y++; return `${y}-${String(m).padStart(2,'0')}`; };
+  async function inspEnrich(){
+    const S = M.insp; if(!S) return; const key = S.dep + '|' + monthKey(S);
+    const tasks = [];
+    if(inspLive.key !== key){ inspLive.key = key; inspLive.prices = null;
+      tasks.push(fetch(`${ESC_API}/api/anywhere?origin=${DEP_IATA[S.dep]||'NTE'}&month=${monthKey(S)}`).then(r=>r.json()).then(j=>{ inspLive.prices = {}; (j.results||[]).forEach(o=>{ if(!(o.destination in inspLive.prices)) inspLive.prices[o.destination] = o; }); }).catch(()=>{ inspLive.prices = {}; })); }
+    if(!inspLive.names) tasks.push(fetch(`${ESC_API}/api/cities`).then(r=>r.json()).then(j=>{ inspLive.names = j && typeof j === 'object' ? (j.names || j) : {}; }).catch(()=>{ inspLive.names = {}; }));
+    // météo réelle du mois pour les cartes affichées
+    const ym = monthKey(S), yy = +ym.slice(0,4) - 1, mm = ym.slice(5);
+    const shown = [...document.querySelectorAll('.cv-idea[data-i]')].map(e=>+e.dataset.i).filter(i=>DESTS[i]);
+    shown.forEach(i=>{ const d = DESTS[i], k = i + '|' + mm; if(inspLive.temps[k] != null) return;
+      const end = new Date(yy, +mm, 0).getDate();
+      tasks.push(fetch(`https://archive-api.open-meteo.com/v1/archive?latitude=${d[3]}&longitude=${d[4]}&start_date=${yy}-${mm}-01&end_date=${yy}-${mm}-${end}&daily=temperature_2m_max,precipitation_sum&timezone=auto`).then(r=>r.json()).then(j=>{
+        const t = (j.daily||{}).temperature_2m_max || [], pr = (j.daily||{}).precipitation_sum || [];
+        if(t.length) inspLive.temps[k] = {t:Math.round(t.reduce((a,b)=>a+(b||0),0)/t.length), pluie:pr.filter(x=>x >= 1).length, y:yy}; }).catch(()=>{})); });
+    await Promise.all(tasks);
+    inspPaint();
+  }
+  function inspPaint(){
+    const S = M.insp; if(!S) return; const mm = monthKey(S).slice(5), nb = Math.min(6, +S.nb || 1);
+    document.querySelectorAll('.cv-idea[data-i]').forEach(el=>{
+      const i = +el.dataset.i, d = DESTS[i]; if(!d) return;
+      const w = inspLive.temps[i + '|' + mm], tEl = el.querySelector('[data-k="t"]');
+      if(w && tEl) tEl.innerHTML = `🌡️ ${w.t} °C · ${w.pluie} j de pluie <small>(relevé ${w.y})</small>`;
+      const pr = inspLive.prices && inspLive.prices[DIATA[d[0]]], pEl = el.querySelector('[data-k="p"]');
+      if(pr && pEl){ pEl.innerHTML = `✈️ <b>dès ${eur(pr.price)}</b> A/R${pr.transfers ? ' · ' + pr.transfers + ' escale' + (pr.transfers > 1 ? 's' : '') : ' · direct'} <small>(vu récemment)</small>`; pEl.classList.add('live');
+        const x = inspRes.find(r=>r.i === i); if(x){ const est = pr.price + x.stay, b = el.querySelector('[data-k="b"]'); if(b) b.innerHTML = `Vol ≈ ${eur(pr.price)} (réel) · sur place ≈ ${eur(x.stay)} · <b>total groupe ≈ ${eur(est * nb)}</b>`;
+          const e2 = el.querySelector('[data-k="e"]'); if(e2) e2.textContent = `💶 ≈ ${eur(est)} / pers.`; x.live = pr.price; } }
+    });
+    // bons plans : les destinations les moins chères depuis ta ville, absentes de la liste
+    const bp = document.getElementById('insp-bp'); if(!bp || !inspLive.prices) return;
+    const known = new Set(Object.values(DIATA)), budT = num(S.budget) ? num(S.budget) * 0.45 : 400;
+    const deals = Object.values(inspLive.prices).filter(o=>!known.has(o.destination) && o.price <= budT && inspLive.names && inspLive.names[o.destination]).slice(0, 8);
+    bp.innerHTML = deals.length ? `<h3 style="margin:14px 0 6px">✈️ Bons plans depuis ${esc(S.dep)} <small class="v-sum-small">(${MOIS_L[+monthKey(S).slice(5)-1]})</small></h3><div class="cv-deals">${deals.map(o=>`<button type="button" class="cv-deal" onclick="CV.inspDeal('${esc(o.destination)}')"><b>${esc(inspLive.names[o.destination])}</b><span>dès ${eur(o.price)}</span><small>${o.transfers ? o.transfers + ' escale(s)' : 'direct'}</small></button>`).join('')}</div>` : '';
+  }
+  async function inspDeal(code){
+    const nm = (inspLive.names || {})[code] || code; toast('📡 ' + nm + '…');
+    const g = await geocode(nm, null).catch(()=>null); if(!g){ alert('Ville introuvable.'); return; }
+    const pr = (inspLive.prices || {})[code], S = M.insp || {}, days = +(S.duree||7);
+    // proposition « à la volée » construite à partir des API
+    const d = [nm, '', '', g.lat, g.lng, 'ville culture', [], 90, [3, Math.max(4, days)], [[nm, Math.max(1, days-1)]], 'Bon plan trouvé dans les prix récents : vérifie le tarif du jour avec Escale.', 'P', Array(12).fill(20), nm];
+    const i = DESTS.push(d) - 1; DIATA[nm] = code;
+    inspRes.unshift({i, d, nom:nm, pays:'', cc:'', tip:d[10], visa:'P', wk:nm, tags:['ville'], best:[], dur:d[8], sc:0, est:(pr ? pr.price : 0) + 90*Math.max(1,days-1), trans:pr ? pr.price : 0, stay:90*Math.max(1,days-1), h:0, ground:false, escale:false, mo:+monthKey(S).slice(5), tmp:'?', why:['✈️ bon plan dès ' + eur(pr ? pr.price : 0)], warn:[], itin:d[9]});
+    inspOpen(i);
+  }
+
+  /* ---------- 🧩 Composer le voyage à partir d'une proposition ---------- */
+  let comp = null;
+  async function wdNear(lat, lng, km_){
+    const q = `SELECT ?c ?cLabel ?img ?coord ?n WHERE { SERVICE wikibase:around { ?c wdt:P625 ?coord. bd:serviceParam wikibase:center "Point(${lng} ${lat})"^^geo:wktLiteral. bd:serviceParam wikibase:radius "${km_}". }
+      VALUES ?t { wd:Q515 wd:Q1549591 wd:Q5119 wd:Q3957 wd:Q15284 wd:Q1637706 } ?c wdt:P31 ?t. ?c wikibase:sitelinks ?n. FILTER(?n > 25) OPTIONAL { ?c wdt:P18 ?img }
+      SERVICE wikibase:label { bd:serviceParam wikibase:language "fr,en". } } ORDER BY DESC(?n) LIMIT 18`;
+    const j = await (await fetch('https://query.wikidata.org/sparql?format=json&query=' + encodeURIComponent(q), {headers:{Accept:'application/sparql-results+json'}})).json();
+    const seen = new Set();
+    return (j.results && j.results.bindings || []).map(b=>{ const m = (b.coord.value.match(/Point\(([-\d.]+) ([-\d.]+)\)/) || []);
+      return {c:b.cLabel.value, lng:+m[1], lat:+m[2], img:b.img ? b.img.value.replace(/^http:/,'https:') + '?width=240' : '', n:+b.n.value}; })
+      .filter(x=>!/^Q\d+$/.test(x.c) && !seen.has(normQ(x.c)) && seen.add(normQ(x.c)));
+  }
+  async function inspOpen(i){
+    const x = inspRes.find(r=>r.i === i); if(!x) return; const S = M.insp || {}, days = +(S.duree||7);
+    comp = {i, x, nights:Math.max(1, days-1), stops:inspItin(x, days, S.rythme).map(([c,n])=>({c, n, lat:null, lng:null})), sel:{}, places:{}, near:null};
+    compRender();
+    const [la, lo] = [x.d[3], x.d[4]];
+    // résumé (Wikivoyage, sinon Wikipédia)
+    (async()=>{ for(const host of ['fr.wikivoyage.org','fr.wikipedia.org']){ try { const j = await (await fetch(`https://${host}/w/api.php?action=query&prop=extracts|pageimages&exintro=1&explaintext=1&exsentences=4&piprop=thumbnail&pithumbsize=800&redirects=1&format=json&origin=*&titles=` + encodeURIComponent(x.wk))).json();
+        const pg = Object.values((j.query||{}).pages||{})[0]; if(pg && pg.extract){ const e = document.getElementById('cp-sum'); if(e) e.innerHTML = esc(pg.extract) + ` <small>(${host.includes('voyage') ? 'Wikivoyage' : 'Wikipédia'}, CC BY-SA)</small>`;
+          if(pg.thumbnail){ const im = document.getElementById('cp-img'); if(im){ im.src = pg.thumbnail.source; im.parentNode.classList.add('has'); } } return; } } catch(e){} } })();
+    // positions des étapes, puis lieux à voir
+    for(const s of comp.stops){ if(!comp || comp.i !== i) return; const g = s.c === x.d[9][0][0] && x.d[3] ? null : await geocode(s.c + (x.pays ? ', ' + x.pays : ''), null).catch(()=>null);
+      s.lat = g ? g.lat : la; s.lng = g ? g.lng : lo; compPlaces(s); }
+    // villes proches (Wikidata)
+    try { comp.near = await wdNear(la, lo, days > 9 ? 280 : 160); } catch(e){ comp.near = []; }
+    if(comp && comp.i === i) compNear();
+  }
+  function compRender(){
+    const c = comp, x = c.x, used = c.stops.reduce((s,a)=>s+a.n,0);
+    openSheet(`<h2>${flag(x.cc)} ${esc(x.nom)}</h2>
+      <div class="cp-hero"><img id="cp-img" alt=""></div>
+      <p id="cp-sum" class="wk-tx">📖 Chargement de la présentation…</p>
+      <h3>🗺️ Mes étapes <small class="v-sum-small">${used} / ${c.nights} nuit${c.nights>1?'s':''}</small></h3>
+      <div id="cp-stops">${c.stops.map((s,k)=>`<div class="cp-stop"><b>${k+1}. ${esc(s.c)}</b><span class="cp-n"><button type="button" onclick="CV.compN(${k},-1)">−</button>${s.n} n.<button type="button" onclick="CV.compN(${k},1)">＋</button></span>${c.stops.length > 1 ? `<button type="button" class="cv-x" onclick="CV.compDel(${k})">✕</button>` : ''}</div>`).join('')}</div>
+      ${used !== c.nights ? `<div class="v-sum-small" style="color:#a16207">${used < c.nights ? 'Il reste ' + (c.nights-used) + ' nuit(s) à placer' : 'Tu dépasses de ' + (used-c.nights) + ' nuit(s) : le voyage sera rallongé'}.</div>` : ''}
+      <h3>➕ Ajouter une étape <small class="v-sum-small">villes à proximité</small></h3><div id="cp-near" class="cp-near">${c.near ? '' : '<div class="v-sum-small">📡 Recherche des villes proches…</div>'}</div>
+      <h3>🔎 À voir <small class="v-sum-small">coche ce qui te tente</small></h3>
+      <div id="cp-places">${c.stops.map((s,k)=>`<div class="cp-pl" id="cp-pl-${k}"><b>${esc(s.c)}</b><div class="cp-grid">${(c.places[s.c]||null) ? '' : '<div class="v-sum-small">📡 Recherche…</div>'}</div></div>`).join('')}</div>
+      <div class="v-actions"><button type="button" class="v-btn" onclick="CV.compCreate()">🧳 Créer mon voyage (${c.stops.length} étape${c.stops.length>1?'s':''}, ${Object.values(c.sel).reduce((s,a)=>s+a.length,0)} lieu${Object.values(c.sel).reduce((s,a)=>s+a.length,0)>1?'x':''})</button><button type="button" class="v-btn sec cv-sq" onclick="CV.inspBack()">←</button></div>`);
+    const im = document.getElementById('cp-img'); if(c.img && im){ im.src = c.img; im.parentNode.classList.add('has'); }
+    if(c.near) compNear(); c.stops.forEach(s=>{ if(c.places[s.c]) compPlacesPaint(s); });
+  }
+  function compNear(){
+    const el = document.getElementById('cp-near'); if(!el || !comp) return; const have = new Set(comp.stops.map(s=>normQ(s.c)));
+    const l = (comp.near||[]).filter(n=>!have.has(normQ(n.c))).slice(0, 12);
+    el.innerHTML = l.length ? l.map(n=>`<button type="button" class="cp-city" onclick="CV.compAdd('${esc(n.c).replace(/'/g,'&#39;')}',${n.lat},${n.lng})">${n.img ? `<img src="${esc(n.img)}" alt="" loading="lazy">` : '<i>🏙️</i>'}<span>${esc(n.c)}</span><small>＋ ajouter</small></button>`).join('') : '<div class="v-sum-small">Pas d’autre ville proposée.</div>';
+  }
+  async function compPlaces(s){
+    if(!comp) return; try { const l = await seeWiki({lat:s.lat, lng:s.lng}); comp.places[s.c] = l.filter(p=>normQ(p.nom) !== normQ(s.c)).slice(0, 9); } catch(e){ comp.places[s.c] = []; }
+    await wkThumbs(comp.places[s.c]); compPlacesPaint(s);
+  }
+  function compPlacesPaint(s){
+    const k = comp.stops.indexOf(s), el = document.querySelector(`#cp-pl-${k} .cp-grid`); if(!el) return;
+    const l = comp.places[s.c] || [], sel = new Set((comp.sel[s.c]||[]).map(p=>p.nom));
+    el.innerHTML = l.length ? l.map((p,j)=>{ const w = wkParse(p.wiki), u = w && wkCache[w.lang+':'+w.title];
+      return `<button type="button" class="cp-place${sel.has(p.nom)?' on':''}" onclick="CV.compTog(${k},${j})">${u ? `<img src="${esc(u)}" alt="" loading="lazy">` : `<i>${(POI_CATS[p.cat]||{icon:'📍'}).icon}</i>`}<span>${esc(p.nom)}</span><em>${sel.has(p.nom) ? '✓' : '＋'}</em></button>`; }).join('') : '<div class="v-sum-small">Aucun lieu trouvé (réseau ?).</div>';
+  }
+  function compTog(k, j){ const s = comp.stops[k], p = (comp.places[s.c]||[])[j]; if(!p) return; const L = comp.sel[s.c] = comp.sel[s.c] || []; const at = L.findIndex(x=>x.nom===p.nom); at >= 0 ? L.splice(at,1) : L.push(p); compPlacesPaint(s); compFoot(); }
+  function compFoot(){ const b = document.querySelector('#v-sheet-bg .v-actions .v-btn'); if(b){ const n = Object.values(comp.sel).reduce((s,a)=>s+a.length,0); b.textContent = `🧳 Créer mon voyage (${comp.stops.length} étape${comp.stops.length>1?'s':''}, ${n} lieu${n>1?'x':''})`; } }
+  function compN(k, d){ const s = comp.stops[k]; s.n = Math.max(1, s.n + d); const y = (document.querySelector('#v-sheet-bg .v-sheet')||{}).scrollTop; compRender(); const sh = document.querySelector('#v-sheet-bg .v-sheet'); if(sh) sh.scrollTop = y; }
+  function compDel(k){ const s = comp.stops.splice(k,1)[0]; delete comp.sel[s.c]; const y = (document.querySelector('#v-sheet-bg .v-sheet')||{}).scrollTop; compRender(); const sh = document.querySelector('#v-sheet-bg .v-sheet'); if(sh) sh.scrollTop = y; }
+  function compAdd(c, lat, lng){
+    const s = {c, n:1, lat, lng}; const big = comp.stops.reduce((a,b)=>b.n > a.n ? b : a, comp.stops[0]); if(big && big.n > 2) big.n--;   // on prend une nuit à l'étape la plus longue
+    comp.stops.push(s); const y = (document.querySelector('#v-sheet-bg .v-sheet')||{}).scrollTop; compRender(); const sh = document.querySelector('#v-sheet-bg .v-sheet'); if(sh) sh.scrollTop = y; compPlaces(s); toast('➕ ' + c);
+  }
+  function inspBack(){ comp = null; inspShow(inspN); }
+  function compCreate(){ if(!comp) return; const c = comp; inspireCreate(c.i, {stops:c.stops.map(s=>[s.c, s.n]), sel:c.sel}); comp = null; }
+
   function infoHTML(){
     return `<div class="cv-info">
       ${tutoBtn()}
@@ -7628,7 +7884,7 @@ ${pm.join('\n')}</Document></kml>`;
     envF:setEnvF, envP:setEnvP, like, editWish, saveWish, delWish, wishToTrip,
     editTrip, saveTrip, delTrip, closeTrip, reopenTrip,
     live, one, echAdd, echDel, echSpread, echToggle, lisser, echReset, echRange, echRangeReset,
-    planDay, plCfg, plAdd, plDel, plOpt, wizard, gateInstall, partsSheet, partsSave, discInfo, discBack, newTrip, blankTrip, inspire, inspireDemo, inspireGo, inspireCreate, zipSheet, zipExport, zipImport, worldFly, worldStep, worldStory, cfSegGo, trkToggle, modeGo, bilanClose, albumSheet, albCover, albumGo, tripShare, tripShareSheet, tripInvite, tripUnshare, tripJoin, tripJoinGo, tripWho, tripWhoSet, impSheet, impPick, jrSheet, jrTog, jrAll, worldMap, worldMode, worldOpen, worldClose, pjAdd, pjDel, pjOpen, cfSheet, cfGo, tlCo2, hereNow, tlStats, tlKml, tlFill, tlFillGo, rcView, rcAttach, tlIcsGo, capSet, shopSheet, shopAdd, shopTick, shopClear, rembAsk, pollNew, pollSave, pollVote, pollClose, pollDel, pdfRoute, pdfJournal, pdfShare, pdfOpen, pkgPick, pkgApply, hydrateMaps, renderOutils, tlDay, tlIcs, fxTool, fxFill, tlMeteo, tlReceipt, tlRcPhoto, tlRcOcr, tlRcSave, tlReceipts, tlMap, tlBags, tlBagsGo, tlDocs, tlDocEdit, tlDocSave, tlDocDel, tlJournal, pkgSheet, pkgExport, pkgImport, pinToggle, shareSheet, shareLink, askErase, tutoSheet, escaleTuto, demoLoad, demoDel, demoReset, wzGo, wzDates, wzEt, wzSum, wzTpl, wzCreate,
+    planDay, plCfg, plAdd, plDel, plOpt, wizard, inspDeal, inspOpen, compN, compDel, compAdd, compTog, compCreate, inspBack, inspMore, inspFav, inspSurprise, inspVote, gateInstall, partsSheet, partsSave, discInfo, discBack, newTrip, blankTrip, inspire, inspireDemo, inspireGo, inspireCreate, zipSheet, zipExport, zipImport, worldFly, worldStep, worldStory, cfSegGo, trkToggle, modeGo, bilanClose, albumSheet, albCover, albumGo, tripShare, tripShareSheet, tripInvite, tripUnshare, tripJoin, tripJoinGo, tripWho, tripWhoSet, impSheet, impPick, jrSheet, jrTog, jrAll, worldMap, worldMode, worldOpen, worldClose, pjAdd, pjDel, pjOpen, cfSheet, cfGo, tlCo2, hereNow, tlStats, tlKml, tlFill, tlFillGo, rcView, rcAttach, tlIcsGo, capSet, shopSheet, shopAdd, shopTick, shopClear, rembAsk, pollNew, pollSave, pollVote, pollClose, pollDel, pdfRoute, pdfJournal, pdfShare, pdfOpen, pkgPick, pkgApply, hydrateMaps, renderOutils, tlDay, tlIcs, fxTool, fxFill, tlMeteo, tlReceipt, tlRcPhoto, tlRcOcr, tlRcSave, tlReceipts, tlMap, tlBags, tlBagsGo, tlDocs, tlDocEdit, tlDocSave, tlDocDel, tlJournal, pkgSheet, pkgExport, pkgImport, pinToggle, shareSheet, shareLink, askErase, tutoSheet, escaleTuto, demoLoad, demoDel, demoReset, wzGo, wzDates, wzEt, wzSum, wzTpl, wzCreate,
     pickColor, newProfile, editProfile, saveProfile, delProfile, whoSheet, setMe,
     genCode, syncOn, syncOff, syncNow, shareCode, exportShare, exportDownload, importPick, wipe, obCreate, obJoin,
     _R:()=>R, _M:()=>M};
