@@ -949,6 +949,33 @@ a.v-btn.cv-escale{display:block;text-align:center;text-decoration:none}
 .cv-share-qr{display:block;margin:6px auto 10px;width:min(64vw,240px);height:auto;background:#fff;border-radius:14px;padding:10px}
 .cv-share-url{font-size:.78rem;text-align:center;word-break:break-all;color:var(--gray);margin-bottom:10px}
 .cv-rmap{margin-top:10px}
+.cv-quick{display:flex;gap:6px;margin:2px 0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.cv-quick button{flex:1 0 auto;border:1.5px solid #e4d9f2;background:#fff;color:#2a1238;border-radius:20px;padding:9px 12px;font:inherit;font-weight:700;font-size:.82rem;white-space:nowrap}
+.cv-quick button:first-child{background:#16a34a;border-color:#16a34a;color:#fff}
+.cv-here{background:#ecfdf3;border:1px solid #a7e3bf;border-radius:12px;padding:8px 10px;margin:0 0 10px;font-size:.88rem}
+.cv-here small{display:block;color:#3f6b52;font-size:.74rem;margin-top:2px}
+.jr-sv{margin:8px 0}
+.jr-sv small{color:#6b5670}
+.jr-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:4px}
+.jr-ph{position:relative;border:0;padding:0;border-radius:10px;overflow:hidden;aspect-ratio:1;background:#eee}
+.jr-ph img{width:100%;height:100%;object-fit:cover;display:block}
+.jr-ph span{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:#7c3aed;color:#fff;font-size:.75rem;display:flex;align-items:center;justify-content:center}
+.jr-ph.off img{opacity:.3;filter:grayscale(1)}
+.jr-ph.off span{background:rgba(0,0,0,.35)}
+#cv-world{position:fixed;inset:0;z-index:9000;background:#05070f;display:none}
+#wm-map{position:absolute;inset:0}
+.wm-top{position:absolute;top:calc(env(safe-area-inset-top,0px) + 10px);left:10px;right:10px;display:flex;gap:8px;align-items:center;z-index:2}
+.wm-top>button{width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,.9);font-size:1.1rem;font-weight:800}
+.wm-seg{display:flex;background:rgba(15,15,30,.7);border-radius:22px;padding:3px;backdrop-filter:blur(8px)}
+.wm-seg button{border:0;background:transparent;color:#fff;border-radius:18px;padding:8px 12px;font:inherit;font-weight:700;font-size:.82rem}
+.wm-seg button.on{background:#fff;color:#2a1238}
+.wm-info{position:absolute;left:10px;right:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);background:rgba(15,15,30,.75);color:#fff;border-radius:14px;padding:9px 12px;font-size:.8rem;z-index:2;backdrop-filter:blur(8px)}
+.wm-pin{border:0;background:transparent;padding:0;position:relative;cursor:pointer}
+.wm-pin .ph{display:flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:50%;border:3px solid #fff;background:#7c3aed;overflow:hidden;font-size:1.3rem;box-shadow:0 4px 12px rgba(0,0,0,.5)}
+.wm-pin img{width:100%;height:100%;object-fit:cover}
+.wm-pin .n{position:absolute;top:-6px;right:-6px;background:#fff;color:#2a1238;border-radius:10px;padding:0 6px;font-size:.7rem;font-weight:800}
+.wm-flag{font-size:1.9rem;filter:drop-shadow(0 2px 4px rgba(0,0,0,.6))}
+.wm-open{margin-top:6px;border:0;background:#7c3aed;color:#fff;border-radius:14px;padding:6px 10px;font:inherit;font-weight:700}
 .cv-pjl{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 6px}
 .cv-pj{position:relative;display:inline-flex}
 .cv-pj>button:first-child{display:flex;flex-direction:column;align-items:center;gap:3px;width:78px;background:#fff;border:1px solid #eadfe6;border-radius:12px;padding:6px;font:inherit;color:inherit}
@@ -1383,11 +1410,11 @@ const CV = (function(){
 
   /* ══════════ En-tête, voyages, navigation ══════════ */
   const GROUPS = [
-    {id:'jours',  icon:'🗓️', lbl:'Programme', tabs:[['prog','Jour par jour'], ['souv','📸 Souvenirs'], ['notes','📌 Notes']]},
+    {id:'jours',  icon:'🗓️', lbl:'Programme', tabs:[['prog','Jour par jour'], ['souv','📸 Souvenirs'], ['notes','📌 Notes'], ['outils','🧰 Outils']]},
     {id:'resas',  icon:'🎫', lbl:'Résas',     tabs:[['transport','✈️ Trajets'], ['hotel','🏨 Hôtels'], ['activite','🎟️ Visites'], ['divers','🧾 Divers']]},
     {id:'sous',   icon:'💸', lbl:'Budget',    tabs:[['budget','Qui paie quoi'], ['ech','📆 Échéancier']]},
     {id:'envies', icon:'✨', lbl:'Envies',    tabs:[['envies','Envies']]},
-    {id:'plus',   icon:'🧳', lbl:'Plus',      tabs:[['check','✅ Checklist'], ['outils','🧰 Outils'], ['reglages','👥 Partage & profils']]},
+    {id:'plus',   icon:'🧳', lbl:'Plus',      tabs:[['check','✅ Checklist'], ['reglages','👥 Partage & profils']]},
   ];
   const groupOf = id => GROUPS.find(g=>g.tabs.some(t=>t[0]===id)) || GROUPS[0];
   const MOIS = ['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
@@ -1815,7 +1842,7 @@ const CV = (function(){
   function pinToggle(){ M.pinOpen = M.pinOpen === false; persist(); const y = window.scrollY; render(); window.scrollTo(0, y); }
   function renderProg(){
     const ds = dayList();
-    let h = liveCard() + whoBar() + pinBoard();
+    let h = liveCard() + quickBar() + whoBar() + pinBoard();
     const tt = trip();
     if(tt && tt.demo) h = `<div class="cv-demo-bar">👀 <b>Voyage de démo</b> : touche à tout, modifie, supprime. Il reste sur ce téléphone et n’est jamais partagé.
         <span class="cv-demo-btns"><button type="button" onclick="CV.demoReset()">↺ Recommencer</button><button type="button" onclick="CV.demoDel()">Supprimer la démo</button></span></div>` + h;
@@ -3465,6 +3492,7 @@ const CV = (function(){
 
   /* ══════════ Démarrage ══════════ */
   function init(){
+    setTimeout(shareInbox, 600);
     try { const hq = document.getElementById('cv-hero-qr'); if(hq) hq.innerHTML = qrSVG(APP_URL(), 'q') + '<span>📤 Partager</span>'; } catch(e){}
     loadStore();
     document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ if(vw) viewClose(); else closeSheet(); } if(vw && e.key==='ArrowRight') viewGo(1); if(vw && e.key==='ArrowLeft') viewGo(-1); });
@@ -5210,9 +5238,10 @@ const CV = (function(){
     const box = (ic, ti, p, btn) => `<div class="v-box cv-tool"><h3>${ic} ${ti}</h3><p>${p}</p>${btn}</div>`;
     let h = `<div class="v-sum"><div class="v-sum-row"><div class="v-sum-big">🧰 Outils du voyage</div></div>
       <div class="v-sum-small">Tout fonctionne sur ton téléphone. Rien n’est envoyé à l’éditeur de l’appli.</div></div>`;
-    h += box('📋','Coller une confirmation','Colle le texte d’un e-mail de réservation (vol, hôtel, train…) : l’appli crée la fiche avec la date, les horaires, la référence et le prix.', `<button class="v-btn" onclick="CV.cfSheet()">📋 Coller une confirmation</button>`);
+    h += box('📄','Importer une réservation','Le PDF de Booking, d’une compagnie ou de la SNCF, une capture d’écran de l’e-mail, ou son texte : la fiche se crée toute seule, avec le document joint comme billet.', `<button class="v-btn" onclick="CV.impSheet()">📄 Importer une réservation</button>`);
+    h += box('🌍','Carte du monde 3D','Ton globe à toi : tous tes voyages, tes steps 📍 et les pays visités. Zoome et fais tourner la Terre du bout des doigts.', `<button class="v-btn sec" onclick="CV.worldMap()">🌍 Ouvrir la carte du monde</button>`);
     h += box('🪄','Remplir mes journées','Les lieux les plus connus de chaque étape, répartis sur tes jours libres (sans toucher à ce qui est déjà prévu).', `<button class="v-btn sec" onclick="CV.tlFill()">🪄 Remplir mes journées</button>`);
-    h += box('📍','Je suis ici','Pendant le voyage, enregistre où tu es (ville, pays, petit mot) : ça trace ton parcours réel sur la carte et alimente tes stats.', `<button class="v-btn sec" onclick="CV.hereNow()">📍 Je suis ici</button><button class="v-btn sec" onclick="CV.tlStats()">📊 Mes stats (pays, km, nuits)</button>`);
+    h += box('📍','Steps : je suis ici','Comme Polarsteps : pendant le voyage, enregistre où tu es avec des photos et un récit. Le step se range dans les Souvenirs, apparaît sur les cartes et dans le journal.', `<button class="v-btn sec" onclick="CV.hereNow()">📍 Je suis ici</button><button class="v-btn sec" onclick="CV.tlStats()">📊 Mes stats (pays, km, nuits)</button>`);
     h += box('🌍','Empreinte carbone et conseils','CO2 estimé de chaque trajet, comparaison avec le train, et le bon moment pour réserver les vols encore à réserver.', `<button class="v-btn sec" onclick="CV.tlCo2()">🌍 Calculer</button>`);
     h += box('🗺️','Exporter l’itinéraire','Étapes, lieux à voir et tracés à pied dans un fichier KML : à ouvrir dans Google My Maps, Google Earth ou <b>Organic Maps</b> (cartes hors ligne gratuites).', `<button class="v-btn sec" onclick="CV.tlKml()">🗺️ Exporter (KML)</button>`);
     h += box('📴','Fiche du jour','Billets, horaires, adresses, téléphones et références d’aujourd’hui et de demain, sur une seule page lisible même sans réseau.',
@@ -5234,7 +5263,7 @@ const CV = (function(){
     h += box('🛂','Documents de voyage', di.length ? `<span class="cv-warnline">⚠️ ${di.length} document${di.length>1?'s':''} à vérifier : ${di.map(x=>esc(x)).join(' · ')}</span>` : 'Passeports, cartes d’identité, visas, assurances : dates d’expiration et alertes avant le départ.',
       `<button class="v-btn sec" onclick="CV.tlDocs()">🛂 Gérer les documents</button>`);
     h += box('📖','Journal de voyage','Un album à imprimer ou garder en PDF : la carte, chaque jour avec ses souvenirs et ses photos, et le bilan.',
-      `<button class="v-btn sec" onclick="CV.pdfJournal()">📖 Créer le journal (PDF)</button>`);
+      `<button class="v-btn sec" onclick="CV.jrSheet()">📖 Créer le journal (PDF)</button>`);
     h += box('📦','Partager sans serveur','Pour ceux qui ne veulent pas de la synchro en ligne : un fichier chiffré à s’envoyer (WhatsApp, Messages, AirDrop…). Voir Partage &amp; profils.',
       `<button class="v-btn sec" onclick="CV.tab('reglages')">📦 Paquets sans serveur</button>`);
     document.getElementById('cv-body').innerHTML = h;
@@ -5791,7 +5820,7 @@ const CV = (function(){
     const st = tlStages(); if(!st.length) return null;
     const pts = []; for(const s of st){ const c = geoCached(s.city) || await geocode(s.city, null).catch(()=>null); if(c) pts.push({lat:c.lat, lng:c.lng, name:s.city}); }
     if(!pts.length) return null;
-    const steps = list('step', s=>s.trip===M.trip && s.lat != null).map(s=>({lat:s.lat, lng:s.lng, label:'•', color:'#16a34a'}));
+    const steps = geoSouvs(M.trip).map(s=>({lat:s.lat, lng:s.lng, label:'•', color:'#16a34a'}));
     return drawMap({w, h, line: pts.map(p=>[p.lat,p.lng]), dashed:true, color:'#7C3AED', maxZoom:12, markers: [...pts.map((p,i)=>Object.assign({label:i+1, color:'#7C3AED'}, p)), ...steps]});
   }
   async function hydrateMaps(){
@@ -5927,7 +5956,7 @@ const CV = (function(){
         if(x.info.plan) D.text(x.info.plan, {font:D.F.i, size:9.5, color:D.C.mut, gap:3});
         for(const s of x.sv){
           D.text(s.titre || 'Souvenir', {font:D.F.b, size:11}); if(s.lieu) D.text(s.lieu, {size:9, color:D.C.mut}); if(s.texte) D.text(s.texte, {size:10, gap:4});
-          const ph = (s.photos||[]).slice(0,6);
+          const ph = (s.photos||[]).filter(p=>!(M.jrOff||{})[p]);
           for(let k=0;k<ph.length;k+=3){
             const cw = (D.W - 2*D.M - 16)/3, chh = cw*0.75; D.need(chh + 6);
             for(let j=0;j<3 && k+j<ph.length;j++){ const b = await photoBlob(ph[k+j]) || await photoBlob(ph[k+j] + '.t'); if(b) await D.photo(b, D.M + j*(cw+8), cw, chh); }
@@ -5965,7 +5994,7 @@ const CV = (function(){
       const ago = (Date.now() - new Date(fin + 'T23:59:00')) / 864e5; if(ago > 30) return '';
       const tr = settle(balances());
       return `<div class="cv-live done"><div class="lk">🏁 Voyage terminé</div><div class="lt">${tr.length ? `${tr.length} remboursement${tr.length>1?'s':''} à faire pour solder les comptes.` : 'Les comptes sont soldés. 🎉'}</div>
-        <div class="lb"><button type="button" onclick="CV.tab('budget')">💸 Bilan et remboursements</button><button type="button" onclick="CV.pdfJournal()">📖 Journal</button></div></div>`;
+        <div class="lb"><button type="button" onclick="CV.tab('budget')">💸 Bilan et remboursements</button><button type="button" onclick="CV.jrSheet()">📖 Journal</button></div></div>`;
     }
     const k = ds.indexOf(td), info = dayInfo(td), spent = spentOn(td), cap = num(t.plafond);
     const bar = cap ? `<div class="lcap${spent > cap ? ' over' : ''}"><span style="width:${Math.min(100, spent/cap*100)}%"></span></div>` : '';
@@ -6118,15 +6147,7 @@ const CV = (function(){
   }
   function cfGo(){
     const txt = (document.getElementById('cf-txt')||{}).value || ''; if(txt.trim().length < 20){ alert('Colle le texte complet de la confirmation.'); return; }
-    const r = cfParse(txt), t = trip();
-    const it = r.kind === 'hotel'
-      ? {cat:'hotel', titre: cityOf(r.adresse ? r.adresse.split(',').slice(-2,-1)[0] || '' : '').replace(/\b\d{3,}\b/g,'').trim() || 'Hébergement', nom:r.nom||'', adresse:r.adresse||'', date:r.date, dateFin:r.dateFin, heure:r.heure, ref:r.ref||'', prix:r.prix||'', partage:'grp'}
-      : r.kind === 'autre' ? {cat:'activite', titre:'Réservation', date:r.date, heure:r.heure, ref:r.ref||'', prix:r.prix||''}
-      : {cat:'transport', mode: r.kind==='vol' ? 'Avion' : r.kind==='bus' ? 'Bus' : 'Train', from:r.from||'', to:r.to||'', titre:(r.from && r.to) ? r.from + ' → ' + r.to : (r.kind==='vol' ? 'Vol' : 'Trajet'), date:r.date, heureDep:r.heure, heureArr:r.heureArr, compagnie:r.compagnie||'', ref:r.ref||'', prix:r.prix||''};
-    Object.assign(it, {type:'item', trip:M.trip, statut: r.prix ? 'paid' : 'booked', note:'Créée depuis une confirmation collée'});
-    const found = [r.kind==='vol' ? 'vol' : r.kind, r.date && 'date', (r.heure) && 'horaire', r.ref && 'référence', r.compagnie && 'compagnie', r.prix && 'prix'].filter(Boolean);
-    edit(it);
-    toast('📋 Repéré : ' + (found.join(', ') || 'peu d’informations') + ' — vérifie puis Enregistrer');
+    edit(cfDraft(txt)); toast('📋 Fiche créée depuis le texte — vérifie puis Enregistrer');
   }
 
   /* ---------- 🌍 Empreinte carbone et conseils de réservation ---------- */
@@ -6155,19 +6176,6 @@ const CV = (function(){
   }
 
   /* ---------- 📍 Je suis ici · 📊 Mes stats ---------- */
-  async function hereNow(){
-    if(!navigator.geolocation){ alert('Localisation indisponible sur ce téléphone.'); return; }
-    toast('📍 Localisation…');
-    navigator.geolocation.getCurrentPosition(async pos => {
-      const lat = +pos.coords.latitude.toFixed(5), lng = +pos.coords.longitude.toFixed(5);
-      let lieu = '', pays = '', cc = '';
-      try { const j = await (await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=10&accept-language=fr&lat=${lat}&lon=${lng}`)).json();
-        const a = (j && j.address) || {}; lieu = a.city || a.town || a.village || a.municipality || a.county || ''; pays = a.country || ''; cc = (a.country_code || '').toUpperCase(); } catch(e){}
-      const note = prompt('📍 ' + (lieu ? lieu + (pays ? ', ' + pays : '') : 'Position enregistrée') + '\nUn petit mot pour cette étape ? (facultatif)', '');
-      put({id:'st'+uid(), type:'step', trip:M.trip, date:isoToday(), heure:new Date().toTimeString().slice(0,5), lat, lng, lieu, pays, cc, note: note || ''}, '📍 ' + (lieu || 'Étape') + ' ajoutée');
-      refresh();
-    }, err => alert('Position introuvable (' + (err && err.message || 'refusée') + '). Autorise la localisation pour l’appli dans les réglages.'), {enableHighAccuracy:true, timeout:15000, maximumAge:60000});
-  }
   async function countryOf(city){
     M.ctry = M.ctry || {}; const k = normQ(city); if(M.ctry[k]) return M.ctry[k];
     const wait = 1100 - (Date.now() - geoLast); if(wait > 0) await new Promise(r=>setTimeout(r, wait)); geoLast = Date.now();
@@ -6186,11 +6194,11 @@ const CV = (function(){
       for(const h of hs){ const c = cityOf(h.titre); if(!c) continue; cities.add(normQ(c));
         const g = geoCached(c) || await geocode(c, null).catch(()=>null); if(g && prev) kmTot += km(prev, g); if(g) prev = g;
         if(t.debut && t.debut <= now){ const co = await countryOf(c); if(co) countries[co.cc || co.pays] = co; } }
-      list('step', s=>s.trip===t.id).forEach(s=>{ nSteps++; if(s.cc || s.pays) countries[s.cc || s.pays] = {pays:s.pays, cc:s.cc}; });
+      geoSouvs(t.id).forEach(s=>{ nSteps++; if(s.cc || s.pays) countries[s.cc || s.pays] = {pays:s.pays, cc:s.cc}; });
     }
     const el = document.getElementById('stt'); if(!el) return;
     const cs = Object.values(countries);
-    el.className = ''; el.innerHTML = `<div class="cv-stats"><div><b>${ts.length}</b><span>voyage${ts.length>1?'s':''}</span></div><div><b>${nights}</b><span>nuits</span></div><div><b>${Math.round(kmTot).toLocaleString('fr-FR')}</b><span>km entre étapes</span></div><div><b>${cities.size}</b><span>villes</span></div><div><b>${cs.length}</b><span>pays visités</span></div><div><b>${nSteps}</b><span>« je suis ici »</span></div></div>
+    el.className = ''; el.innerHTML = `<div class="cv-stats"><div><b>${ts.length}</b><span>voyage${ts.length>1?'s':''}</span></div><div><b>${nights}</b><span>nuits</span></div><div><b>${Math.round(kmTot).toLocaleString('fr-FR')}</b><span>km entre étapes</span></div><div><b>${cities.size}</b><span>villes</span></div><div><b>${cs.length}</b><span>pays visités</span></div><div><b>${nSteps}</b><span>steps 📍</span></div></div>
       <div class="cv-flags">${cs.map(c=>`<span>${flag(c.cc)} ${esc(c.pays)}</span>`).join('') || '<span class="v-sum-small">Les pays apparaissent une fois les voyages commencés (ou avec « 📍 Je suis ici »).</span>'}</div>
       <div class="v-sum-small" style="margin-top:8px">Pays comptés pour les voyages commencés, d’après les villes des hébergements et tes « Je suis ici ». Distances à vol d’oiseau entre étapes.</div>`;
   }
@@ -6207,7 +6215,7 @@ const CV = (function(){
     dayList().forEach((d,i)=>{ const pl = placesOf(d).filter(p=>p.lat != null), r = dayInfo(d).route;
       pl.forEach((p,k)=>pm.push(`<Placemark><name>${kmlEsc('J' + (i+1) + '.' + (k+1) + ' ' + p.nom)}</name><styleUrl>#lieu</styleUrl><Point><coordinates>${p.lng},${p.lat}</coordinates></Point></Placemark>`));
       if(r && r.geom && r.geom.length > 1) pm.push(`<Placemark><name>${kmlEsc('J' + (i+1) + ' · à pied')}</name><styleUrl>#pied</styleUrl><LineString><coordinates>${r.geom.map(p=>p[1]+','+p[0]).join(' ')}</coordinates></LineString></Placemark>`); });
-    list('step', s=>s.trip===M.trip).forEach(s=>pm.push(`<Placemark><name>${kmlEsc('📍 ' + (s.lieu || 'Je suis ici') + ' · ' + fshort(s.date))}</name><description>${kmlEsc(s.note||'')}</description><styleUrl>#ici</styleUrl><Point><coordinates>${s.lng},${s.lat}</coordinates></Point></Placemark>`));
+    geoSouvs(M.trip).forEach(s=>pm.push(`<Placemark><name>${kmlEsc('📍 ' + (s.lieu || 'Je suis ici') + ' · ' + fshort(s.date))}</name><description>${kmlEsc(s.note||'')}</description><styleUrl>#ici</styleUrl><Point><coordinates>${s.lng},${s.lat}</coordinates></Point></Placemark>`));
     if(!pm.length){ alert('Rien à exporter : ajoute des hébergements avec leur ville ou des lieux à voir.'); return; }
     const kml = `<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>${kmlEsc(t.titre)}</name>
 <Style id="etape"><IconStyle><color>ffed3a7c</color></IconStyle></Style><Style id="lieu"><IconStyle><color>ff2626dc</color></IconStyle></Style><Style id="ici"><IconStyle><color>ff4ac716</color></IconStyle></Style>
@@ -6253,6 +6261,209 @@ ${pm.join('\n')}</Document></kml>`;
     putMany(out, '🪄 ' + added + ' lieu(x) ajouté(s)'); closeSheet(true); M.tab = 'prog'; refresh();
     setTimeout(()=>alert(`🪄 ${added} lieux répartis sur tes journées libres.\nPour chaque jour : « Itinéraire » optimise l’ordre de visite et trace le parcours à pied.`), 300);
   }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     ⚡ ACCÈS RAPIDE · 📍 STEPS GÉOLOCALISÉS (comme Polarsteps) · 📄 IMPORT PDF / CAPTURE
+     📖 CHOIX DES PHOTOS DU JOURNAL · 🌍 CARTE DU MONDE 3D
+     ══════════════════════════════════════════════════════════════════════════ */
+  function quickBar(){
+    const t = trip(); if(!t || t.archived) return '';
+    return `<div class="cv-quick"><button type="button" onclick="CV.hereNow()">📍 Je suis ici</button><button type="button" onclick="CV.impSheet()">📄 Importer une résa</button><button type="button" onclick="CV.worldMap()">🌍 Carte du monde</button></div>`;
+  }
+
+  /* ---------- 📍 Step géolocalisé = souvenir avec position (photos + récit) ---------- */
+  async function hereNow(){
+    if(!navigator.geolocation){ alert('Localisation indisponible sur ce téléphone.'); return; }
+    toast('📍 Localisation…');
+    navigator.geolocation.getCurrentPosition(async pos => {
+      const lat = +pos.coords.latitude.toFixed(5), lng = +pos.coords.longitude.toFixed(5);
+      let lieu = '', pays = '', cc = '';
+      try { const j = await (await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=10&accept-language=fr&lat=${lat}&lon=${lng}`)).json();
+        const a = (j && j.address) || {}; lieu = a.city || a.town || a.village || a.municipality || a.county || ''; pays = a.country || ''; cc = (a.country_code || '').toUpperCase(); } catch(e){}
+      editSouv(null);
+      Object.assign(editing, {lat, lng, pays, cc, step:1});
+      const f = document.getElementById('v-form'); if(f){ if(f.titre) f.titre.value = lieu || 'Step'; if(f.lieu) f.lieu.value = [lieu, pays].filter(Boolean).join(', '); }
+      const h2 = document.querySelector('.v-sheet h2'); if(h2) h2.insertAdjacentHTML('afterend', `<div class="cv-here">${flag(cc)} <b>${esc(lieu || 'Position enregistrée')}</b>${pays ? ', ' + esc(pays) : ''} · ${new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}<small>Ajoute des photos et un petit récit, comme un step Polarsteps. Il apparaît sur la carte du monde et dans le journal.</small></div>`);
+    }, err => alert('Position introuvable (' + (err && err.message || 'refusée') + '). Autorise la localisation pour l’appli dans les réglages du téléphone.'), {enableHighAccuracy:true, timeout:15000, maximumAge:60000});
+  }
+  const geoSouvs = (tripId) => [...list('souv', s=>s.lat != null && (!tripId || s.trip===tripId)), ...list('step', s=>s.lat != null && (!tripId || s.trip===tripId))];
+
+  /* ---------- 📄 Importer une réservation : PDF, capture d'écran, photo ou texte ---------- */
+  function impSheet(){
+    openSheet(`<h2>📄 Importer une réservation</h2>
+      <div class="v-sum-small" style="margin-bottom:10px">Le PDF de Booking, d’une compagnie aérienne, de la SNCF… ou une capture d’écran de l’e-mail : l’appli lit le document <b>sur ton téléphone</b>, crée la fiche et y joint le document comme billet.</div>
+      <button type="button" class="v-btn" onclick="CV.impPick()">📄 Choisir un PDF, une capture ou une photo</button>
+      <button type="button" class="v-btn sec" onclick="CV.cfSheet()">📋 Coller le texte de l’e-mail</button>
+      <div class="v-sum-small" style="margin-top:10px"><b>Depuis Mail sur iPhone :</b> touche la pièce jointe PDF → Partager → <i>Enregistrer dans Fichiers</i>, puis choisis-la ici.<br><b>Sur Android :</b> depuis Gmail ou Booking, Partager → <i>Carnet de voyage</i> (appli installée) : l’import démarre tout seul.</div>
+      <div id="imp-msg" class="v-sum-small" style="margin-top:8px"></div>
+      <div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.close()">Fermer</button></div>`);
+  }
+  const impSay = m => { const e = document.getElementById('imp-msg'); if(e) e.textContent = m; else toast(m); };
+  function impPick(){ tlPickFile('application/pdf,image/*,.pdf', f => impFile(f)); }
+  async function pdfText(file){
+    const lib = await import(new URL('vendor/pdf.min.mjs', location.href).href);
+    lib.GlobalWorkerOptions.workerSrc = new URL('vendor/pdf.worker.min.mjs', location.href).href;
+    const doc = await lib.getDocument({data: new Uint8Array(await file.arrayBuffer())}).promise;
+    let out = '';
+    for(let p=1; p<=Math.min(doc.numPages, 6); p++){
+      const tc = await (await doc.getPage(p)).getTextContent(); let lastY = null, line = '';
+      for(const it of tc.items){ const y = Math.round(it.transform[5]); if(lastY !== null && Math.abs(y - lastY) > 2){ out += line.trim() + '\n'; line = ''; } line += it.str + (it.hasEOL ? '\n' : ' '); lastY = y; }
+      out += line.trim() + '\n';
+    }
+    return out;
+  }
+  async function ocrText(file){
+    if(!window.Tesseract) await new Promise((res, rej)=>{ const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'; s.onload = res; s.onerror = ()=>rej(new Error('outil de lecture indisponible (réseau ?)')); document.head.appendChild(s); });
+    const small = await shrink(file, 2000, 0.9); const {data} = await Tesseract.recognize(small, 'fra+eng'); return (data && data.text) || '';
+  }
+  async function impFile(file, extraText){
+    const isPdf = /pdf/i.test(file.type) || /\.pdf$/i.test(file.name||'');
+    try {
+      impSay(isPdf ? '📄 Lecture du PDF…' : '🔍 Lecture de l’image… (la 1re fois l’outil se télécharge, ~15 s)');
+      const txt = (isPdf ? await pdfText(file) : await ocrText(file)) + (extraText ? '\n' + extraText : '');
+      if(txt.replace(/\s/g,'').length < 30) throw new Error(isPdf ? 'ce PDF ne contient pas de texte lisible (c’est peut-être une image) : essaie une capture d’écran' : 'aucun texte reconnu');
+      const id = 'pj' + uid();
+      if(isPdf) await IDB.put({id, blob:file, up:1}); else { await storePhoto(file, id); uploadQueue(); }
+      const draft = cfDraft(txt);
+      draft.pj = [{id, t: isPdf ? 'pdf' : 'img', n: (file.name || (isPdf ? 'reservation' : 'capture')).replace(/\.[a-z0-9]+$/i,'').slice(0,40)}];
+      edit(draft);
+      toast('📄 Fiche créée depuis le document — vérifie puis Enregistrer');
+    } catch(e){ impSay('⚠️ ' + e.message); }
+  }
+  // Prétraitement commun (espaces, heures « 14 : 00 », montants « 144 , 30 »)
+  const cfPre = T => String(T||'').replace(/\u00a0|\u202f/g,' ').replace(/[ \t]+/g,' ').replace(/(\d)\s*:\s*(\d{2})\b/g,'$1:$2').replace(/(\d)\s+([.,])\s*(\d)/g,'$1$2$3');
+  function yearFor(T, mo, d){
+    const today = new Date(isoToday() + 'T12:00:00'), ys = [...T.matchAll(/\b(20\d{2})\b/g)].map(m=>+m[1]).filter(y=>y >= today.getFullYear());
+    let y = ys.length ? Math.min(...ys) : today.getFullYear();
+    if(new Date(y, mo-1, d) < today && !ys.length) y++;
+    return `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  }
+  function bookingParse(T){
+    const L = T.split('\n').map(l=>l.trim()).filter(Boolean), r = {kind:'hotel'};
+    const ref = T.match(/NUM[ÉE]RO DE CONFIRMATION\s*:\s*([\d.\s]{6,24})/i); if(ref) r.ref = ref[1].replace(/\D/g,'');
+    const pin = T.match(/CODE (?:CONFIDENTIEL|PIN)\s*:\s*(\d{3,8})/i);
+    const ia = L.findIndex(l=>/^Adresse\s*:/i.test(l)); if(ia > 0) r.nom = L[ia-1];
+    if(ia >= 0){ const it = L.findIndex((l,i)=>i>ia && /^T[ée]l[ée]phone/i.test(l)); r.adresse = L.slice(ia, it > ia ? it : ia+4).join(' ').replace(/^Adresse\s*:\s*/i,'').replace(/\s+/g,' ').replace(/(\p{L}) ([^\x00-\x7F]) (\p{L})/gu,'$1$2$3').replace(/(^|\s)([^\x00-\x7F]) (\p{Ll})/gu,'$1$2$3').replace(/\s*:\s*/g,':').replace(/NO:/g,'No ').trim(); }
+    const tel = T.match(/T[ée]l[ée]phone\s*:\s*(\+?[\d][\d\s().-]{6,20}\d)/i); if(tel) r.tel = tel[1].trim();
+    const gps = T.match(/N\s*0*(\d{1,2})°\s*([\d.]+)\s*,?\s*([EW])\s*0*(\d{1,3})°\s*([\d.]+)/);
+    if(gps){ r.lat = +(+gps[1] + +gps[2]/60).toFixed(5); r.lng = +((+gps[4] + +gps[5]/60) * (gps[3]==='W' ? -1 : 1)).toFixed(5); }
+    const n = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+    const blk = lab => { const i = L.findIndex(l=>n(l).startsWith(lab)); if(i < 0) return null; const sl = L.slice(i+1, i+7).join(' ');
+      const m = sl.match(/(\d{1,2})\s+([A-Za-zÀ-ÿ]+)/); const tm = [...sl.matchAll(/(\d{1,2}:\d{2})/g)].map(x=>x[1]);
+      return m && MOIS_FR[n(m[2]).replace(/\./g,'')] ? {d: yearFor(T, MOIS_FR[n(m[2])], +m[1]), t: tm} : null; };
+    const a = blk('arrivee'), d = blk('depart');
+    if(a){ r.date = a.d; r.heure = a.t[0] || ''; } if(d) r.dateFin = d.d;
+    const am = [...T.matchAll(/€ ?(\d[\d .]*(?:,\d{1,2})?)|(\d[\d .]*,\d{2}) ?€/g)].map(m=>parseFloat((m[1]||m[2]).replace(/\s|\.(?=\d{3})/g,'').replace(',', '.'))).filter(x=>!isNaN(x));
+    if(am.length) r.prix = String(Math.max(...am));
+    if(r.adresse){ const parts = r.adresse.split(','); if(parts.length >= 2) r.ville = parts[parts.length-2].replace(/\b\d{3,}\b/g,'').trim(); }
+    r.note = 'Booking.com' + (pin ? ' · code confidentiel ' + pin[1] : '');
+    return r;
+  }
+  function cfDraft(raw){
+    const T = cfPre(raw);
+    const r = (/NUM[ÉE]RO DE CONFIRMATION/i.test(T) && /ARRIV[ÉE]E/i.test(T)) ? bookingParse(T) : cfParse(T);
+    if(r.kind === 'hotel') return {cat:'hotel', type:'item', trip:M.trip, titre: r.ville || cityOf(r.adresse ? r.adresse.split(',').slice(-2,-1)[0] || '' : '').replace(/\b\d{3,}\b/g,'').trim() || 'Hébergement',
+      nom:r.nom||'', adresse:r.adresse||'', tel:r.tel||'', date:r.date||'', dateFin:r.dateFin||'', heure:r.heure||'', ref:r.ref||'', prix:r.prix||'', partage:'grp', statut:'booked', lat:r.lat, lng:r.lng, note:r.note || 'Créée depuis un document importé'};
+    if(r.kind === 'autre') return {cat:'activite', type:'item', trip:M.trip, titre:'Réservation', date:r.date||'', heure:r.heure||'', ref:r.ref||'', prix:r.prix||'', statut:'booked', note:'Créée depuis un document importé'};
+    return {cat:'transport', type:'item', trip:M.trip, mode: r.kind==='vol' ? 'Avion' : r.kind==='bus' ? 'Bus' : 'Train', from:r.from||'', to:r.to||'', titre:(r.from && r.to) ? r.from + ' → ' + r.to : (r.kind==='vol' ? 'Vol' : 'Trajet'),
+      date:r.date||'', heureDep:r.heure||'', heureArr:r.heureArr||'', compagnie:r.compagnie||'', ref:r.ref||'', prix:r.prix||'', statut: r.prix ? 'paid' : 'booked', note:'Créée depuis un document importé'};
+  }
+  // Partage Android (« Partager → Carnet de voyage ») : le service worker a rangé le fichier ou le texte
+  async function shareInbox(){
+    if(!/[?&]partage=1/.test(location.search)) return;
+    history.replaceState(null, '', location.pathname);
+    try {
+      const c = await caches.open('share-inbox'), keys = await c.keys(); let file = null, text = '';
+      for(const k of keys){ const res = await c.match(k); if(/\/share\/file/.test(k.url)){ const b = await res.blob(); file = new File([b], decodeURIComponent((k.url.split('name=')[1]||'document')), {type:b.type}); } else if(/\/share\/text/.test(k.url)) text = await res.text(); await c.delete(k); }
+      if(!trip()){ alert('Crée ou ouvre d’abord un voyage, puis partage à nouveau la réservation.'); return; }
+      if(file) impFile(file, text); else if(text){ edit(cfDraft(text)); toast('📋 Fiche créée depuis le texte partagé'); }
+    } catch(e){}
+  }
+
+  /* ---------- 📖 Journal : choisir les photos ---------- */
+  function jrSheet(){
+    const t = trip(); if(!t) return;
+    const all = souvs().filter(s=>(s.photos||[]).length).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+    const off = M.jrOff = M.jrOff || {}, nAll = all.reduce((n,s)=>n+s.photos.length,0), nOn = all.reduce((n,s)=>n+s.photos.filter(p=>!off[p]).length,0);
+    openSheet(`<h2>📖 Journal de voyage</h2><div class="v-sum-small" style="margin-bottom:8px">Touche une photo pour l’enlever ou la remettre dans le PDF. <b id="jr-n">${nOn}</b> / ${nAll} photo(s) choisie(s).</div>
+      <div class="cv-row" style="gap:6px;margin-bottom:8px"><button type="button" class="v-day-edit" onclick="CV.jrAll(true)">✅ Tout ajouter</button><button type="button" class="v-day-edit" onclick="CV.jrAll(false)">⬜ Tout retirer</button></div>
+      <div id="jr-list">${all.map(s=>`<div class="jr-sv"><b>${esc(s.titre||'Souvenir')}</b> <small>${s.date ? fshort(s.date) : ''}</small><div class="jr-grid">${s.photos.map(p=>`<button type="button" class="jr-ph${off[p]?' off':''}" data-p="${esc(p)}" onclick="CV.jrTog(this)"><img data-ph="${esc(p)}.t" alt=""><span>✓</span></button>`).join('')}</div></div>`).join('') || '<div class="v-sum-small">Pas encore de photos dans les souvenirs : le journal contiendra les textes et la carte.</div>'}</div>
+      <div class="v-actions"><button type="button" class="v-btn" onclick="CV.pdfJournal()">📖 Créer le PDF</button><button type="button" class="v-btn sec cv-sq" onclick="CV.close()">✕</button></div>`);
+    hydrate();
+  }
+  function jrCount(){ const n = document.querySelectorAll('.jr-ph:not(.off)').length, e = document.getElementById('jr-n'); if(e) e.textContent = n; }
+  function jrTog(b){ const p = b.dataset.p; M.jrOff = M.jrOff || {}; if(M.jrOff[p]) delete M.jrOff[p]; else M.jrOff[p] = 1; b.classList.toggle('off', !!M.jrOff[p]); persist(); jrCount(); }
+  function jrAll(on){ M.jrOff = M.jrOff || {}; document.querySelectorAll('.jr-ph').forEach(b=>{ if(on) delete M.jrOff[b.dataset.p]; else M.jrOff[b.dataset.p] = 1; b.classList.toggle('off', !on); }); persist(); jrCount(); }
+
+  /* ---------- 🌍 Carte du monde 3D (globe interactif : zoom, rotation, voyages, pays, steps) ---------- */
+  let wm = null;
+  function loadCss(href){ return new Promise(res=>{ if(document.querySelector(`link[href="${href}"]`)) return res(); const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = href; l.onload = res; l.onerror = res; document.head.appendChild(l); }); }
+  function loadJs(src){ return new Promise((res, rej)=>{ if(document.querySelector(`script[src="${src}"]`) && window.maplibregl) return res(); const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = ()=>rej(new Error('carte 3D indisponible (pas de réseau ?)')); document.head.appendChild(s); }); }
+  async function worldMap(){
+    let ov = document.getElementById('cv-world');
+    if(!ov){ ov = document.createElement('div'); ov.id = 'cv-world'; document.body.appendChild(ov); }
+    ov.innerHTML = `<div id="wm-map"></div><div class="wm-top"><button type="button" onclick="CV.worldClose()" aria-label="Fermer">✕</button><div class="wm-seg"><button type="button" class="on" data-m="trips" onclick="CV.worldMode('trips')">🧳 Voyages</button><button type="button" data-m="pays" onclick="CV.worldMode('pays')">🏳️ Pays</button></div></div><div class="wm-info" id="wm-info">🌍 Chargement du globe…</div>`;
+    ov.style.display = 'block'; document.body.style.overflow = 'hidden';
+    try {
+      await loadCss('https://cdn.jsdelivr.net/npm/maplibre-gl@5/dist/maplibre-gl.css');
+      if(!window.maplibregl) await loadJs('https://cdn.jsdelivr.net/npm/maplibre-gl@5/dist/maplibre-gl.js');
+      const style = {version:8, projection:{type:'globe'},
+        sources:{
+          sat:{type:'raster', tiles:['https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2020_3857/default/g/{z}/{y}/{x}.jpg'], tileSize:256, maxzoom:15, attribution:'Sentinel-2 cloudless – s2maps.eu par EOX (données Copernicus)'},
+          lbl:{type:'raster', tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}'], tileSize:256, attribution:'Noms et frontières © Esri'}},
+        layers:[{id:'bg', type:'background', paint:{'background-color':'#05070f'}}, {id:'sat', type:'raster', source:'sat'}, {id:'lbl', type:'raster', source:'lbl', paint:{'raster-opacity':0.9}}],
+        sky:{'atmosphere-blend':['interpolate',['linear'],['zoom'],0,1,5,1,7,0]}};
+      const map = new maplibregl.Map({container:'wm-map', style, center:[10, 35], zoom:1.6, attributionControl:{compact:true}});
+      map.addControl(new maplibregl.NavigationControl({visualizePitch:true}), 'bottom-right');
+      wm = {map, markers:[], mode:'trips'};
+      map.on('load', async ()=>{ await worldData(); worldMode('trips'); });
+    } catch(e){ const i = document.getElementById('wm-info'); if(i) i.textContent = '⚠️ ' + e.message; }
+  }
+  async function worldData(){
+    const ts = trips(), data = {trips:[], steps:[], pays:{}};
+    const info = document.getElementById('wm-info');
+    for(const t of ts){
+      const hs = list('item', i=>i.trip===t.id && i.cat==='hotel' && i.date && !i.deleted).sort((a,b)=>a.date.localeCompare(b.date));
+      const pts = [];
+      for(const h of hs){ const c = cityOf(h.titre); if(!c) continue;
+        let g = h.lat != null ? {lat:h.lat, lng:h.lng} : geoCached(c); if(!g){ if(info) info.textContent = '📡 Placement : ' + c + '…'; g = await geocode(c, null).catch(()=>null); }
+        if(g){ pts.push({lat:g.lat, lng:g.lng, city:c}); const co = M.ctry && M.ctry[normQ(c)]; if(co && t.debut && t.debut <= isoToday() && !data.pays[co.cc||co.pays]) data.pays[co.cc||co.pays] = {...co, lat:g.lat, lng:g.lng}; } }
+      const ph = souvs().filter(s=>s.trip===t.id && (s.photos||[]).length)[0];
+      if(pts.length) data.trips.push({id:t.id, titre:t.titre, dates:tripDatesLong(t), pts, photo: ph ? ph.photos[0] : null, demo:!!t.demo});
+    }
+    geoSouvs().forEach(s=>{ data.steps.push({lat:s.lat, lng:s.lng, titre:s.titre||s.lieu||'Step', date:s.date, id:s.id}); if(s.cc || s.pays){ const k = s.cc || s.pays; if(!data.pays[k]) data.pays[k] = {pays:s.pays, cc:s.cc, lat:s.lat, lng:s.lng}; } });
+    wm.data = data;
+    const lines = data.trips.filter(t=>t.pts.length > 1).map(t=>({type:'Feature', properties:{}, geometry:{type:'LineString', coordinates:t.pts.map(p=>[p.lng, p.lat])}}));
+    wm.map.addSource('routes', {type:'geojson', data:{type:'FeatureCollection', features:lines}});
+    wm.map.addLayer({id:'routes', type:'line', source:'routes', paint:{'line-color':'#ffffff', 'line-width':2, 'line-dasharray':[2,2], 'line-opacity':0.85}});
+    wm.map.addSource('steps', {type:'geojson', data:{type:'FeatureCollection', features:data.steps.map(s=>({type:'Feature', properties:{titre:s.titre, date:s.date}, geometry:{type:'Point', coordinates:[s.lng, s.lat]}}))}});
+    wm.map.addLayer({id:'steps', type:'circle', source:'steps', paint:{'circle-radius':5, 'circle-color':'#22c55e', 'circle-stroke-color':'#fff', 'circle-stroke-width':2}});
+    wm.map.on('click', 'steps', e=>{ const p = e.features[0].properties; new maplibregl.Popup({offset:10}).setLngLat(e.lngLat).setHTML(`<b>📍 ${esc(p.titre)}</b><br>${p.date ? fdate(p.date) : ''}`).addTo(wm.map); });
+    if(info) info.textContent = `${data.trips.length} voyage${data.trips.length>1?'s':''} · ${Object.keys(data.pays).length} pays · ${data.steps.length} step${data.steps.length>1?'s':''} — pince pour zoomer, glisse pour tourner`;
+  }
+  async function worldMode(m){
+    if(!wm || !wm.data) return; wm.mode = m;
+    document.querySelectorAll('.wm-seg button').forEach(b=>b.classList.toggle('on', b.dataset.m === m));
+    wm.markers.forEach(x=>x.remove()); wm.markers = [];
+    if(wm.map.getLayer('routes')) wm.map.setLayoutProperty('routes', 'visibility', m === 'trips' ? 'visible' : 'none');
+    if(m === 'trips'){
+      for(const t of wm.data.trips){
+        const el = document.createElement('button'); el.type = 'button'; el.className = 'wm-pin';
+        el.innerHTML = `<span class="ph">${t.photo ? `<img alt="">` : '🧳'}</span><span class="n">${t.pts.length}</span>`;
+        if(t.photo){ const u = await photoURL(t.photo + '.t').catch(()=>null); if(u) el.querySelector('img').src = u; }
+        el.onclick = ev => { ev.stopPropagation(); new maplibregl.Popup({offset:28}).setLngLat([t.pts[0].lng, t.pts[0].lat]).setHTML(`<b>${esc(t.titre)}</b><br><small>${esc(t.dates)}</small><br><small>${t.pts.map(p=>esc(p.city)).join(' → ')}</small><br><button type="button" class="wm-open" onclick="CV.worldOpen('${t.id}')">Ouvrir ce voyage</button>`).addTo(wm.map); };
+        wm.markers.push(new maplibregl.Marker({element:el, anchor:'bottom'}).setLngLat([t.pts[0].lng, t.pts[0].lat]).addTo(wm.map));
+      }
+    } else {
+      Object.values(wm.data.pays).forEach(c=>{
+        const el = document.createElement('div'); el.className = 'wm-flag'; el.textContent = flag(c.cc); el.title = c.pays || '';
+        wm.markers.push(new maplibregl.Marker({element:el}).setLngLat([c.lng, c.lat]).addTo(wm.map));
+      });
+      const i = document.getElementById('wm-info'); if(i) i.textContent = `🏳️ ${Object.keys(wm.data.pays).length} pays visités : ${Object.values(wm.data.pays).map(c=>flag(c.cc) + ' ' + (c.pays||'')).join(' · ') || 'commence un voyage ou ajoute un step 📍'}`;
+    }
+  }
+  function worldOpen(id){ worldClose(); go(id); M.tab = 'prog'; refresh(); }
+  function worldClose(){ const ov = document.getElementById('cv-world'); if(wm && wm.map){ try { wm.map.remove(); } catch(e){} } wm = null; if(ov){ ov.style.display = 'none'; ov.innerHTML = ''; } document.body.style.overflow = ''; }
 
   function infoHTML(){
     return `<div class="cv-info">
@@ -6332,7 +6543,7 @@ ${pm.join('\n')}</Document></kml>`;
     envF:setEnvF, envP:setEnvP, like, editWish, saveWish, delWish, wishToTrip,
     editTrip, saveTrip, delTrip, closeTrip, reopenTrip,
     live, one, echAdd, echDel, echSpread, echToggle, lisser, echReset, echRange, echRangeReset,
-    planDay, plCfg, plAdd, plDel, plOpt, wizard, pjAdd, pjDel, pjOpen, cfSheet, cfGo, tlCo2, hereNow, tlStats, tlKml, tlFill, tlFillGo, rcView, rcAttach, tlIcsGo, capSet, shopSheet, shopAdd, shopTick, shopClear, rembAsk, pollNew, pollSave, pollVote, pollClose, pollDel, pdfRoute, pdfJournal, pdfShare, pdfOpen, pkgPick, pkgApply, hydrateMaps, renderOutils, tlDay, tlIcs, fxTool, fxFill, tlMeteo, tlReceipt, tlRcPhoto, tlRcOcr, tlRcSave, tlReceipts, tlMap, tlBags, tlBagsGo, tlDocs, tlDocEdit, tlDocSave, tlDocDel, tlJournal, pkgSheet, pkgExport, pkgImport, pinToggle, shareSheet, shareLink, askErase, tutoSheet, escaleTuto, demoLoad, demoDel, demoReset, wzGo, wzDates, wzEt, wzSum, wzTpl, wzCreate,
+    planDay, plCfg, plAdd, plDel, plOpt, wizard, impSheet, impPick, jrSheet, jrTog, jrAll, worldMap, worldMode, worldOpen, worldClose, pjAdd, pjDel, pjOpen, cfSheet, cfGo, tlCo2, hereNow, tlStats, tlKml, tlFill, tlFillGo, rcView, rcAttach, tlIcsGo, capSet, shopSheet, shopAdd, shopTick, shopClear, rembAsk, pollNew, pollSave, pollVote, pollClose, pollDel, pdfRoute, pdfJournal, pdfShare, pdfOpen, pkgPick, pkgApply, hydrateMaps, renderOutils, tlDay, tlIcs, fxTool, fxFill, tlMeteo, tlReceipt, tlRcPhoto, tlRcOcr, tlRcSave, tlReceipts, tlMap, tlBags, tlBagsGo, tlDocs, tlDocEdit, tlDocSave, tlDocDel, tlJournal, pkgSheet, pkgExport, pkgImport, pinToggle, shareSheet, shareLink, askErase, tutoSheet, escaleTuto, demoLoad, demoDel, demoReset, wzGo, wzDates, wzEt, wzSum, wzTpl, wzCreate,
     pickColor, newProfile, editProfile, saveProfile, delProfile, whoSheet, setMe,
     genCode, syncOn, syncOff, syncNow, shareCode, exportShare, exportDownload, importPick, wipe, obCreate, obJoin,
     _R:()=>R, _M:()=>M};

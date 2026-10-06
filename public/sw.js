@@ -1,7 +1,7 @@
 // Carnet de voyage — fonctionnement hors ligne
 // Pages et fichiers de l'appli : réseau d'abord (toujours la dernière version), copie locale si pas de réseau.
 // La synchro (/api/…) passe toujours par le réseau : les données restent dans le téléphone en attendant.
-const CACHE = 'carnet-2026-10-05c';
+const CACHE = 'carnet-2026-10-06a';
 const CORE = ['./', './index.html', './manifest.json', './apple-touch-icon.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -19,6 +19,21 @@ self.addEventListener('fetch', e => {
   const req = e.request; if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin === self.location.origin) {
+    // Partage Android (« Partager → Carnet de voyage ») : on range le document, puis on ouvre l'appli
+    if (e.request.method === 'POST' && url.pathname.endsWith('/partage-recu')) {
+      e.respondWith((async () => {
+        try {
+          const fd = await e.request.formData(), c = await caches.open('share-inbox');
+          for (const k of await c.keys()) await c.delete(k);
+          const f = fd.getAll('files').find(x => x && x.size);
+          if (f) await c.put(new Request('./share/file?name=' + encodeURIComponent(f.name || 'document')), new Response(f, {headers: {'Content-Type': f.type || 'application/octet-stream'}}));
+          const txt = [fd.get('title'), fd.get('text'), fd.get('url')].filter(Boolean).join('\n');
+          if (txt) await c.put(new Request('./share/text'), new Response(txt));
+        } catch (_) {}
+        return Response.redirect('./?partage=1', 303);
+      })());
+      return;
+    }
     // Rappels : « rappels.ics?c=… » est fabriqué ici, sur le téléphone, pour que l'iPhone ouvre Calendrier (« Ajouter tout »)
     if (url.pathname.endsWith('/rappels.ics') && url.searchParams.get('c')) {
       let b = url.searchParams.get('c').replace(/-/g, '+').replace(/_/g, '/'); while (b.length % 4) b += '=';
