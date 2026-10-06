@@ -949,6 +949,24 @@ a.v-btn.cv-escale{display:block;text-align:center;text-decoration:none}
 .cv-share-qr{display:block;margin:6px auto 10px;width:min(64vw,240px);height:auto;background:#fff;border-radius:14px;padding:10px}
 .cv-share-url{font-size:.78rem;text-align:center;word-break:break-all;color:var(--gray);margin-bottom:10px}
 .cv-rmap{margin-top:10px}
+.bb-state{margin-top:8px;font-weight:700;font-size:.86rem;border-radius:12px;padding:7px 10px}
+.bb-state.ok{background:#dcfce7;color:#14532d}.bb-state.wait{background:#fef3c7;color:#78350f}
+.bb-tr{display:flex;align-items:center;justify-content:space-between;gap:8px;border-top:1px dashed #eadfe6;padding:8px 0;font-size:.88rem}
+.bb-tr small{display:block;color:#6b5670;font-size:.72rem}
+.bb-bt{display:flex;gap:6px;flex:0 0 auto}
+.bb-bt button{border:1.5px solid #e4d9f2;background:#fff;border-radius:14px;padding:6px 9px;font:inherit;font-weight:700;font-size:.74rem}
+.bb-bt button:first-child{background:#16a34a;border-color:#16a34a;color:#fff}
+.bb-rb{display:flex;align-items:center;gap:8px;border-top:1px dashed #eadfe6;padding:7px 0;font-size:.84rem}
+.bb-rb>span{flex:1}.bb-rb small{display:block;color:#6b5670;font-size:.72rem}
+.bb-tab>div{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr 1fr;gap:4px;font-size:.76rem;padding:6px 0;border-top:1px dashed #eadfe6;align-items:center}
+.bb-tab .hd{font-weight:700;color:#6b5670;border-top:0}
+.bb-tab .pos{color:#15803d;font-weight:800}.bb-tab .neg{color:#b91c1c;font-weight:800}
+.bb-ex{display:flex;align-items:center;gap:10px;border-top:1px dashed #eadfe6;padding:8px 0}
+.bb-j{flex:0 0 46px;width:46px;height:46px;border-radius:10px;border:1px solid #eadfe6;background:#f3eefc;overflow:hidden;padding:0;font:inherit;font-weight:800;font-size:.7rem;color:#7c3aed}
+.bb-j img{width:100%;height:100%;object-fit:cover}.bb-j.none{border-style:dashed;background:#fff;font-size:1rem}
+.bb-ex-t{flex:1;min-width:0;text-align:left;border:0;background:none;padding:0;font:inherit;color:inherit}
+.bb-ex-t b{display:block;font-size:.86rem}.bb-ex-t small{display:block;color:#6b5670;font-size:.72rem}
+.bb-m{text-align:right;font-weight:800;font-size:.86rem}.bb-m small{display:block;font-weight:600;color:#6b5670;font-size:.68rem}
 .cv-inner{display:flex;gap:6px;overflow-x:auto;margin:0 0 12px;padding:2px 0}
 .cv-inner button{flex:0 0 auto;border:1.5px solid #e4d9f2;background:#fff;border-radius:20px;padding:8px 14px;font:inherit;font-weight:700;font-size:.82rem;color:#2a1238}
 .cv-inner button.on{background:#2a1238;color:#fff;border-color:#2a1238}
@@ -3504,7 +3522,7 @@ const CV = (function(){
   // à quel carnet appartient une photo ? (celui de la fiche qui la contient)
   function photoCode(id){
     const base = String(id).replace(/\.t$/,'');
-    const r = Object.values(R).find(x=>x && ((x.photos||[]).includes(base) || x.recu===base || (x.pj||[]).some(p=>p.id===base)));
+    const r = Object.values(R).find(x=>x && ((x.photos||[]).includes(base) || x.recu===base || x.preuve===base || (x.pj||[]).some(p=>p.id===base)));
     if(r && r.demo) return null;   // les photos de démo restent sur le téléphone
     const t = targets(r)[0];
     return t === 'main' ? (M.sync.on && M.sync.code ? M.sync.code : null) : t;
@@ -5594,7 +5612,7 @@ const CV = (function(){
     const box = (ic, ti, p, btn) => `<div class="v-box cv-tool"><h3>${ic} ${ti}</h3><p>${p}</p>${btn}</div>`;
     let h = `<div class="v-sum"><div class="v-sum-row"><div class="v-sum-big">🧰 Outils du voyage</div></div>
       <div class="v-sum-small">Tout fonctionne sur ton téléphone. Rien n’est envoyé à l’éditeur de l’appli.</div></div>`;
-    h += box('📄','Importer une réservation','Le PDF de Booking, d’une compagnie ou de la SNCF, ou une capture d’écran de l’e-mail : la fiche se crée toute seule, avec le document joint comme billet.', `<button class="v-btn" onclick="CV.impSheet()">📄 Importer une réservation</button>`);
+    h += box('📄','Importer une réservation','Le PDF de la réservation (Booking, compagnie, SNCF…) : la fiche se crée toute seule, avec le PDF joint comme billet.', `<button class="v-btn" onclick="CV.impSheet()">📄 Importer une réservation</button>`);
     h += box('🌍','Carte du monde 3D','Ton globe à toi : tous tes voyages, tes steps 📍 et les pays visités. Zoome et fais tourner la Terre du bout des doigts.', `<button class="v-btn sec" onclick="CV.worldMap()">🌍 Ouvrir la carte du monde</button>`);
     h += box('🪄','Remplir mes journées','Les lieux les plus connus de chaque étape, répartis sur tes jours libres (sans toucher à ce qui est déjà prévu).', `<button class="v-btn sec" onclick="CV.tlFill()">🪄 Remplir mes journées</button>`);
     h += box('📍','Steps : je suis ici','Comme Polarsteps : pendant le voyage, enregistre où tu es avec des photos et un récit. Le step se range dans les Souvenirs, apparaît sur les cartes et dans le journal.', `<button class="v-btn sec" onclick="CV.hereNow()">📍 Je suis ici</button><button class="v-btn sec" onclick="CV.tlStats()">📊 Mes stats (pays, km, nuits)</button>`);
@@ -6628,14 +6646,14 @@ ${pm.join('\n')}</Document></kml>`;
   /* ---------- 📄 Importer une réservation : PDF, capture d'écran, photo ou texte ---------- */
   function impSheet(){
     openSheet(`<h2>📄 Importer une réservation</h2>
-      <div class="v-sum-small" style="margin-bottom:10px">Le PDF de Booking, d’une compagnie aérienne, de la SNCF… ou une capture d’écran de l’e-mail : l’appli lit le document <b>sur ton téléphone</b>, crée la fiche et y joint le document comme billet.</div>
-      <button type="button" class="v-btn" onclick="CV.impPick()">📄 Choisir un PDF, une capture ou une photo</button>
+      <div class="v-sum-small" style="margin-bottom:10px">Le <b>PDF</b> de la réservation (Booking, compagnie aérienne, SNCF…) : l’appli le lit <b>sur ton téléphone</b>, crée la fiche (ou les vols d’un aller-retour) et y joint le PDF comme billet.</div>
+      <button type="button" class="v-btn" onclick="CV.impPick()">📄 Choisir le PDF de la réservation</button>
       <div class="v-sum-small" style="margin-top:10px"><b>Depuis Mail sur iPhone :</b> touche la pièce jointe PDF → Partager → <i>Enregistrer dans Fichiers</i>, puis choisis-la ici.<br><b>Sur Android :</b> depuis Gmail ou Booking, Partager → <i>Carnet de voyage</i> (appli installée) : l’import démarre tout seul.</div>
       <div id="imp-msg" class="v-sum-small" style="margin-top:8px"></div>
       <div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.close()">Fermer</button></div>`);
   }
   const impSay = m => { const e = document.getElementById('imp-msg'); if(e) e.textContent = m; else toast(m); };
-  function impPick(){ tlPickFile('application/pdf,image/*,.pdf', f => impFile(f)); }
+  function impPick(){ tlPickFile('application/pdf,.pdf', f => impFile(f)); }
   async function pdfText(file){
     const lib = await import(new URL('vendor/pdf.min.mjs', location.href).href);
     lib.GlobalWorkerOptions.workerSrc = new URL('vendor/pdf.worker.min.mjs', location.href).href;
@@ -6654,6 +6672,7 @@ ${pm.join('\n')}</Document></kml>`;
   }
   async function impFile(file, extraText){
     const isPdf = /pdf/i.test(file.type) || /\.pdf$/i.test(file.name||'');
+    if(!isPdf){ impSay('⚠️ Choisis le PDF de la réservation (dans Mail : la pièce jointe → Partager → Enregistrer dans Fichiers).'); return; }
     try {
       impSay(isPdf ? '📄 Lecture du PDF…' : '🔍 Lecture de l’image… (la 1re fois l’outil se télécharge, ~15 s)');
       const txt = (isPdf ? await pdfText(file) : await ocrText(file)) + (extraText ? '\n' + extraText : '');
@@ -7849,9 +7868,9 @@ ${pm.join('\n')}</Document></kml>`;
   function innerRender(){
     const L = INNER[M.mode]; if(!L) return false; const cur = (M.inner||{})[M.mode] || L[0][0];
     if(cur === L[0][0]) return false;
-    const fn = {budget:renderBudget, ech:renderEch, souv:renderSouv}[cur]; if(!fn) return false;
+    const fn = {budget: M.mode === 'bilan' ? bilanBudgetRender : renderBudget, ech:renderEch, souv:renderSouv}[cur]; if(!fn) return false;
     const keep = M.tab; M.tab = cur; try { fn(); } finally { M.tab = keep; }
-    const body = document.getElementById('cv-body'); body.insertAdjacentHTML('afterbegin', innerBar() + (cur === 'budget' ? bilanSplit() : ''));
+    const body = document.getElementById('cv-body'); body.insertAdjacentHTML('afterbegin', innerBar() + (cur === 'budget' && M.mode !== 'bilan' ? bilanSplit() : ''));
     if(cur === 'souv'){ const f = document.getElementById('cv-fab'); if(f){ f.style.display = ''; } }
     hydrate(); return true;
   }
@@ -7924,6 +7943,56 @@ ${pm.join('\n')}</Document></kml>`;
     openSheet(`<h2>💾 Petite sauvegarde ?</h2><div class="v-sum-small" style="margin-bottom:10px">${M.zipLast ? 'Ta dernière sauvegarde complète date du ' + new Date(M.zipLast).toLocaleDateString('fr-FR') : 'Tu n’as encore jamais fait de sauvegarde complète'}. Une fois par mois, garde une copie de tout ton carnet (photos comprises) dans Fichiers, iCloud ou Drive : si tu perds ou changes de téléphone, tu retrouves tout.</div>
       <button type="button" class="v-btn" onclick="CV.zipSheet()">💾 Faire ma sauvegarde</button><div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.close()">Plus tard (dans un mois)</button></div>`);
   }
+  /* ══════════ 🏁 Bilan › Budget : qui rembourse qui, quand, comment, avec les justificatifs ══════════ */
+  const MOYENS = ['Lydia','Wero','Virement','Espèces','PayPal','Paylib','Revolut','Chèque','Autre'];
+  function bilanBudgetRender(){
+    const t = trip(), all = items(), v = tv(), tot = all.reduce((s,i)=>s+totalOf(i),0), bal = balances();
+    const hasF = v.some(p=>tFoyer(p)), SF = hasF ? settleFoyers(bal) : null, tr = hasF ? SF.tr : settle(bal), nm = hasF ? SF.lbl : pname_c, rb = rembs();
+    const pay = it => v.filter(p=>advancedBy(it,p) > 0.01).map(p=>`${pname_c(p)} ${eur(advancedBy(it,p))}`).join(' + ') || '<i>personne</i>';
+    const pour = it => { const l = v.filter(p=>shareOf(it,p) > 0.01); return l.length === v.length ? 'tout le monde' : l.map(p=>`${pname_c(p)} ${eur(shareOf(it,p))}`).join(', '); };
+    const just = it => { const ph = it.recu || ((it.pj||[]).find(x=>x.t==='img')||{}).id, pdf = (it.pj||[]).find(x=>x.t==='pdf');
+      return ph ? `<button type="button" class="bb-j" onclick="CV.rcOpen('${esc(it.id)}','${esc(ph)}')"><img data-ph="${esc(ph)}.t" alt=""></button>` : pdf ? `<button type="button" class="bb-j pdf" onclick="CV.pjOpen('${esc(pdf.id)}','pdf')">PDF</button>` : `<button type="button" class="bb-j none" onclick="CV.edit('${esc(it.id)}')" title="Joindre un justificatif">📎</button>`; };
+    const exp = all.filter(i=>totalOf(i) > 0).sort((a,b)=>(a.date||'9').localeCompare(b.date||'9'));
+    const noJ = exp.filter(i=>!i.recu && !(i.pj||[]).length).length;
+    let h = `<div class="v-sum"><div class="v-sum-row"><div class="v-sum-big">${eur(tot)}</div><div class="v-sum-small">${v.length > 1 ? eur(tot / v.length) + ' / personne en moyenne' : ''}</div></div>
+      <div class="bb-state ${tr.length ? 'wait' : 'ok'}">${tr.length ? `⏳ ${tr.length} remboursement${tr.length>1?'s':''} à faire` : '✅ Comptes soldés entre vous'}${rb.length ? ` · ${rb.length} déjà noté${rb.length>1?'s':''}` : ''}</div></div>`;
+    h += bilanSplit();
+    h += `<div class="v-box"><h3>💸 Qui doit quoi à qui</h3>${tr.length ? tr.map(x=>`<div class="bb-tr"><span>${nm(x.de)} doit <b>${eur(x.v)}</b> à ${nm(x.a)}${(prof(x.a)||{}).rembours ? `<small>💳 ${esc(prof(x.a).rembours)}</small>` : ''}</span>
+        <span class="bb-bt"><button type="button" onclick="CV.rbSheet('${x.de}','${x.a}',${x.v.toFixed(2)})">✅ Réglé</button><button type="button" onclick="CV.rembAsk('${x.de}','${x.a}',${x.v.toFixed(2)})">📤 Demander</button></span></div>`).join('')
+        : '<p class="v-sum-small">Personne ne doit rien à personne. 🎉</p>'}
+      <p class="v-sum-small">Calcul : ce que chacun a avancé − sa part de chaque dépense ± les remboursements déjà notés. ${hasF ? 'Calculé entre foyers.' : ''} Répartitions réglables dans ⚖️ Parts & foyers et dans chaque fiche (Paiement).</p>
+      <button type="button" class="v-day-edit" onclick="CV.partsSheet()">⚖️ Parts & foyers</button></div>`;
+    h += `<div class="v-box"><h3>✅ Remboursements notés</h3>${rb.length ? rb.map(x=>`<div class="bb-rb"><span><b>${fshort(x.date||isoToday())}</b> · ${pname_c(x.de)} → ${pname_c(x.a)} <b>${eur(num(x.montant))}</b>${x.moyen ? ` · ${esc(x.moyen)}` : ''}${x.note ? `<small>${esc(x.note)}</small>` : ''}</span>
+        ${x.preuve ? `<button type="button" class="bb-j" onclick="CV.pjOpen('${esc(x.preuve)}','img')"><img data-ph="${esc(x.preuve)}.t" alt=""></button>` : ''}<button type="button" class="cv-x" onclick="CV.rembDel('${x.id}')" aria-label="Supprimer">✕</button></div>`).join('') : '<p class="v-sum-small">Aucun pour l’instant : touche « ✅ Réglé » quand quelqu’un rembourse.</p>'}
+      <button type="button" class="v-day-edit" onclick="CV.rbSheet('','',0)">＋ Noter un remboursement</button></div>`;
+    h += `<div class="v-box"><h3>👤 Par personne</h3><div class="bb-tab"><div class="hd"><span></span><span>A avancé</span><span>Sa part</span><span>Remb.</span><span>Solde</span></div>
+      ${bal.map(b=>`<div><span>${pname_c(b.pid)}</span><span>${eur(b.avance)}</span><span>${eur(b.part)}</span><span>${b.verse || b.recu ? (b.verse ? '−' + eur(b.verse) : '') + (b.recu ? ' +' + eur(b.recu) : '') : '—'}</span><span class="${b.solde > 0.5 ? 'pos' : b.solde < -0.5 ? 'neg' : ''}">${b.solde > 0.5 ? '+' : ''}${eur(b.solde)}</span></div>`).join('')}</div>
+      <p class="v-sum-small">Solde positif : on lui doit de l’argent · négatif : il doit rembourser.</p></div>`;
+    h += `<div class="v-box"><h3>🧾 Dépenses et justificatifs</h3><p class="v-sum-small">${exp.length} dépense${exp.length>1?'s':''}${noJ ? ` · <b>${noJ} sans justificatif</b> (touche 📎 pour en joindre un)` : ' · toutes justifiées'}</p>
+      ${exp.map(it=>`<div class="bb-ex">${just(it)}<button type="button" class="bb-ex-t" onclick="CV.edit('${it.id}')"><b>${icon(it)} ${esc(it.titre)}</b><small>${it.date ? fshort(it.date) + ' · ' : ''}payé par ${pay(it)}</small><small>pour ${pour(it)}</small></button><span class="bb-m">${eur(totalOf(it))}<small>${it.statut==='paid' ? 'payé' : it.statut==='booked' ? 'réservé' : 'prévu'}</small></span></div>`).join('') || '<p class="v-sum-small">Aucune dépense.</p>'}</div>`;
+    document.getElementById('cv-body').innerHTML = h;
+  }
+  function rcOpen(itemId, ph){ const it = R[itemId]; if(it && it.recu === ph) return rcView(itemId); pjOpen(ph, 'img'); }
+  let rbProof = null;
+  function rbSheet(de, a, v){
+    const p = tv(); rbProof = null;
+    const sel = (id, cur) => `<select class="v-in" id="${id}">${p.map(x=>`<option value="${x}"${x===cur?' selected':''}>${esc(pname(x))}</option>`).join('')}</select>`;
+    openSheet(`<h2>✅ Noter un remboursement</h2>
+      <div class="v-f2"><div class="v-f"><label>Qui rembourse ?</label>${sel('rb-de', de || p[0])}</div><div class="v-f"><label>À qui ?</label>${sel('rb-a', a || p[1] || p[0])}</div></div>
+      <div class="v-f2"><div class="v-f"><label>Montant (€)</label><input class="v-in" id="rb-m" inputmode="decimal" value="${v ? String(Math.round(v*100)/100).replace('.', ',') : ''}"></div><div class="v-f"><label>Quand ?</label><input class="v-in" id="rb-d" type="date" value="${isoToday()}"></div></div>
+      <div class="v-f"><label>Comment ?</label><select class="v-in" id="rb-mo">${MOYENS.map(m=>`<option>${m}</option>`).join('')}</select></div>
+      <div class="v-f"><label>Note (facultatif)</label><input class="v-in" id="rb-n" placeholder="Ex. solde du voyage, réf. du virement…"></div>
+      <button type="button" class="v-day-edit" onclick="CV.rbPhoto()">📷 Joindre une preuve (capture du virement…)</button><span id="rb-pv" class="v-sum-small"></span>
+      <div class="v-actions"><button type="button" class="v-btn" onclick="CV.rbSave()">✅ Enregistrer</button><button type="button" class="v-btn sec cv-sq" onclick="CV.close()">✕</button></div>`);
+  }
+  function rbPhoto(){ tlPickFile('image/*', async f => { const id = 'rbp' + uid(); try { await storePhoto(f, id); rbProof = id; uploadQueue(); const e = document.getElementById('rb-pv'); if(e) e.textContent = ' ✓ preuve jointe'; } catch(e){ alert('Photo impossible à enregistrer.'); } }); }
+  function rbSave(){
+    const g = id => document.getElementById(id).value, de = g('rb-de'), a = g('rb-a'), m = num(g('rb-m'));
+    if(de === a){ alert('Choisis deux personnes différentes.'); return; } if(!(m > 0)){ alert('Montant invalide.'); return; }
+    put({id:'rb'+uid(), type:'remb', trip:M.trip, de, a, montant:m, date:g('rb-d') || isoToday(), moyen:g('rb-mo'), note:g('rb-n').trim(), preuve:rbProof || ''}, '💸 Remboursement noté');
+    rbProof = null; closeSheet(true); render();
+  }
+
   function infoHTML(){
     return `<div class="cv-info">
       ${tutoBtn()}
@@ -8002,7 +8071,7 @@ ${pm.join('\n')}</Document></kml>`;
     envF:setEnvF, envP:setEnvP, like, editWish, saveWish, delWish, wishToTrip,
     editTrip, saveTrip, delTrip, closeTrip, reopenTrip,
     live, one, echAdd, echDel, echSpread, echToggle, lisser, echReset, echRange, echRangeReset,
-    planDay, plCfg, plAdd, plDel, plOpt, wizard, zipSavePart, zipCancel, innerGo, inspDeal, inspOpen, compN, compDel, compAdd, compTog, compCreate, inspBack, inspMore, inspFav, inspSurprise, inspVote, gateInstall, partsSheet, partsSave, discInfo, discBack, newTrip, blankTrip, inspire, inspireDemo, inspireGo, inspireCreate, zipSheet, zipExport, zipImport, worldFly, worldStep, worldStory, cfSegGo, trkToggle, modeGo, bilanClose, albumSheet, albCover, albumGo, tripShare, tripShareSheet, tripInvite, tripUnshare, tripJoin, tripJoinGo, tripWho, tripWhoSet, impSheet, impPick, jrSheet, jrTog, jrAll, worldMap, worldMode, worldOpen, worldClose, pjAdd, pjDel, pjOpen, cfSheet, cfGo, tlCo2, hereNow, tlStats, tlKml, tlFill, tlFillGo, rcView, rcAttach, tlIcsGo, capSet, shopSheet, shopAdd, shopTick, shopClear, rembAsk, pollNew, pollSave, pollVote, pollClose, pollDel, pdfRoute, pdfJournal, pdfShare, pdfOpen, pkgPick, pkgApply, hydrateMaps, renderOutils, tlDay, tlIcs, fxTool, fxFill, tlMeteo, tlReceipt, tlRcPhoto, tlRcOcr, tlRcSave, tlReceipts, tlMap, tlBags, tlBagsGo, tlDocs, tlDocEdit, tlDocSave, tlDocDel, tlJournal, pkgSheet, pkgExport, pkgImport, pinToggle, shareSheet, shareLink, askErase, tutoSheet, escaleTuto, demoLoad, demoDel, demoReset, wzGo, wzDates, wzEt, wzSum, wzTpl, wzCreate,
+    planDay, plCfg, plAdd, plDel, plOpt, wizard, rcOpen, rbSheet, rbPhoto, rbSave, zipSavePart, zipCancel, innerGo, inspDeal, inspOpen, compN, compDel, compAdd, compTog, compCreate, inspBack, inspMore, inspFav, inspSurprise, inspVote, gateInstall, partsSheet, partsSave, discInfo, discBack, newTrip, blankTrip, inspire, inspireDemo, inspireGo, inspireCreate, zipSheet, zipExport, zipImport, worldFly, worldStep, worldStory, cfSegGo, trkToggle, modeGo, bilanClose, albumSheet, albCover, albumGo, tripShare, tripShareSheet, tripInvite, tripUnshare, tripJoin, tripJoinGo, tripWho, tripWhoSet, impSheet, impPick, jrSheet, jrTog, jrAll, worldMap, worldMode, worldOpen, worldClose, pjAdd, pjDel, pjOpen, cfSheet, cfGo, tlCo2, hereNow, tlStats, tlKml, tlFill, tlFillGo, rcView, rcAttach, tlIcsGo, capSet, shopSheet, shopAdd, shopTick, shopClear, rembAsk, pollNew, pollSave, pollVote, pollClose, pollDel, pdfRoute, pdfJournal, pdfShare, pdfOpen, pkgPick, pkgApply, hydrateMaps, renderOutils, tlDay, tlIcs, fxTool, fxFill, tlMeteo, tlReceipt, tlRcPhoto, tlRcOcr, tlRcSave, tlReceipts, tlMap, tlBags, tlBagsGo, tlDocs, tlDocEdit, tlDocSave, tlDocDel, tlJournal, pkgSheet, pkgExport, pkgImport, pinToggle, shareSheet, shareLink, askErase, tutoSheet, escaleTuto, demoLoad, demoDel, demoReset, wzGo, wzDates, wzEt, wzSum, wzTpl, wzCreate,
     pickColor, newProfile, editProfile, saveProfile, delProfile, whoSheet, setMe,
     genCode, syncOn, syncOff, syncNow, shareCode, exportShare, exportDownload, importPick, wipe, obCreate, obJoin,
     _R:()=>R, _M:()=>M};
