@@ -949,6 +949,15 @@ a.v-btn.cv-escale{display:block;text-align:center;text-decoration:none}
 .cv-share-qr{display:block;margin:6px auto 10px;width:min(64vw,240px);height:auto;background:#fff;border-radius:14px;padding:10px}
 .cv-share-url{font-size:.78rem;text-align:center;word-break:break-all;color:var(--gray);margin-bottom:10px}
 .cv-rmap{margin-top:10px}
+#cv-gate{position:fixed;inset:0;z-index:20000;background:linear-gradient(160deg,#2a1238,#4c1d95 60%,#be185d);color:#fff;display:flex;align-items:center;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 20px) 22px calc(env(safe-area-inset-bottom,0px) + 20px);overflow:auto}
+#cv-gate .gt{max-width:420px;text-align:center}
+#cv-gate .gi{width:84px;height:84px;border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+#cv-gate h1{font-family:'Playfair Display',Georgia,serif;font-style:italic;font-size:2rem;margin:14px 0 8px}
+#cv-gate p{font-size:.95rem;line-height:1.5;color:#f3e8ff}
+#cv-gate .gs{text-align:left;background:rgba(255,255,255,.12);border-radius:16px;padding:14px 14px 14px 34px;margin:14px 0;line-height:1.6}
+#cv-gate .gk{display:inline-block;background:#fff;color:#2a1238;border-radius:6px;padding:0 6px;font-weight:800}
+#cv-gate .gm{font-size:.74rem;opacity:.85}
+#cv-gate a{color:#fff}
 .cv-prt{display:grid;grid-template-columns:auto 1fr 1.4fr;gap:8px;align-items:center;margin:6px 0}
 .cv-prt label{display:flex;flex-direction:column;font-size:.7rem;color:#6b5670;min-width:0}
 .cv-prt .v-in{margin:2px 0 0;min-width:0}
@@ -1361,7 +1370,15 @@ const CV = (function(){
     return Object.fromEntries(pool.map(x=>[x, coef ? tCoef(x) : 1]));   // parts du voyage (enfant 0,5…) pour les dépenses partagées
   }
   function shareOf(it, pid, kind){
-    const c = chargeOf(it), w = weights(parts(it), c.mode, c.pid, c.parts, partage(it)!=='pp'), sw = sumv(w);
+    const c = chargeOf(it);
+    if(c.mode === 'perso'){   // montants exacts en € ; le reste éventuel est partagé entre ceux sans montant
+      const pool = parts(it), T0 = totalOf(it), T = totalOf(it, kind), ratio = T0 ? T / T0 : 1;
+      const given = Object.fromEntries(Object.entries(c.parts||{}).filter(([k])=>pool.includes(k)).map(([k,v])=>[k, num(v)]));
+      const rest = pool.filter(x=>!(x in given)), left = T0 - sumv(given);
+      if(pid in given) return (given[pid] + (rest.length ? 0 : left / pool.length)) * ratio;
+      return rest.includes(pid) ? Math.max(0, left) / rest.length * ratio : 0;
+    }
+    const w = weights(parts(it), c.mode === 'parts' ? 'perso' : c.mode, c.pid, c.parts, partage(it)!=='pp'), sw = sumv(w);
     return (sw && pid in w) ? totalOf(it, kind) * w[pid] / sw : 0;
   }
   /* Ce qui est déjà réglé : tout si « Payé », sinon les échéances cochées */
@@ -2118,13 +2135,7 @@ const CV = (function(){
         <span class="cv-demo-btns"><button type="button" onclick="CV.demoReset()">↺ Recommencer</button><button type="button" onclick="CV.demoDel()">Supprimer la démo</button></span></div>` + h;
     { const di0 = tt && !tt.archived ? docIssues() : []; if(di0.length) h += `<button type="button" class="cv-docalert" onclick="CV.tlDocs()">⚠️ ${di0.length} document${di0.length>1?'s':''} de voyage à vérifier — ${esc(di0[0])}${di0.length>1?'…':''}</button>`; }
     if(tt && !tt.archived) h += discoverCard(true);
-    if(ESCALE && tt && !tt.archived) h += `<a class="cv-escale-card" href="${ESCALE}">
-        <span class="ek">Escale · comparateur${new Date() <= new Date('2026-12-31T23:59:59') ? ' · 🎁 Premium offert jusqu’au 31/12' : ''}</span>
-        <span class="et">Trouve les vols les moins chers pour ce voyage</span>
-        <span class="ed">Compare les prix des compagnies en quelques secondes, puis ajoute ton vol ici.</span>
-        <span class="eb">Chercher avec Escale ↗</span>
-        ${PUBLIC ? '<small>Prix indicatifs : vérifie toujours le tarif final chez la compagnie.</small>' : ''}
-      </a><button type="button" class="cv-escale-tuto" onclick="CV.escaleTuto()">🎓 Tuto vidéo : utiliser Escale en mode premium</button>`;
+    // (encart Escale retiré du programme : accès par le bouton 🛫 Escale de l'en-tête)
     if(!ds.length) h += '<div class="v-empty">Aucun jour. Ajoute des dates au voyage (⚙️ Partage → Modifier le voyage) ou un trajet daté.</div>';
     h += ds.map((d,idx)=>{
       const info = dayInfo(d);
@@ -2829,7 +2840,7 @@ const CV = (function(){
     const v = tv(), c = chargeOf(it), py = it.payeur || 'chacun';
     let h = `<div class="cv-paybox"><div class="cv-paybox-h">💶 Paiement</div>`;
     if(v.length > 1){
-      h += `<div class="v-f"><label>Qui prend en charge le coût ?</label>${segBtns('cv-chg', [['egal','Partagé égal'],['seul','Une personne'],['perso','Montants']], c.mode)}<div id="cv-chg-x"></div></div>`;
+      h += `<div class="v-f"><label>Qui prend en charge le coût ?</label>${segBtns('cv-chg', [['egal','Égal'],['seul','Une personne'],['perso','Montants €'],['parts','Parts']], c.mode)}<div id="cv-chg-x"></div></div>`;
       h += `<div class="v-f"><label>Qui a payé / avancé l’argent ?</label>${segBtns('cv-pay', [['chacun','Chacun sa part'], ...v.map(p=>[p, esc(pname(p))]), ['perso','Montants']], py)}<div id="cv-pay-x"></div></div>`;
     }
     h += `<div class="cv-live" id="cv-live"></div>`;
@@ -2849,7 +2860,7 @@ const CV = (function(){
       else {
         const c = {mode:cm};
         if(cm==='seul'){ const b = document.querySelector('#cv-chg-x button.on'); c.pid = b ? b.dataset.p : parts(it)[0]; }
-        if(cm==='perso'){ c.parts = {}; document.querySelectorAll('[data-chg]').forEach(i=>{ if(i.value.trim()!=='') c.parts[i.dataset.chg] = num(i.value); }); }
+        if(cm==='perso' || cm==='parts'){ c.parts = {}; document.querySelectorAll('[data-chg]').forEach(i=>{ if(i.value.trim()!=='') c.parts[i.dataset.chg] = num(i.value); }); }
         it.charge = c;
       }
     }
@@ -2890,8 +2901,8 @@ const CV = (function(){
       const c = chargeOf(it), keep = {}; document.querySelectorAll('[data-chg]').forEach(i=>keep[i.dataset.chg] = i.value);
       xc.innerHTML = cm==='seul'
         ? `<div class="cv-qsel" style="margin-top:6px">${p.map(pid=>`<button type="button" class="${(c.pid && p.includes(c.pid) ? c.pid : p[0])===pid?'on':''}" data-p="${pid}" style="--pc:${pcol(pid)}" onclick="CV.one(this)">${esc(pname(pid))} paie tout</button>`).join('')}</div>`
-        : cm==='perso'
-        ? `<div class="cv-amts">${p.map(pid=>`<label>${pchip(pid)}<input class="v-in" data-chg="${pid}" inputmode="decimal" value="${esc(keep[pid] ?? ((c.parts||{})[pid] ?? ''))}" placeholder="€"></label>`).join('')}</div><div class="v-sum-small">Montant (ou proportion) à la charge de chacun.</div>`
+        : cm==='perso' || cm==='parts'
+        ? `<div class="cv-amts">${p.map(pid=>`<label>${pchip(pid)}<input class="v-in" data-chg="${pid}" inputmode="decimal" value="${esc(keep[pid] ?? ((c.mode===cm && c.parts||{})[pid] ?? ''))}" placeholder="${cm==='perso' ? '€' : 'parts'}"></label>`).join('')}</div><div class="v-sum-small" id="cv-chg-help">${cm==='perso' ? 'Montant exact en € pour chacun. Laisse vide : le reste est partagé entre ceux sans montant.' : 'Nombre de parts (ex. 2 et 1 : le premier paie deux fois plus).'}</div>`
         : '';
     }
     const xp = document.getElementById('cv-pay-x');
@@ -2901,6 +2912,8 @@ const CV = (function(){
     }
     readPay(tmp);
     const T = totalOf(tmp);
+    if(cm === 'perso'){ const hp = document.getElementById('cv-chg-help'), g = [...document.querySelectorAll('[data-chg]')].filter(i=>i.value.trim()!==''), sg = g.reduce((s,i)=>s+num(i.value),0), left = T - sg;
+      if(hp) hp.innerHTML = `Saisi : <b>${eur(sg)}</b> sur ${eur(T)} · ${Math.abs(left) < 0.01 ? '✓ tout est réparti' : left > 0 ? (g.length < p.length ? 'reste ' + eur(left) + ' partagé entre ceux sans montant' : '<b style="color:#a06d00">reste ' + eur(left) + ' : partagé entre tous</b>') : '<b style="color:var(--red)">dépasse de ' + eur(-left) + '</b>'}`; }
     let h = `<div class="cv-live-t">Coût total <b>${eur(T)}</b>${p.length>1 && partage(tmp)==='pp' ? ` <span>(${eur(base(tmp))} × ${p.length})</span>` : ''}</div>`;
     if(tv().length > 1) h += `<div class="cv-live-r">${p.map(pid=>`<span>${pchip(pid)} <b>${eur(shareOf(tmp,pid))}</b></span>`).join('')}</div>`;
     const P = paidAmount(tmp);
@@ -3784,7 +3797,9 @@ const CV = (function(){
     document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') syncNow(); });
     window.addEventListener('online', ()=>syncNow());
     setInterval(()=>{ if(document.visibilityState==='visible' && !sheetOpen()) syncNow(); }, 20000);
-    applyMode(); applyLock(); bootOffline();
+    bootOffline();
+    if(installGate()) return;
+    applyMode(); applyLock(); countInstall();
     if(PUBLIC && !M.infoSeen) infoSheet(true);
     else if(!M.me || !prof(M.me)){ if(M.sync.on && profiles().length) whoSheet(); else onboarding(); }
     syncNow();
@@ -5556,7 +5571,7 @@ const CV = (function(){
     h += box('📖','Journal de voyage','Un album à imprimer ou garder en PDF : la carte, chaque jour avec ses souvenirs et ses photos, et le bilan.',
       `<button class="v-btn sec" onclick="CV.jrSheet()">📖 Créer le journal (PDF)</button>`);
     h += box('📦','Partager sans serveur','Pour ceux qui ne veulent pas de la synchro en ligne : un fichier chiffré à s’envoyer (WhatsApp, Messages, AirDrop…). Voir Partage &amp; profils.',
-      `<button class="v-btn sec" onclick="CV.tab('reglages')">📦 Paquets sans serveur</button>`);
+      `<button class="v-btn sec" onclick="CV.pkgSheet()">📤 Envoyer un paquet</button><button class="v-btn sec" onclick="CV.pkgImport()">📥 Recevoir un paquet</button>`);
     document.getElementById('cv-body').innerHTML = h;
   }
 
@@ -6686,6 +6701,29 @@ ${pm.join('\n')}</Document></kml>`;
 
   /* ---------- 🌍 Carte du monde 3D (globe interactif : zoom, rotation, voyages, pays, steps) ---------- */
 
+  /* ---------- ✈️ Plusieurs vols dans une même confirmation (aller-retour, escales) ---------- */
+  const AIRLINES = {EZY:'easyJet',U2:'easyJet',EJU:'easyJet',AFR:'Air France',AF:'Air France',TVF:'Transavia',TO:'Transavia',HV:'Transavia',RYR:'Ryanair',FR:'Ryanair',VLG:'Vueling',VY:'Vueling',V7:'Volotea',VOE:'Volotea',
+    LH:'Lufthansa',DLH:'Lufthansa',KL:'KLM',KLM:'KLM',BA:'British Airways',BAW:'British Airways',IB:'Iberia',TP:'TAP Air Portugal',AZ:'ITA Airways',ITY:'ITA Airways',EK:'Emirates',QR:'Qatar Airways',TK:'Turkish Airlines',
+    A3:'Aegean',KM:'KM Malta Airlines',W6:'Wizz Air',W4:'Wizz Air',MS:'EgyptAir',AT:'Royal Air Maroc',SN:'Brussels Airlines',LX:'Swiss',OS:'Austrian',SK:'SAS',AY:'Finnair',DY:'Norwegian',BT:'airBaltic',LS:'Jet2',EW:'Eurowings',DE:'Condor',SS:'Corsair',TX:'Air Caraïbes',UX:'Air Europa',PC:'Pegasus',XQ:'SunExpress'};
+  function cfSegments(raw){
+    const T = cfPre(raw), L = T.split('\n').map(l=>l.replace(/\t+/g,' ').trim()).filter(Boolean), segs = [];
+    const isCode = l => l.length < 45 && /^(?:vol\s*:?\s*)?([A-Z]{3}|[A-Z]{2}|[A-Z]\d|\d[A-Z])\s?(\d{2,4})\b/.test(l) && !/^\d{4}$/.test(l);
+    const idx = L.map((l,i)=>isCode(l) ? i : -1).filter(i=>i>=0);
+    idx.forEach((ci, k)=>{
+      const end = k+1 < idx.length ? idx[k+1] : L.length, blk = L.slice(ci, end);
+      const m = L[ci].match(/^(?:vol\s*:?\s*)?([A-Z]{3}|[A-Z]{2}|[A-Z]\d|\d[A-Z])\s?(\d{2,4})/);
+      let from = '', to = '';
+      for(let j=ci-1; j>=Math.max(0, ci-4); j--){ const r = L[j].match(/^(.+?)\s+(?:à|a|to|→|->|–|—)\s+(.+)$/i); if(r && !/^\d/.test(r[1]) && !/:/.test(L[j])){ from = r[1]; to = r[2]; break; } }
+      const clean = s => s.replace(/\(.*?\)/g,'').replace(/\b(?:Terminal|Aéroport|Airport|T\d)\b.*$/i,'').trim();
+      const line = re => blk.find(l=>re.test(l)) || '';
+      const dep = line(/^(?:d[ée]part|departure|departs?)\b/i), arr = line(/^(?:arriv[ée]e|arrival|arrives?)\b/i);
+      const tm = l => (l.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/) || [])[0] || '';
+      const d = cfDates(dep)[0] || cfDates(blk.join('\n'))[0] || '';
+      const notes = blk.filter(l=>/si[èe]ge|seat|bagage|baggage|comptoir|enregistrement|check-?in|porte|gate|embarquement|boarding/i.test(l) && !/^ajouter|^changer/i.test(l)).slice(0,6);
+      segs.push({kind:'vol', code:(m[1]+m[2]).toUpperCase(), from:clean(from), to:clean(to), date:d, heure:tm(dep), heureArr:tm(arr), compagnie:(AIRLINES[m[1]] ? AIRLINES[m[1]] + ' ' : '') + (m[1]+m[2]).toUpperCase(), note:notes.join(' · ')});
+    });
+    return segs.filter(s=>s.date || s.from);
+  }
   function cfImport(raw, pj){
     const segs = cfSegments(raw), ref = (cfPre(raw).match(/(?:r[ée]f[ée]rence|reference|booking|r[ée]servation|PNR|code)\W{0,25}([A-Z0-9]{6,8})\b/i) || [])[1] || '';
     if(segs.length >= 2){
@@ -6843,7 +6881,7 @@ ${pm.join('\n')}</Document></kml>`;
   };
   function albumSheet(){
     const t = trip(); if(!t) return;
-    const A = M.album = Object.assign({titre:t.titre, sous:tripDatesLong(t), theme:'nuit', serif:1, lay:'duo', carte:1, chiffres:1, recits:1, jours:1, cover:''}, M.album && M.album.trip===t.id ? M.album : {trip:t.id, titre:t.titre, sous:tripDatesLong(t)});
+    const A = M.album = Object.assign({titre:t.titre, sous:tripDatesLong(t), theme:'nuit', serif:1, lay:'magazine', carte:1, chiffres:1, recits:1, jours:1, cover:''}, M.album && M.album.trip===t.id ? M.album : {trip:t.id, titre:t.titre, sous:tripDatesLong(t)});
     A.trip = t.id;
     const phs = souvs().flatMap(s=>(s.photos||[]).filter(p=>!(M.jrOff||{})[p]));
     const opt = (n, v, l) => `<option value="${v}"${A[n]==v?' selected':''}>${l}</option>`;
@@ -6852,7 +6890,7 @@ ${pm.join('\n')}</Document></kml>`;
       ${field('Titre','al_titre',A.titre)}${field('Sous-titre','al_sous',A.sous)}
       <div class="v-f2"><div class="v-f"><label>Ambiance</label><select class="v-in" id="al-theme">${Object.entries(ALB_THEMES).map(([k,x])=>opt('theme',k,x.lbl)).join('')}</select></div>
         <div class="v-f"><label>Écriture</label><select class="v-in" id="al-serif">${opt('serif',1,'Élégante (serif)')}${opt('serif',0,'Moderne')}</select></div></div>
-      <div class="v-f"><label>Mise en page des photos</label><select class="v-in" id="al-lay">${opt('lay','grande','Une grande photo par page')}${opt('lay','duo','Deux photos par page')}${opt('lay','mosa','Mosaïque de 4')}</select></div>
+      <div class="v-f"><label>Mise en page des photos</label><select class="v-in" id="al-lay">${opt('lay','magazine','✨ Magazine : montages variés (pleine page, collages, polaroïds)')}${opt('lay','polaroid','📸 Polaroïds éparpillés')}${opt('lay','grande','Une grande photo par page')}${opt('lay','duo','Deux photos par page')}${opt('lay','mosa','Mosaïque de 4')}</select></div>
       <div class="v-f"><label>Photo de couverture</label><div class="jr-grid" id="al-cov">${phs.slice(0,24).map((p,i)=>`<button type="button" class="jr-ph${(A.cover||phs[0])===p?'':' off'}" data-p="${esc(p)}" onclick="CV.albCover(this)"><img data-ph="${esc(p)}.t" alt=""><span>★</span></button>`).join('') || '<div class="v-sum-small">Pas encore de photos.</div>'}</div></div>
       <div class="v-f"><label>Contenu</label>${ck('carte','🗺️ Carte du voyage')}${ck('chiffres','✨ Le voyage en chiffres')}${ck('jours','📅 Un chapitre par jour')}${ck('recits','✍️ Les récits des souvenirs')}</div>
       <button type="button" class="v-day-edit" onclick="CV.jrSheet()">🖼️ Choisir les photos (${phs.length} retenue${phs.length>1?'s':''})</button>
@@ -6876,7 +6914,8 @@ ${pm.join('\n')}</Document></kml>`;
       const wrap = (s, f, sz, w) => { const out = []; pdfTxt(s).split('\n').forEach(par=>{ let line = ''; par.split(' ').forEach(wd=>{ const tt = line ? line + ' ' + wd : wd; if(f.widthOfTextAtSize(tt, sz) <= w) line = tt; else { if(line) out.push(line); line = wd; } }); out.push(line); }); return out; };
       const center = (s, f, sz, yy, col) => { const tx = pdfTxt(s); pg.drawText(tx, {x:W/2 - f.widthOfTextAtSize(tx, sz)/2, y:yy, size:sz, font:f, color:col || C(th.ink)}); };
       const para = (s, f, sz, col, w) => { w = w || W - 2*Mg; wrap(s, f, sz, w).forEach(l=>{ if(y < Mg + sz*1.5) page(); pg.drawText(l, {x:(W - w)/2, y:y - sz, size:sz, font:f, color:col || C(th.ink)}); y -= sz*1.45; }); };
-      const embed = async id => { const b = await photoBlob(id) || await photoBlob(id + '.t'); if(!b) return null; try { return await pdf.embedJpg(new Uint8Array(await b.arrayBuffer())); } catch(e){ return null; } };
+      const emb = new Map(), embed = async id => { if(emb.has(id)) return emb.get(id); const b = await photoBlob(id) || await photoBlob(id + '.t'); let im = null; if(b){ try { im = await pdf.embedJpg(new Uint8Array(await b.arrayBuffer())); } catch(e){} } emb.set(id, im); return im; };
+      const getPg = () => pg;
       const cover = (im, x, yy, w, h) => { const r = Math.max(w/im.width, h/im.height), dw = im.width*r, dh = im.height*r;
         pg.pushOperators(L.pushGraphicsState(), L.rectangle(x, yy, w, h), L.clip(), L.endPath());
         pg.drawImage(im, {x:x + (w-dw)/2, y:yy + (h-dh)/2, width:dw, height:dh}); pg.pushOperators(L.popGraphicsState()); };
@@ -6897,13 +6936,20 @@ ${pm.join('\n')}</Document></kml>`;
           st.forEach(([v,l],i)=>{ const x = Mg + i*cw + cw/2, vs = String(v); pg.drawText(vs, {x:x - F.b.widthOfTextAtSize(vs, 30)/2, y:y - 34, size:30, font:F.b, color:C(th.acc)}); pg.drawText(l, {x:x - F.i.widthOfTextAtSize(l, 11)/2, y:y - 52, size:11, font:F.i, color:C(th.ink)}); });
           y -= 80; } }
       // 3. chapitres / photos
+      if(A.lay === 'magazine' || A.lay === 'polaroid'){
+        pdfSay('Montage des pages…');
+        await albumMagazine({pdf, L, page, W, H, Mg, th, C, F, embed, getPg}, photos.slice().sort((a,b)=>(a.s.date||'').localeCompare(b.s.date||'')), A.lay, A.recits);
+        page(); y = H/2 + 40; center('Fin', F.b, 30, y, C(th.acc)); center('Album créé avec Carnet de voyage · ' + new Date().toLocaleDateString('fr-FR', {month:'long', year:'numeric'}), F.i, 11, y - 34);
+        pdfReady(new File([await pdf.save()], pdfName('album', t), {type:'application/pdf'})); return;
+      }
       const groups = A.jours ? dayList().map((d,i)=>({titre:`Jour ${i+1}`, sub:longDate(d) + (dayInfo(d).titre ? ' · ' + dayInfo(d).titre : ''), sv: sv.filter(s=>s.date===d)})).filter(g=>g.sv.length) : [{titre:'', sub:'', sv}];
-      const per = A.lay === 'grande' ? 1 : A.lay === 'duo' ? 2 : 4;
+      const per = A.lay === 'grande' ? 1 : A.lay === 'duo' ? 2 : A.lay === 'mosa' ? 4 : 1;
       for(const gp of groups){
         pdfSay(gp.titre ? gp.titre + '…' : 'Photos…');
         if(gp.titre){ page(); y -= 120; center(gp.titre, F.b, 34, y, C(th.acc)); y -= 30; center(gp.sub, F.i, 14, y); y -= 26; pg.drawLine({start:{x:W/2-30, y}, end:{x:W/2+30, y}, thickness:1, color:C(th.acc)}); y -= 30;
           if(A.recits) gp.sv.forEach(s=>{ if(s.titre) { if(y < 120) page(); center(s.titre, F.b, 15, y - 15); y -= 26; } if(s.texte) para(s.texte, F.r, 11.5, null, W - 2*Mg - 40); y -= 10; }); }
         const ps = gp.sv.flatMap(s=>(s.photos||[]).filter(p=>!(M.jrOff||{})[p]).map(p=>({p, s})));
+        if(A.lay === 'magazine' || A.lay === 'polaroid'){ await albumMagazine({pdf, L, page, W, H, Mg, th, C, F, embed, getPg}, ps, A.lay); continue; }
         for(let k=0; k<ps.length; k+=per){
           page(); const box = {x:Mg, y:Mg + 20, w:W - 2*Mg, h:H - 2*Mg - 30};
           const cells = per === 1 ? [[0,0,1,1]] : per === 2 ? [[0,.51,1,.49],[0,0,1,.49]] : [[0,.51,.49,.49],[.51,.51,.49,.49],[0,0,.49,.49],[.51,0,.49,.49]];
@@ -7057,9 +7103,12 @@ ${pm.join('\n')}</Document></kml>`;
     } catch(e){ wmInfo('⚠️ ' + esc(e.message)); }
   }
   function spinGlobe(){
-    if(!wm) return; const map = wm.map;
-    const step = () => { if(!wm || !wm.spin || map.getZoom() > 3.2){ return; } const c = map.getCenter(); c.lng -= 6; map.easeTo({center:c, duration:1000, easing:n=>n}); };
-    map.on('moveend', step); step();
+    if(!wm) return; const map = wm.map, el = map.getContainer();
+    const stop = () => { if(wm && wm.spin){ wm.spin = false; map.stop(); } };
+    ['pointerdown','touchstart','wheel','mousedown'].forEach(ev=>el.addEventListener(ev, stop, {capture:true, passive:true}));
+    map.on('movestart', e=>{ if(e && e.originalEvent) stop(); });
+    const step = () => { if(!wm || !wm.spin || map.getZoom() > 3.2) return; const c = map.getCenter(); c.lng -= 6; map.easeTo({center:c, duration:1000, easing:n=>n}); };
+    map.on('moveend', ()=>{ if(wm && wm.spin) step(); }); step();
   }
   function worldCarousel(){
     const c = document.getElementById('wm-car'); if(!c || !wm) return;
@@ -7413,6 +7462,94 @@ ${pm.join('\n')}</Document></kml>`;
     setTimeout(()=>alert(`🧳 « ${ville} » est créé, du ${fdate(debut)} au ${fdate(fin)} (dates modifiables).\n\nEnsuite : ✈️ cherche les vols avec Escale, 🔎 « Que voir » pour les visites, 🪄 « Remplir mes journées ».`), 300);
   }
 
+  /* ══════════ 📲 Appli à installer obligatoirement (écran d'accueil) + compteur anonyme ══════════ */
+  function installGate(){
+    if(isInstalled() || !/^https?:/.test(location.protocol) || /^(localhost|127\.)/.test(location.hostname) || /[?&]web=1/.test(location.search)) return false;
+    let g = document.getElementById('cv-gate'); if(!g){ g = document.createElement('div'); g.id = 'cv-gate'; document.body.appendChild(g); }
+    gateRender(); return true;
+  }
+  function gateRender(){
+    const g = document.getElementById('cv-gate'); if(!g) return;
+    const ua = navigator.userAgent, ios = isIOS(), iosOther = ios && /CriOS|FxiOS|EdgiOS|OPiOS/.test(ua), android = /Android/i.test(ua);
+    const steps = ios ? (iosOther ? `<li>Ouvre cette page dans <b>Safari</b> (sur iPhone, seul Safari sait installer une appli web).</li><li>Puis suis les étapes ci-dessous.</li>` : '')
+        + `<li>Touche <b>Partager</b> <span class="gk">⬆︎</span> en bas de Safari.</li><li>Choisis <b>« Sur l’écran d’accueil »</b> <span class="gk">＋</span>.</li><li>Touche <b>Ajouter</b>, puis ouvre <b>Carnet</b> depuis ton écran d’accueil.</li>`
+      : android ? `<li>${installEvt ? 'Touche le bouton ci-dessous' : 'Touche le menu <b>⋮</b> de Chrome, puis <b>« Installer l’application »</b> (ou « Ajouter à l’écran d’accueil »)'}.</li><li>Ouvre <b>Carnet</b> depuis ton écran d’accueil.</li>`
+      : `<li>${installEvt ? 'Clique sur le bouton ci-dessous' : 'Dans Chrome ou Edge : l’icône <b>Installer</b> à droite de la barre d’adresse. Dans Safari (Mac) : menu <b>Fichier → Ajouter au Dock</b>'}.</li><li>Ouvre <b>Carnet</b> depuis tes applications.</li>`;
+    g.innerHTML = `<div class="gt"><img src="icon-192.png" alt="" class="gi"><h1>Carnet de voyage</h1>
+      <p>Pour garder tes voyages <b>sur ton téléphone</b>, fonctionner <b>sans réseau</b> et protéger tes données, l’appli s’utilise <b>installée sur ton écran d’accueil</b>. C’est gratuit et ça prend 10 secondes.</p>
+      <ol class="gs">${steps}</ol>
+      ${installEvt ? `<button type="button" class="v-btn" onclick="CV.gateInstall()">📲 Installer l’appli</button>` : ''}
+      <p class="gm">Aucune inscription, aucune publicité. <a href="mentions-legales.html">Mentions légales</a> · <a href="privacy.html">Confidentialité</a></p></div>`;
+  }
+  async function gateInstall(){ if(!installEvt) return; installEvt.prompt(); try { await installEvt.userChoice; } catch(e){} installEvt = null; gateRender(); }
+  window.addEventListener('beforeinstallprompt', ()=>setTimeout(gateRender, 50));
+  window.addEventListener('appinstalled', ()=>{ const g = document.getElementById('cv-gate'); if(g) g.innerHTML = '<div class="gt"><h1>✅ Appli installée</h1><p>Ouvre maintenant <b>Carnet</b> depuis ton écran d’accueil.</p></div>'; });
+  function countInstall(){
+    if(!isInstalled() || M.instSent || !/^https?:/.test(location.protocol)) return;
+    M.instId = M.instId || (Date.now().toString(36) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)).slice(0, 32);
+    const plat = isIOS() ? 'ios' : /Android/i.test(navigator.userAgent) ? 'android' : 'desktop';
+    fetch(location.origin + '/api/installs', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id:M.instId, plat})})
+      .then(r=>{ if(r.ok){ M.instSent = 1; persist(); } }).catch(()=>{});
+  }
+
+  /* ══════════ 📕 Album « magazine » : montages variés (pleine page, collages, polaroïds) ══════════ */
+  async function albumMagazine(ctx, photos, mode, recits){
+    const {pdf, L, page, W, H, Mg, th, C, F, embed, getPg} = ctx;
+    const ds = dayList(), told = new Set();
+    const head = ps => { const s0 = ps[0] && ps[0].s; if(!s0 || !s0.date) return; const k = ds.indexOf(s0.date), t = pdfTxt((k >= 0 ? 'Jour ' + (k+1) + '  ·  ' : '') + longDate(s0.date)); getPg().drawText(t, {x:W/2 - F.i.widthOfTextAtSize(t, 10)/2, y:H - 30, size:10, font:F.i, color:C(th.acc)}); };
+    const rad = d => d * Math.PI / 180;
+    // dessine une image recadrée dans un cadre (x,y,w,h), avec rotation éventuelle autour du centre
+    const put = (im, x, y, w, h, rot) => {
+      const pg = getPg(), cx = x + w/2, cy = y + h/2, a = rad(rot||0), cs = Math.cos(a), sn = Math.sin(a);
+      const r = Math.max(w/im.width, h/im.height), dw = im.width*r, dh = im.height*r;
+      pg.pushOperators(L.pushGraphicsState(), L.concatTransformationMatrix(cs, sn, -sn, cs, cx, cy), L.rectangle(-w/2, -h/2, w, h), L.clip(), L.endPath());
+      pg.drawImage(im, {x:-dw/2, y:-dh/2, width:dw, height:dh}); pg.pushOperators(L.popGraphicsState());
+    };
+    const polaroid = (im, x, y, w, h, rot, cap) => {
+      const pg = getPg(), cx = x + w/2, cy = y + h/2, a = rad(rot), cs = Math.cos(a), sn = Math.sin(a), b = w*0.06, bb = w*0.2;
+      pg.pushOperators(L.pushGraphicsState(), L.concatTransformationMatrix(cs, sn, -sn, cs, cx, cy));
+      pg.drawRectangle({x:-w/2 - b + 3, y:-h/2 - bb - 3, width:w + 2*b, height:h + b + bb, color:L.rgb(0,0,0), opacity:0.18});
+      pg.drawRectangle({x:-w/2 - b, y:-h/2 - bb, width:w + 2*b, height:h + b + bb, color:L.rgb(1,1,0.98)});
+      pg.pushOperators(L.pushGraphicsState(), L.rectangle(-w/2, -h/2, w, h), L.clip(), L.endPath());
+      const r = Math.max(w/im.width, h/im.height); pg.drawImage(im, {x:-im.width*r/2, y:-im.height*r/2, width:im.width*r, height:im.height*r});
+      pg.pushOperators(L.popGraphicsState());
+      if(cap){ const t = pdfTxt(cap).slice(0, 38); pg.drawText(t, {x:-F.i.widthOfTextAtSize(t, 11)/2, y:-h/2 - bb*0.62, size:11, font:F.i, color:L.rgb(.25,.22,.3)}); }
+      pg.pushOperators(L.popGraphicsState());
+    };
+    const caption = (txt, y, col) => { const pg = getPg(), t = pdfTxt(txt).slice(0, 80); if(t) pg.drawText(t, {x:W/2 - F.i.widthOfTextAtSize(t, 12)/2, y, size:12, font:F.i, color:col || C(th.ink)}); };
+    const band = (txt, sub) => { const pg = getPg(); pg.drawRectangle({x:0, y:0, width:W, height:120, color:L.rgb(0,0,0), opacity:0.42});
+      const t = pdfTxt(txt).slice(0, 48); pg.drawText(t, {x:Mg, y:62, size:24, font:F.b, color:L.rgb(1,1,1)}); if(sub) pg.drawText(pdfTxt(sub).slice(0, 70), {x:Mg, y:38, size:12, font:F.i, color:L.rgb(.95,.92,.85)}); };
+    const T = [
+      { n:1, draw:async (ps)=>{ const im = await embed(ps[0].p); if(!im) return; put(im, 0, 0, W, H); band(ps[0].s.titre || ps[0].s.lieu || '', [ps[0].s.lieu, ps[0].s.date ? longDate(ps[0].s.date) : ''].filter(Boolean).join(' · ')); } },
+      { n:3, draw:async (ps)=>{ const g = 10, iw = W - 2*Mg, ih = H - 2*Mg - 30, big = iw*0.62; const ims = await Promise.all(ps.map(x=>embed(x.p)));
+          if(ims[0]) put(ims[0], Mg, Mg + 20, big - g/2, ih); if(ims[1]) put(ims[1], Mg + big + g/2, Mg + 20 + ih/2 + g/2, iw - big - g/2, ih/2 - g/2); if(ims[2]) put(ims[2], Mg + big + g/2, Mg + 20, iw - big - g/2, ih/2 - g/2); } },
+      { n:3, draw:async (ps)=>{ const ims = await Promise.all(ps.map(x=>embed(x.p))), w = 210, h = 170;
+          [[Mg + 10, H - Mg - h - 70, -6], [W - Mg - w - 10, H/2 - h/2 + 10, 5], [Mg + 40, Mg + 80, -2]].forEach(([x,y,r],k)=>{ if(ims[k]) polaroid(ims[k], x, y, w, h, r, ps[k].s.titre || ps[k].s.lieu); }); } },
+      { n:4, draw:async (ps)=>{ const g = 8, iw = W - 2*Mg, ih = H - 2*Mg - 30, ims = await Promise.all(ps.map(x=>embed(x.p)));
+          const cells = [[0, .55, .58, .45], [.6, .55, .4, .45], [0, 0, .4, .53], [.42, 0, .58, .53]];
+          cells.forEach(([cx,cy,cw,ch],k)=>{ if(ims[k]) put(ims[k], Mg + cx*iw, Mg + 20 + cy*ih, cw*iw - (cx+cw < 1 ? g/2 : 0), ch*ih - (cy+ch < 1 ? g/2 : 0)); }); } },
+      { n:2, draw:async (ps)=>{ const ims = await Promise.all(ps.map(x=>embed(x.p))), iw = W - 2*Mg, ih = (H - 2*Mg - 80)/2;
+          if(ims[0]) put(ims[0], Mg, H - Mg - ih, iw, ih); caption(ps[0].s.titre || '', H - Mg - ih - 22); if(ims[1]) put(ims[1], Mg, Mg + 30, iw, ih); if(ps[1]) caption(ps[1].s.titre || '', Mg + 10); } },
+      { n:3, draw:async (ps)=>{ const ims = await Promise.all(ps.map(x=>embed(x.p))), sw = (W - 2*Mg - 16)/3, sh = sw*1.45, y = H/2 - sh/2 + 40;
+          ims.forEach((im,k)=>{ if(im) put(im, Mg + k*(sw + 8), y, sw, sh); }); const t = ps.map(x=>x.s.titre).filter(Boolean)[0] || ''; caption(t, y - 30, C(th.acc)); } },
+    ];
+    // page « récit » : une photo et le texte du souvenir
+    const story = async x => { const im = await embed(x.p); const iw = W - 2*Mg, ih = H*0.52; if(im) put(im, Mg, H - Mg - 20 - ih, iw, ih);
+      const pg = getPg(); let y = H - Mg - 20 - ih - 40; const t = pdfTxt(x.s.titre || x.s.lieu || ''); pg.drawText(t, {x:W/2 - F.b.widthOfTextAtSize(t, 20)/2, y, size:20, font:F.b, color:C(th.acc)}); y -= 30;
+      const words = pdfTxt(x.s.texte).split(' '); let line = '';
+      for(const w of words){ const tt = line ? line + ' ' + w : w; if(F.r.widthOfTextAtSize(tt, 12.5) > iw - 40){ pg.drawText(line, {x:Mg + 20, y, size:12.5, font:F.r, color:C(th.ink)}); y -= 19; line = w; if(y < Mg + 30) break; } else line = tt; }
+      if(line && y >= Mg + 30) pg.drawText(line, {x:Mg + 20, y, size:12.5, font:F.r, color:C(th.ink)}); };
+    const TT = mode === 'polaroid' ? [T[2]] : T;
+    let k = 0, ti = 0;
+    while(k < photos.length){
+      const x0 = photos[k];
+      if(recits && x0.s.texte && x0.s.texte.length > 30 && !told.has(x0.s.id)){ told.add(x0.s.id); page(); await story(x0); head([x0]); k++; continue; }
+      let t = TT[ti % TT.length]; ti++;
+      if(photos.length - k < t.n && mode !== 'polaroid') t = T.find(x=>x.n <= photos.length - k) || T[0];
+      const ps = photos.slice(k, k + t.n); page(); await t.draw(ps); if(t !== T[0]) head(ps); k += t.n;
+    }
+  }
+
   function infoHTML(){
     return `<div class="cv-info">
       ${tutoBtn()}
@@ -7491,7 +7628,7 @@ ${pm.join('\n')}</Document></kml>`;
     envF:setEnvF, envP:setEnvP, like, editWish, saveWish, delWish, wishToTrip,
     editTrip, saveTrip, delTrip, closeTrip, reopenTrip,
     live, one, echAdd, echDel, echSpread, echToggle, lisser, echReset, echRange, echRangeReset,
-    planDay, plCfg, plAdd, plDel, plOpt, wizard, partsSheet, partsSave, discInfo, discBack, newTrip, blankTrip, inspire, inspireDemo, inspireGo, inspireCreate, zipSheet, zipExport, zipImport, worldFly, worldStep, worldStory, cfSegGo, trkToggle, modeGo, bilanClose, albumSheet, albCover, albumGo, tripShare, tripShareSheet, tripInvite, tripUnshare, tripJoin, tripJoinGo, tripWho, tripWhoSet, impSheet, impPick, jrSheet, jrTog, jrAll, worldMap, worldMode, worldOpen, worldClose, pjAdd, pjDel, pjOpen, cfSheet, cfGo, tlCo2, hereNow, tlStats, tlKml, tlFill, tlFillGo, rcView, rcAttach, tlIcsGo, capSet, shopSheet, shopAdd, shopTick, shopClear, rembAsk, pollNew, pollSave, pollVote, pollClose, pollDel, pdfRoute, pdfJournal, pdfShare, pdfOpen, pkgPick, pkgApply, hydrateMaps, renderOutils, tlDay, tlIcs, fxTool, fxFill, tlMeteo, tlReceipt, tlRcPhoto, tlRcOcr, tlRcSave, tlReceipts, tlMap, tlBags, tlBagsGo, tlDocs, tlDocEdit, tlDocSave, tlDocDel, tlJournal, pkgSheet, pkgExport, pkgImport, pinToggle, shareSheet, shareLink, askErase, tutoSheet, escaleTuto, demoLoad, demoDel, demoReset, wzGo, wzDates, wzEt, wzSum, wzTpl, wzCreate,
+    planDay, plCfg, plAdd, plDel, plOpt, wizard, gateInstall, partsSheet, partsSave, discInfo, discBack, newTrip, blankTrip, inspire, inspireDemo, inspireGo, inspireCreate, zipSheet, zipExport, zipImport, worldFly, worldStep, worldStory, cfSegGo, trkToggle, modeGo, bilanClose, albumSheet, albCover, albumGo, tripShare, tripShareSheet, tripInvite, tripUnshare, tripJoin, tripJoinGo, tripWho, tripWhoSet, impSheet, impPick, jrSheet, jrTog, jrAll, worldMap, worldMode, worldOpen, worldClose, pjAdd, pjDel, pjOpen, cfSheet, cfGo, tlCo2, hereNow, tlStats, tlKml, tlFill, tlFillGo, rcView, rcAttach, tlIcsGo, capSet, shopSheet, shopAdd, shopTick, shopClear, rembAsk, pollNew, pollSave, pollVote, pollClose, pollDel, pdfRoute, pdfJournal, pdfShare, pdfOpen, pkgPick, pkgApply, hydrateMaps, renderOutils, tlDay, tlIcs, fxTool, fxFill, tlMeteo, tlReceipt, tlRcPhoto, tlRcOcr, tlRcSave, tlReceipts, tlMap, tlBags, tlBagsGo, tlDocs, tlDocEdit, tlDocSave, tlDocDel, tlJournal, pkgSheet, pkgExport, pkgImport, pinToggle, shareSheet, shareLink, askErase, tutoSheet, escaleTuto, demoLoad, demoDel, demoReset, wzGo, wzDates, wzEt, wzSum, wzTpl, wzCreate,
     pickColor, newProfile, editProfile, saveProfile, delProfile, whoSheet, setMe,
     genCode, syncOn, syncOff, syncNow, shareCode, exportShare, exportDownload, importPick, wipe, obCreate, obJoin,
     _R:()=>R, _M:()=>M};
