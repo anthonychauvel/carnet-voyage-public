@@ -1869,7 +1869,10 @@ const CV = (function(){
       ? `<button class="v-btn sec" onclick="CV.demoReset()">↺ Relancer le voyage de démo (remis à neuf)</button>
          <button class="v-btn sec" onclick="CV.demoDel()">🗑 Supprimer le voyage de démo</button>`
       : `<button class="v-btn sec" onclick="CV.demoLoad()">👀 Voir les voyages de démo (préparation, en cours, souvenirs)</button>`) : '';
-  function go(id){ M.trip = id; M.who = 'all'; M.modeTrip = M.modeTrip || {}; if(M.mode) M.modeTrip[M.mode] = id; persist(); applyMode(); window.scrollTo({top:0}); }
+  function go(id){ M.trip = id; M.who = 'all'; M.modeTrip = M.modeTrip || {};
+    { const ph = R[id] ? tripPhase(R[id]) : 'prep'; const want = ph === 'prep' ? 'prep' : ph === 'live' ? 'live' : (M.mode === 'past' || M.mode === 'bilan' ? M.mode : 'bilan');
+      if(M.mode && M.mode !== want && !(M.mode === 'past' && want === 'bilan')) M.mode = want; M.modeTrip[M.mode === 'past' ? 'bilan' : M.mode] = id; }
+    persist(); applyMode(); window.scrollTo({top:0}); }
   function tab(id){
     M.tab = id; persist(); buildTabs(); render();
     const sub = document.getElementById('tabsC'), y = sub && sub.style.display!=='none' ? sub.getBoundingClientRect().top + window.scrollY : 0;
@@ -3507,7 +3510,7 @@ const CV = (function(){
     return t === 'main' ? (M.sync.on && M.sync.code ? M.sync.code : null) : t;
   }
   async function photoBlob(id){
-    try { const o = await IDB.get(id); if(o && o.blob) return o.blob; } catch(e){}
+    try { const o = await IDB.get(id); if(o && o.blob){ try { await o.blob.slice(0, 1).arrayBuffer(); return o.blob; } catch(e){ /* fichier perdu par Safari : on le reprend sur le serveur */ } } } catch(e){}
     const code = photoCode(id); if(!code || !photoApi()) return null;
     try {
       const r = await fetch(photoApi() + '?id=' + encodeURIComponent(await sid(id, code)), {headers:{'X-Carnet-Code':await authCode(code)}});
@@ -3566,7 +3569,7 @@ const CV = (function(){
           const body = E2E ? new Blob([await seal(new Uint8Array(await o.blob.arrayBuffer()), code)], {type:'image/jpeg'}) : o.blob;
           const r = await fetch(photoApi(), {method:'POST', headers:{'X-Carnet-Code':await authCode(code), 'X-Photo-Id':await sid(id, code), 'Content-Type':'image/jpeg'}, body});
           if(!r.ok && r.status !== 413) break;
-          try { await IDB.put({id, blob:o.blob, up:1}); } catch(e){}
+          try { await IDB.put({id, blob:new Blob([await o.blob.arrayBuffer()], {type:o.blob.type || 'image/jpeg'}), up:1}); } catch(e){}   // copie : Safari perd le fichier si on réenregistre le même objet
         }
         M.pq = M.pq.filter(x=>x!==id); persist(); syncDot();
         if(M.pq.length) cryptShow('🔐 Chiffrement des photos… (' + Math.ceil(M.pq.length/2) + ' restante' + (M.pq.length > 2 ? 's' : '') + ')');
@@ -6834,12 +6837,13 @@ ${pm.join('\n')}</Document></kml>`;
     el.innerHTML = MODES.map(([k,ic,l])=>`<button type="button" class="${(M.mode||'prep')===k?'on':''}" onclick="CV.modeGo('${k}')"><i>${ic}</i><span>${l}</span>${k==='live' && live ? '<b class="dotlive"></b>' : ''}</button>`).join('');
   }
   function modeGo(k){
-    M.modeTrip = M.modeTrip || {}; if(M.mode && M.trip) M.modeTrip[M.mode] = M.trip;
+    M.modeTrip = M.modeTrip || {}; if(M.mode && M.mode !== 'past' && M.trip && R[M.trip]){ const ph = tripPhase(R[M.trip]); if((M.mode === 'prep' && ph === 'prep') || (M.mode === 'live' && ph === 'live') || (M.mode === 'bilan' && ph !== 'prep')) M.modeTrip[M.mode] = M.trip; }
     M.mode = k; const td = isoToday(), ts = trips();
-    { const keep = M.modeTrip[k] && R[M.modeTrip[k]]; if(keep && !keep.deleted && (k === 'past' || k === 'prep' || (k === 'live' ? tripPhase(keep)==='live' : tripPhase(keep)!=='prep'))) M.trip = keep.id; }
-    const pick = {prep: t=>tripPhase(t)==='prep', live: t=>tripPhase(t)==='live', past: t=>tripPhase(t)==='past', bilan: t=>tripPhase(t)!=='prep'};
+    { const want = k === 'past' ? 'bilan' : k, keep = M.modeTrip[want] && R[M.modeTrip[want]], okPh = t => k === 'prep' ? tripPhase(t)==='prep' : k === 'live' ? tripPhase(t)==='live' : tripPhase(t)!=='prep';
+      if(keep && !keep.deleted && okPh(keep)) M.trip = keep.id; }
+    const pick = {prep: t=>tripPhase(t)==='prep', live: t=>tripPhase(t)==='live', past: t=>tripPhase(t)==='past', bilan: t=>tripPhase(t)==='past'};
     const cur = trip();
-    if(k !== 'past' && !(cur && pick[k](cur))){ const c = k==='bilan' ? ts.filter(pick.bilan).sort((a,b)=>(b.fin||'').localeCompare(a.fin||''))[0] : ts.find(pick[k]); if(c) M.trip = c.id; }
+    if(k !== 'past' && !(cur && pick[k](cur))){ const c = k==='bilan' ? (ts.filter(t=>tripPhase(t)==='past').sort((a,b)=>(b.fin||'').localeCompare(a.fin||''))[0] || ts.find(pick.bilan)) : ts.find(pick[k]); if(c) M.trip = c.id; }
     if(k === 'prep' && !groupOf(M.tab)) M.tab = 'prog';
     persist(); applyMode(); window.scrollTo({top:0});
   }
@@ -7048,33 +7052,59 @@ ${pm.join('\n')}</Document></kml>`;
       <button type="button" class="v-btn sec" onclick="CV.zipImport()">📥 Restaurer une sauvegarde ZIP</button>
       <div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.close()">Fermer</button></div>`);
   }
+  let zipJob = null;
   async function zipExport(){
     const msg = m => { const e = document.getElementById('zp-msg'); if(e) e.textContent = m; };
-    const withPh = document.getElementById('zp-ph').checked, withPdf = document.getElementById('zp-pdf').checked, withCodes = document.getElementById('zp-codes').checked;
-    try {
-      const recs = Object.values(R).filter(r=>!r.demo), files = [], te_ = new TextEncoder(); let nPh = 0, nPdf = 0;
-      const ids = new Set(), pdfs = new Set();
-      recs.forEach(r=>{ (r.photos||[]).forEach(p=>ids.add(p)); if(r.recu) ids.add(r.recu); (r.pj||[]).forEach(p=>(p.t==='pdf' ? pdfs : ids).add(p.id)); });
-      if(withPh){ let k = 0; for(const id of ids){ k++; if(k % 10 === 0) msg(`📸 Photos : ${k} / ${ids.size}…`);
-        for(const v of document.getElementById('zp-thumb') && document.getElementById('zp-thumb').checked ? [id + '.t'] : [id, id + '.t']){ const b = await photoBlob(v).catch(()=>null); if(b){ files.push({name:'photos/' + v + '.jpg', blob:b}); nPh++; } } } }
-      if(withPdf) for(const id of pdfs){ const b = await photoBlob(id).catch(()=>null); if(b){ files.push({name:'docs/' + id + '.pdf', blob:b}); nPdf++; } }
-      const meta = {me:M.me, trip:M.trip, ...(withCodes ? {sync:{url:M.sync.url, code:M.sync.code, on:M.sync.on}, spaces:(M.spaces||[]).map(x=>({code:x.code})), tripSpace:M.tripSpace||{}} : {})};
-      files.unshift({name:'carnet.json', data:te_.encode(JSON.stringify({app:'carnet-voyage', format:3, exportedAt:new Date().toISOString(), meta, records:recs}))});
-      files.unshift({name:'LISEZMOI.txt', data:te_.encode(`Sauvegarde Carnet de voyage du ${new Date().toLocaleString('fr-FR')}\n${recs.length} fiches, ${nPh} images, ${nPdf} PDF.\nPour restaurer : Plus → Partage & profils → 💾 Sauvegarde complète → Restaurer.\n`)});
-      msg('📦 Assemblage du fichier…');
-      const zip = await zipBuild(files), name = 'carnet-sauvegarde-' + isoToday() + '.zip';
-      msg(`✅ ${recs.length} fiches, ${nPh} images, ${nPdf} PDF · ${(zip.size/1048576).toFixed(1)} Mo`);
-      M.zipLast = Date.now(); persist();
-      await tlShareFile(new File([zip], name, {type:'application/zip'}), name, 'Sauvegarde Carnet de voyage');
-    } catch(e){ msg('⚠️ ' + e.message); }
+    const withPh = document.getElementById('zp-ph').checked, withPdf = document.getElementById('zp-pdf').checked, withCodes = document.getElementById('zp-codes').checked, thumb = (document.getElementById('zp-thumb')||{}).checked;
+    const recs = Object.values(R).filter(r=>!r.demo), te_ = new TextEncoder(), ids = new Set(), pdfs = new Set();
+    recs.forEach(r=>{ (r.photos||[]).forEach(p=>ids.add(p)); if(r.recu) ids.add(r.recu); (r.pj||[]).forEach(p=>(p.t==='pdf' ? pdfs : ids).add(p.id)); });
+    const entries = [];
+    if(withPh) ids.forEach(id=>(thumb ? [id + '.t'] : [id, id + '.t']).forEach(v=>entries.push({name:'photos/' + v + '.jpg', id:v})));
+    if(withPdf) pdfs.forEach(id=>entries.push({name:'docs/' + id + '.pdf', id}));
+    const meta = {me:M.me, trip:M.trip, ...(withCodes ? {sync:{url:M.sync.url, code:M.sync.code, on:M.sync.on}, spaces:(M.spaces||[]).map(x=>({code:x.code})), tripSpace:M.tripSpace||{}} : {})};
+    zipJob = {entries, i:0, part:1, ok:0, skip:0, stamp:isoToday(), head:[
+      {name:'LISEZMOI.txt', data:te_.encode(`Sauvegarde Carnet de voyage du ${new Date().toLocaleString('fr-FR')}\n${recs.length} fiches.\nRestaurer : Partage & profils → 💾 Sauvegarde complète → Restaurer (choisis toutes les parties d’un coup ou l’une après l’autre).\n`)},
+      {name:'carnet.json', data:te_.encode(JSON.stringify({app:'carnet-voyage', format:3, exportedAt:new Date().toISOString(), meta, records:recs}))}]};
+    msg('📦 Préparation…'); zipNext();
   }
-  function zipImport(){ tlPickFile('.zip,application/zip,application/x-zip-compressed', f => zipRestore(f)); }
-  async function zipRestore(f){
+  async function zipNext(){
+    const J = zipJob; if(!J) return; const LIMIT = 120 * 1048576, files = J.part === 1 ? J.head.slice() : [{name:'partie.txt', data:new TextEncoder().encode('Carnet de voyage — partie ' + J.part)}];
+    let size = 0; const msg = m => { const e = document.getElementById('zp-msg'); if(e) e.textContent = m; else toast(m); };
+    while(J.i < J.entries.length && size < LIMIT){
+      const en = J.entries[J.i++]; if(J.i % 15 === 0) msg(`📸 Fichiers : ${J.i} / ${J.entries.length}…`);
+      try { const b = await photoBlob(en.id); if(!b){ J.skip++; continue; } const u8 = new Uint8Array(await b.arrayBuffer()); files.push({name:en.name, data:u8}); size += u8.length; J.ok++; }
+      catch(e){ J.skip++; }
+    }
+    const zip = await zipBuild(files), last = J.i >= J.entries.length, name = `carnet-sauvegarde-${J.stamp}${J.part > 1 || !last ? '-partie' + J.part : ''}.zip`;
+    J.file = new File([zip], name, {type:'application/zip'});
+    openSheet(`<h2>💾 Sauvegarde ${last && J.part === 1 ? 'prête' : '— partie ' + J.part}</h2>
+      <div class="v-sum-small" style="margin-bottom:10px"><b>${esc(name)}</b> · ${(zip.size/1048576).toFixed(1)} Mo${J.skip ? ` · ${J.skip} fichier(s) introuvable(s) ignoré(s)` : ''}.<br>${last ? 'C’est la dernière partie.' : 'Il reste des photos : enregistre cette partie, la suivante se prépare ensuite.'}</div>
+      <button type="button" class="v-btn" onclick="CV.zipSavePart()">💾 Enregistrer ${last && J.part === 1 ? 'la sauvegarde' : 'la partie ' + J.part}</button>
+      <div id="zp-msg" class="v-sum-small" style="margin-top:6px"></div>
+      <div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.zipCancel()">Arrêter</button></div>`, true);
+  }
+  async function zipSavePart(){
+    const J = zipJob; if(!J || !J.file) return;
+    await tlShareFile(J.file, J.file.name, 'Sauvegarde Carnet de voyage'); J.file = null;
+    if(J.i < J.entries.length){ J.part++; const e = document.getElementById('zp-msg'); if(e) e.textContent = '📦 Préparation de la partie ' + J.part + '…'; zipNext(); }
+    else { M.zipLast = Date.now(); persist(); zipJob = null; closeSheet(true); toast(`💾 Sauvegarde terminée (${J.part} partie${J.part>1?'s':''}, ${J.ok} fichiers)`); }
+  }
+  function zipCancel(){ zipJob = null; closeSheet(true); }
+  function zipImport(){
+    const i = document.createElement('input'); i.type = 'file'; i.multiple = true; i.accept = '.zip,application/zip,application/x-zip-compressed';
+    i.style.cssText = 'position:fixed;left:-1000px;top:0;opacity:0'; document.body.appendChild(i);
+    i.addEventListener('change', async () => { const fs = [...(i.files||[])].sort((a,b)=>a.name.localeCompare(b.name, 'fr', {numeric:true})); setTimeout(()=>i.remove(), 1000); for(const f of fs) await zipRestore(f, fs.length > 1); if(fs.length > 1) alert('💾 ' + fs.length + ' parties restaurées.'); });
+    i.click();
+  }
+  async function zipRestore(f, multi){
     const msg = m => { const e = document.getElementById('zp-msg'); if(e) e.textContent = m; else toast(m); };
     try {
       msg('📂 Lecture de la sauvegarde…');
       const z = await zipRead(f), get = async n => { const v = z[n]; return typeof v === 'function' ? await v() : v; };
-      const main = await get('carnet.json'); if(!main) throw new Error('ce ZIP n’est pas une sauvegarde du carnet');
+      const main = await get('carnet.json');
+      if(!main){ if(!z['partie.txt']) throw new Error('ce ZIP n’est pas une sauvegarde du carnet'); let nf = 0;
+        for(const k of Object.keys(z).filter(k=>/^(photos|docs)\//.test(k))){ const id = k.replace(/^(photos|docs)\//,'').replace(/\.(jpg|pdf)$/,''); const ex = await IDB.get(id).catch(()=>null); if(ex && ex.blob) continue; const u8 = await get(k); if(u8){ await IDB.put({id, blob:new Blob([u8], {type: k.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg'}), up:0}); nf++; } }
+        toast('📸 ' + nf + ' photo(s) restaurée(s) depuis ' + f.name); refresh(); return; }
       const data = JSON.parse(new TextDecoder().decode(main)); if(data.app !== 'carnet-voyage') throw new Error('ce ZIP n’est pas une sauvegarde du carnet');
       const replace = Object.values(R).some(r=>!r.demo && r.type!=='profile') && confirm(`Sauvegarde du ${new Date(data.exportedAt).toLocaleString('fr-FR')} : ${data.records.length} fiches.\n\nOK = REMPLACER tout le carnet de ce téléphone par la sauvegarde.\nAnnuler = FUSIONNER (garder les deux ; la version la plus récente de chaque fiche gagne).`);
       if(replace) Object.keys(R).forEach(id=>{ if(!R[id].demo) delete R[id]; });
@@ -7092,7 +7122,7 @@ ${pm.join('\n')}</Document></kml>`;
       }
       if(!M.trip || !R[M.trip]){ const t = trips()[0]; if(t) M.trip = t.id; }
       persist(); closeSheet(true); applyMode(); queueSync(); uploadQueue();
-      alert(`💾 Sauvegarde restaurée : ${n} fiche(s), ${nf} photo(s)/PDF.`);
+      if(multi) toast(`💾 ${n} fiche(s), ${nf} photo(s)`); else alert(`💾 Sauvegarde restaurée : ${n} fiche(s), ${nf} photo(s)/PDF.`);
     } catch(e){ msg('⚠️ ' + e.message); }
   }
 
@@ -7106,6 +7136,7 @@ ${pm.join('\n')}</Document></kml>`;
   const wmInfo = h => { const i = document.getElementById('wm-info'); if(i) i.innerHTML = h; };
   async function worldMap(){
     let ov = document.getElementById('cv-world');
+    if(wm && wm.map && ov && ov.innerHTML){ ov.style.display = 'block'; document.body.style.overflow = 'hidden'; try { wm.map.resize(); } catch(e){} worldRefresh(); return; }
     if(!ov){ ov = document.createElement('div'); ov.id = 'cv-world'; document.body.appendChild(ov); }
     ov.innerHTML = `<div class="wm-stars"></div><div id="wm-map"></div>
       <div class="wm-top"><button type="button" class="wm-x" onclick="CV.worldClose()" aria-label="Fermer">✕</button>
@@ -7183,6 +7214,7 @@ ${pm.join('\n')}</Document></kml>`;
     next();
   }
   const yieldUI = () => new Promise(r=>setTimeout(r, 0));
+  let wmTried = null, wmBusy = false;
   const thin = (c, max) => { if(c.length <= max) return c; const st = c.length / max, out = []; for(let i=0;i<c.length;i+=st) out.push(c[Math.floor(i)]); out.push(c[c.length-1]); return out; };
   async function worldData(){
     const map = wm.map, ts = trips(), data = {trips:[], steps:[], pays:{}, photos:[]}, missing = new Set();
@@ -7238,13 +7270,11 @@ ${pm.join('\n')}</Document></kml>`;
     worldChips();
     wmInfo('Touche un voyage ci-dessous pour t’y envoler ✨');
     // arrière-plan : placer les villes manquantes (1 par seconde, règle d'OpenStreetMap), puis rafraîchir
-    if(missing.size) setTimeout(async ()=>{
-      let n = 0;
-      for(const c of [...missing].slice(0, 60)){
-        if(!wm) return; await geocode(c, null).catch(()=>null); n++;
-        const co = await countryOf(c).catch(()=>null);
-        if(n % 8 === 0 || n === Math.min(60, missing.size)){ if(!wm) return; worldRefresh(); }
-      }
+    wmTried = wmTried || new Set(); const todo = [...missing].filter(c=>!wmTried.has(c)).slice(0, 40);
+    if(todo.length && !wmBusy) setTimeout(async ()=>{
+      wmBusy = true; let found = 0;
+      for(const c of todo){ if(!wm) break; wmTried.add(c); const g = await geocode(c, null).catch(()=>null); if(g){ found++; await countryOf(c).catch(()=>null); } }
+      wmBusy = false; if(found && wm) worldRefresh();
     }, 1500);
   }
   function worldChips(){
@@ -7306,7 +7336,7 @@ ${pm.join('\n')}</Document></kml>`;
     }
   }
   function worldOpen(id){ worldClose(); go(id); M.mode = tripPhase(R[id]) === 'past' ? 'bilan' : tripPhase(R[id]); persist(); applyMode(); }
-  function worldClose(){ stopStory(); const ov = document.getElementById('cv-world'); if(wm && wm.map){ try { wm.map.remove(); } catch(e){} } wm = null; if(ov){ ov.style.display = 'none'; ov.innerHTML = ''; } document.body.style.overflow = ''; }
+  function worldClose(){ stopStory(); const ov = document.getElementById('cv-world'); if(wm) wm.spin = false; if(ov) ov.style.display = 'none'; document.body.style.overflow = ''; }   // la carte reste prête pour la prochaine ouverture
 
   /* ══════════════════════════════════════════════════════════════════════════
      ⚖️ PARTS INÉGALES & FOYERS · 🔎 LIEUX ILLUSTRÉS (Wikipédia) · 🧭 NOUVEAU VOYAGE : 3 FAÇONS
@@ -7973,7 +8003,7 @@ ${pm.join('\n')}</Document></kml>`;
     envF:setEnvF, envP:setEnvP, like, editWish, saveWish, delWish, wishToTrip,
     editTrip, saveTrip, delTrip, closeTrip, reopenTrip,
     live, one, echAdd, echDel, echSpread, echToggle, lisser, echReset, echRange, echRangeReset,
-    planDay, plCfg, plAdd, plDel, plOpt, wizard, innerGo, inspDeal, inspOpen, compN, compDel, compAdd, compTog, compCreate, inspBack, inspMore, inspFav, inspSurprise, inspVote, gateInstall, partsSheet, partsSave, discInfo, discBack, newTrip, blankTrip, inspire, inspireDemo, inspireGo, inspireCreate, zipSheet, zipExport, zipImport, worldFly, worldStep, worldStory, cfSegGo, trkToggle, modeGo, bilanClose, albumSheet, albCover, albumGo, tripShare, tripShareSheet, tripInvite, tripUnshare, tripJoin, tripJoinGo, tripWho, tripWhoSet, impSheet, impPick, jrSheet, jrTog, jrAll, worldMap, worldMode, worldOpen, worldClose, pjAdd, pjDel, pjOpen, cfSheet, cfGo, tlCo2, hereNow, tlStats, tlKml, tlFill, tlFillGo, rcView, rcAttach, tlIcsGo, capSet, shopSheet, shopAdd, shopTick, shopClear, rembAsk, pollNew, pollSave, pollVote, pollClose, pollDel, pdfRoute, pdfJournal, pdfShare, pdfOpen, pkgPick, pkgApply, hydrateMaps, renderOutils, tlDay, tlIcs, fxTool, fxFill, tlMeteo, tlReceipt, tlRcPhoto, tlRcOcr, tlRcSave, tlReceipts, tlMap, tlBags, tlBagsGo, tlDocs, tlDocEdit, tlDocSave, tlDocDel, tlJournal, pkgSheet, pkgExport, pkgImport, pinToggle, shareSheet, shareLink, askErase, tutoSheet, escaleTuto, demoLoad, demoDel, demoReset, wzGo, wzDates, wzEt, wzSum, wzTpl, wzCreate,
+    planDay, plCfg, plAdd, plDel, plOpt, wizard, zipSavePart, zipCancel, innerGo, inspDeal, inspOpen, compN, compDel, compAdd, compTog, compCreate, inspBack, inspMore, inspFav, inspSurprise, inspVote, gateInstall, partsSheet, partsSave, discInfo, discBack, newTrip, blankTrip, inspire, inspireDemo, inspireGo, inspireCreate, zipSheet, zipExport, zipImport, worldFly, worldStep, worldStory, cfSegGo, trkToggle, modeGo, bilanClose, albumSheet, albCover, albumGo, tripShare, tripShareSheet, tripInvite, tripUnshare, tripJoin, tripJoinGo, tripWho, tripWhoSet, impSheet, impPick, jrSheet, jrTog, jrAll, worldMap, worldMode, worldOpen, worldClose, pjAdd, pjDel, pjOpen, cfSheet, cfGo, tlCo2, hereNow, tlStats, tlKml, tlFill, tlFillGo, rcView, rcAttach, tlIcsGo, capSet, shopSheet, shopAdd, shopTick, shopClear, rembAsk, pollNew, pollSave, pollVote, pollClose, pollDel, pdfRoute, pdfJournal, pdfShare, pdfOpen, pkgPick, pkgApply, hydrateMaps, renderOutils, tlDay, tlIcs, fxTool, fxFill, tlMeteo, tlReceipt, tlRcPhoto, tlRcOcr, tlRcSave, tlReceipts, tlMap, tlBags, tlBagsGo, tlDocs, tlDocEdit, tlDocSave, tlDocDel, tlJournal, pkgSheet, pkgExport, pkgImport, pinToggle, shareSheet, shareLink, askErase, tutoSheet, escaleTuto, demoLoad, demoDel, demoReset, wzGo, wzDates, wzEt, wzSum, wzTpl, wzCreate,
     pickColor, newProfile, editProfile, saveProfile, delProfile, whoSheet, setMe,
     genCode, syncOn, syncOff, syncNow, shareCode, exportShare, exportDownload, importPick, wipe, obCreate, obJoin,
     _R:()=>R, _M:()=>M};
