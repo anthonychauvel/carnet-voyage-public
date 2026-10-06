@@ -949,6 +949,25 @@ a.v-btn.cv-escale{display:block;text-align:center;text-decoration:none}
 .cv-share-qr{display:block;margin:6px auto 10px;width:min(64vw,240px);height:auto;background:#fff;border-radius:14px;padding:10px}
 .cv-share-url{font-size:.78rem;text-align:center;word-break:break-all;color:var(--gray);margin-bottom:10px}
 .cv-rmap{margin-top:10px}
+.cv-prt{display:grid;grid-template-columns:auto 1fr 1.4fr;gap:8px;align-items:center;margin:6px 0}
+.cv-prt label{display:flex;flex-direction:column;font-size:.7rem;color:#6b5670;min-width:0}
+.cv-prt .v-in{margin:2px 0 0;min-width:0}
+.cv-pth{position:relative;flex:0 0 52px;width:52px;height:52px;border:0;padding:0;border-radius:10px;background:#f3eefc;overflow:hidden;display:flex;align-items:center;justify-content:center;margin-right:8px}
+.cv-pth img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .3s}
+.cv-pth.has img{opacity:1}
+.cv-pth .ic{font-size:1.3rem}
+.cv-poi .x{cursor:pointer}
+.wk-img{width:100%;max-height:260px;object-fit:cover;border-radius:14px;display:block;margin-bottom:8px}
+.wk-tx{font-size:.88rem;line-height:1.5}
+.cv-choice{display:flex;gap:12px;align-items:center;width:100%;text-align:left;background:#fff;border:1.5px solid #e4d9f2;border-radius:16px;padding:12px;margin:0 0 8px;font:inherit;color:inherit}
+.cv-choice i{font-style:normal;font-size:1.7rem}
+.cv-choice b{display:block}
+.cv-choice small{display:block;color:#6b5670;font-size:.78rem}
+.cv-idea{background:#fff;border:1px solid #eadfe6;border-radius:16px;padding:10px 12px;margin:8px 0}
+.cv-idea .hd b{display:block;font-size:1rem}
+.cv-idea .hd small{color:#6b5670;font-size:.74rem}
+.cv-idea .why{margin:6px 0 2px;font-size:.8rem;color:#4c1d95;font-weight:600}
+.cv-idea p{margin:4px 0 8px;font-size:.82rem}
 .cv-modes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin:10px 12px 4px;background:#efe7f6;border-radius:16px;padding:4px}
 .cv-modes button{position:relative;border:0;background:transparent;border-radius:12px;padding:7px 2px;font:inherit;color:#4b3a5a;display:flex;flex-direction:column;align-items:center;gap:1px}
 .cv-modes button i{font-style:normal;font-size:1.1rem}
@@ -1336,13 +1355,13 @@ const CV = (function(){
   /* Qui prend en charge le coût : égal (défaut), une seule personne, ou montants/proportions perso */
   const chargeOf = it => (it.charge && it.charge.mode) ? it.charge : {mode:'egal'};
   const sumv = o => Object.values(o).reduce((a,b)=>a+b,0);
-  function weights(pool, mode, one, map){
+  function weights(pool, mode, one, map, coef){
     if(mode==='seul' && pool.includes(one)) return Object.fromEntries(pool.map(x=>[x, x===one?1:0]));
     if(mode==='perso'){ const w = Object.fromEntries(pool.map(x=>[x, Math.max(0, num((map||{})[x]))])); if(sumv(w) > 0) return w; }
-    return Object.fromEntries(pool.map(x=>[x,1]));
+    return Object.fromEntries(pool.map(x=>[x, coef ? tCoef(x) : 1]));   // parts du voyage (enfant 0,5…) pour les dépenses partagées
   }
   function shareOf(it, pid, kind){
-    const c = chargeOf(it), w = weights(parts(it), c.mode, c.pid, c.parts), sw = sumv(w);
+    const c = chargeOf(it), w = weights(parts(it), c.mode, c.pid, c.parts, partage(it)!=='pp'), sw = sumv(w);
     return (sw && pid in w) ? totalOf(it, kind) * w[pid] / sw : 0;
   }
   /* Ce qui est déjà réglé : tout si « Payé », sinon les échéances cochées */
@@ -1649,7 +1668,7 @@ const CV = (function(){
           <span class="ins">${(t.voyageurs||[]).filter(prof).map(ini).join('')}</span></button>`).join('')}
         ${!PUBLIC && !(R.t2026 && !R.t2026.deleted) ? `<button class="cv-tripcard legacy" onclick="CV.convert2026()"><span class="tt">Road trip Europe</span><span class="td">juillet 2026 · touche pour le passer au nouveau format</span></button>` : ''}
       </div>
-      <button class="v-btn" onclick="CV.wizard()">＋ Préparer un nouveau voyage</button>
+      <button class="v-btn" onclick="CV.newTrip()">＋ Préparer un nouveau voyage</button>
       ${demoBtn()}
       <button class="v-btn sec" onclick="CV.shareSheet()">📤 Partager l’appli à un ami (QR code)</button>
       <button class="v-btn sec" onclick="CV.psPick()">📥 Importer des voyages Polarsteps</button>
@@ -1691,25 +1710,88 @@ const CV = (function(){
   /* ══════════ 👀 Voyage de démo (version grand public) ══════════ */
   const DEMO_TPL = [{"id":"__P1__","type":"profile","nom":"Léo","couleur":"#2e9e6a"},{"id":"__P2__","type":"profile","nom":"Inès","couleur":"#e8862e"},{"id":"__T__","type":"trip","titre":"Japon · 3 semaines","sous":"Tokyo → Hakone → Kyoto → Hiroshima → Osaka → Tokyo","debut":"@0","fin":"@20","voyageurs":["__P1__","__P2__","__ME__"],"objectif":3500,"createdBy":"__ME__","updatedBy":"__ME__"},{"id":"~0","type":"item","trip":"__T__","cat":"hotel","titre":"Tokyo","date":"@0","dateFin":"@5","statut":"booked","partage":"grp","qui":[],"createdBy":"__ME__","updatedBy":"__ME__","echeances":[{"id":"emutz7gp7i3a1q0","date":"@-149","montant":273.33,"fait":false},{"id":"emutz7gp76i6j51","date":"@-119","montant":273.33,"fait":false},{"id":"emutz7gp7cah962","date":"@-88","montant":273.34,"fait":false}],"nom":"Hotel Gracery Shinjuku","adresse":"","heure":"","tel":"","prix":"820","estime":"","ref":"","lien":"","payeur":"__P1__"},{"id":"~1","type":"item","trip":"__T__","cat":"hotel","titre":"Hakone","date":"@5","dateFin":"@7","statut":"paid","partage":"grp","qui":[],"createdBy":"__ME__","updatedBy":"__ME__","nom":"Ryokan Fujiya","adresse":"Miyanoshita, Hakone","heure":"15:00","prix":"540","payeur":"__P2__"},{"id":"~2","type":"item","trip":"__T__","cat":"transport","statut":"booked","partage":"pp","qui":[],"mode":"Train","titre":"Tokyo → Hakone","from":"Tokyo","to":"Hakone","date":"@5","createdBy":"__ME__","updatedBy":"__ME__","compagnie":"Odakyu Romancecar","heureDep":"09:30","heureArr":"11:00","prix":"25","payeur":"chacun"},{"id":"~3","type":"item","trip":"__T__","cat":"hotel","titre":"Kyoto","date":"@7","dateFin":"@12","statut":"booked","partage":"grp","qui":[],"createdBy":"__ME__","updatedBy":"__ME__","nom":"Machiya Gion","adresse":"Higashiyama, Kyoto","heure":"16:00","prix":"950","payeur":"__ME__"},{"id":"~4","type":"item","trip":"__T__","cat":"transport","statut":"booked","partage":"pp","qui":[],"mode":"Train","titre":"Hakone → Kyoto","from":"Hakone","to":"Kyoto","date":"@7","createdBy":"__ME__","updatedBy":"__ME__","compagnie":"Shinkansen Hikari","heureDep":"10:12","heureArr":"12:20","prix":"95","payeur":"__P1__"},{"id":"~5","type":"item","trip":"__T__","cat":"hotel","titre":"Hiroshima","date":"@12","dateFin":"@14","statut":"booked","partage":"grp","qui":[],"createdBy":"__ME__","updatedBy":"__ME__","nom":"Hotel Granvia","adresse":"Gare de Hiroshima","heure":"15:00","prix":"260","payeur":"__P1__"},{"id":"~6","type":"item","trip":"__T__","cat":"transport","statut":"paid","partage":"pp","qui":[],"mode":"Train","titre":"Kyoto → Hiroshima","from":"Kyoto","to":"Hiroshima","date":"@12","createdBy":"__ME__","updatedBy":"__ME__","compagnie":"Shinkansen Nozomi","heureDep":"09:05","heureArr":"10:45","prix":"85","payeur":"__P2__"},{"id":"~7","type":"item","trip":"__T__","cat":"hotel","titre":"Osaka","date":"@14","dateFin":"@17","statut":"todo","partage":"grp","qui":[],"createdBy":"__ME__","updatedBy":"__ME__","nom":"Cross Hotel","adresse":"Dōtonbori, Osaka","estime":"390"},{"id":"~8","type":"item","trip":"__T__","cat":"transport","statut":"todo","partage":"pp","qui":[],"mode":"Train","titre":"Hiroshima → Osaka","from":"Hiroshima","to":"Osaka","date":"@14","createdBy":"__ME__","updatedBy":"__ME__","estime":"75"},{"id":"~9","type":"item","trip":"__T__","cat":"hotel","titre":"Tokyo","date":"@17","dateFin":"@20","statut":"todo","partage":"grp","qui":[],"createdBy":"__ME__","updatedBy":"__ME__","nom":"Mitsui Garden Ginza","adresse":"Ginza, Tokyo","estime":"600"},{"id":"~10","type":"item","trip":"__T__","cat":"transport","statut":"todo","partage":"pp","qui":[],"mode":"Train","titre":"Osaka → Tokyo","from":"Osaka","to":"Tokyo","date":"@17","createdBy":"__ME__","updatedBy":"__ME__","estime":"105"},{"id":"~11","type":"item","trip":"__T__","cat":"transport","statut":"paid","partage":"pp","qui":[],"mode":"Avion","titre":"Paris → Tokyo","from":"Paris","to":"Tokyo","date":"@0","createdBy":"__ME__","updatedBy":"__ME__","compagnie":"Air France AF276","heureDep":"10:25","heureArr":"06:40","prix":"980","estime":"","ref":"","lien":"","payeur":"__ME__"},{"id":"~12","type":"item","trip":"__T__","cat":"transport","statut":"paid","partage":"pp","qui":[],"mode":"Avion","titre":"Tokyo → Paris","from":"Tokyo","to":"Paris","date":"@20","createdBy":"__ME__","updatedBy":"__ME__","compagnie":"Air France AF275","heureDep":"12:05","heureArr":"18:30","prix":"0","estime":"","payeur":"__ME__","note":"inclus dans l’aller-retour"},{"type":"day","trip":"__T__","date":"@0","titre":"Arrivée à Tokyo","plan":"","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@1","titre":"Tokyo","plan":"Shibuya, Harajuku, Meiji-jingu","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@2","titre":"Tokyo","plan":"teamLab le matin, Odaiba l’après-midi","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@3","titre":"Tokyo","plan":"","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@4","titre":"Tokyo","plan":"Asakusa, Senso-ji, Skytree au coucher du soleil","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@5","titre":"Tokyo → Hakone","plan":"","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@6","titre":"Hakone","plan":"Lac Ashi, Owakudani, onsen le soir","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@7","titre":"Hakone → Kyoto","plan":"","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@8","titre":"Kyoto","plan":"Fushimi Inari tôt le matin, Gion le soir","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@9","titre":"Kyoto","plan":"","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@10","titre":"Kyoto","plan":"Arashiyama, bambouseraie","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@11","titre":"Kyoto","plan":"","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@12","titre":"Kyoto → Hiroshima","plan":"","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@13","titre":"Hiroshima","plan":"Miyajima, torii flottant à marée haute","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@14","titre":"Hiroshima → Osaka","plan":"","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@15","titre":"Osaka","plan":"","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@16","titre":"Osaka","plan":"Dōtonbori, street food","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@17","titre":"Osaka → Tokyo","plan":"","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@18","titre":"Tokyo","plan":"Shimokitazawa, dernières emplettes","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@19","titre":"Tokyo","plan":"","createdBy":"__ME__","updatedBy":"__ME__"},{"type":"day","trip":"__T__","date":"@20","titre":"Tokyo → retour","plan":"","createdBy":"__ME__","updatedBy":"__ME__"},{"id":"~13","type":"check","trip":"__T__","cat":"📋 Documents","label":"Pièce d’identité / passeport valide","done":true,"createdBy":"__ME__","updatedBy":"__ME__"},{"id":"~14","type":"check","trip":"__T__","cat":"📋 Documents","label":"Assurance voyage (rapatriement)","done":true,"createdBy":"__ME__","updatedBy":"__ME__"},{"id":"~15","type":"check","trip":"__T__","cat":"📋 Documents","label":"Carte bancaire sans frais à l’étranger + 2e carte","done":true,"createdBy":"__ME__","updatedBy":"__ME__"},{"id":"~16","type":"check","trip":"__T__","cat":"📋 Documents","label":"Copies numériques (papiers, billets, réservations)","done":true,"createdBy":"__ME__","updatedBy":"__ME__"},{"id":"~17","type":"check","trip":"__T__","cat":"🗓️ À réserver tôt","label":"Trajets aller et retour","done":true,"createdBy":"__ME__","updatedBy":"__ME__"},{"id":"~18","type":"check","trip":"__T__","cat":"🗓️ À réserver tôt","label":"Hébergements","done":false,"createdBy":"__ME__","updatedBy":"__ME__"},{"id":"~19","type":"check","trip":"__T__","cat":"🗓️ À réserver tôt","label":"Visites à créneau","done":false,"createdBy":"__ME__","updatedBy":"__ME__"},{"id":"~20","type":"check","trip":"__T__","cat":"☀️ Santé","label":"Trousse pharmacie","done":false,"createdBy":"__ME__","updatedBy":"__ME__"},{"id":"~21","type":"check","trip":"__T__","cat":"☀️ Santé","label":"Crème solaire, gourde","done":false,"createdBy":"__ME__","updatedBy":"__ME__"},{"id":"~22","type":"check","trip":"__T__","cat":"📱 Tech","label":"Chargeur + batterie externe","done":false,"createdBy":"__ME__","updatedBy":"__ME__"},{"id":"~23","type":"check","trip":"__T__","cat":"📱 Tech","label":"Cartes hors ligne","done":false,"createdBy":"__ME__","updatedBy":"__ME__"},{"id":"~24","type":"check","trip":"__T__","cat":"📱 Tech","label":"eSIM / forfait à l’étranger","done":false,"createdBy":"__ME__","updatedBy":"__ME__"},{"id":"~25","type":"item","trip":"__T__","statut":"paid","partage":"pp","qui":[],"createdBy":"__ME__","updatedBy":"__ME__","cat":"activite","titre":"teamLab Planets","date":"@2","heure":"10:00","adresse":"Toyosu, Tokyo","prix":"32","payeur":"__ME__"},{"id":"~26","type":"item","trip":"__T__","statut":"booked","partage":"pp","qui":[],"createdBy":"__ME__","updatedBy":"__ME__","cat":"activite","titre":"Musée Ghibli","date":"@3","heure":"14:00","adresse":"Mitaka, Tokyo","prix":"8","payeur":"__P2__"},{"id":"~27","type":"item","trip":"__T__","statut":"todo","partage":"pp","qui":[],"createdBy":"__ME__","updatedBy":"__ME__","cat":"activite","titre":"Croisière lac Ashi","date":"@6","adresse":"Hakone","estime":"15"},{"id":"~28","type":"item","trip":"__T__","statut":"booked","partage":"pp","qui":[],"createdBy":"__ME__","updatedBy":"__ME__","cat":"activite","titre":"Cours de cuisine japonaise","date":"@9","heure":"11:00","adresse":"Nishiki, Kyoto","prix":"75","payeur":"__P2__"},{"id":"~29","type":"item","trip":"__T__","statut":"todo","partage":"pp","qui":[],"createdBy":"__ME__","updatedBy":"__ME__","cat":"activite","titre":"Ferry pour Miyajima","date":"@13","adresse":"Port de Miyajimaguchi","estime":"5"},{"id":"~30","type":"item","trip":"__T__","statut":"paid","partage":"pp","qui":[],"createdBy":"__ME__","updatedBy":"__ME__","cat":"activite","titre":"Universal Studios Japan","date":"@15","heure":"09:00","adresse":"Osaka","prix":"85","payeur":"__P1__"},{"id":"~31","type":"item","trip":"__T__","statut":"paid","partage":"grp","qui":[],"createdBy":"__ME__","updatedBy":"__ME__","cat":"divers","titre":"Pocket Wi-Fi 3 semaines","prix":"90","payeur":"__ME__"},{"id":"~32","type":"item","trip":"__T__","statut":"paid","partage":"pp","qui":[],"createdBy":"__ME__","updatedBy":"__ME__","cat":"divers","titre":"Assurance voyage","prix":"45","payeur":"chacun"},{"id":"~33","type":"item","trip":"__T__","statut":"todo","partage":"pp","qui":[],"createdBy":"__ME__","updatedBy":"__ME__","cat":"divers","titre":"Carte Suica (recharges)","estime":"60"},{"id":"~34","type":"souv","trip":"__T__","date":"@6","titre":"Premier onsen","lieu":"Hakone","texte":"Eau à 42 °C avec vue sur la montagne. Léo a tenu 4 minutes.","photos":[],"createdBy":"__P2__","updatedBy":"__P2__"},{"id":"~35","type":"souv","trip":"__T__","date":"@8","titre":"Mille torii à l’aube","lieu":"Fushimi Inari, Kyoto","texte":"Partis à 6 h : personne sur le sentier, seulement les corbeaux.","photos":[],"createdBy":"__P2__","updatedBy":"__P2__"},{"id":"~36","type":"souv","trip":"__T__","date":"@6","titre":"Le Fuji au coucher du soleil","lieu":"Hakone","texte":"Le ciel a viré au rose juste au moment où le Fuji est sorti des nuages.","photos":[],"createdBy":"__ME__","updatedBy":"__ME__"}];
   const demoTrip = () => list('trip', t=>t.demo)[0] || null;
-  function demoLoad(){
+  /* 👀 Voyages de démo : le même Japon sous 3 angles pour tout explorer —
+     à préparer (dans 6 mois) · en cours (on est au jour 7) · terminé (souvenirs, photos, bilan).
+     Photos dessinées sur le téléphone, rien n'est téléchargé, rien n'est partagé. */
+  const DEMO_CITY = {tokyo:[35.6812,139.7671], hakone:[35.2324,139.1069], kyoto:[35.0116,135.7681], hiroshima:[34.3853,132.4553], osaka:[34.6937,135.5023]};
+  function demoPaint(kind, seed){
+    const W = 960, H = 720, c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
+    let s = seed * 9301 + 49297; const rnd = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+    const sky = (a, b, y1) => { const gr = g.createLinearGradient(0,0,0,y1||H); gr.addColorStop(0,a); gr.addColorStop(1,b); g.fillStyle = gr; g.fillRect(0,0,W,y1||H); };
+    const ground = (a, b, y0) => { const gr = g.createLinearGradient(0,y0,0,H); gr.addColorStop(0,a); gr.addColorStop(1,b); g.fillStyle = gr; g.fillRect(0,y0,W,H-y0); };
+    const blossoms = (n, cx, cy, r, cols) => { for(let i=0;i<n;i++){ const a = rnd()*6.28, d = Math.sqrt(rnd())*r; g.fillStyle = cols[Math.floor(rnd()*cols.length)]; g.beginPath(); g.arc(cx+Math.cos(a)*d, cy+Math.sin(a)*d*0.7, 6+rnd()*12, 0, 6.28); g.fill(); } };
+    if(kind === 'fuji'){ sky('#ff9a6b','#7b4a9c',500); g.fillStyle = '#ffe2a8'; g.beginPath(); g.arc(700,230,70,0,6.28); g.fill();
+      g.fillStyle = '#463a6e'; g.beginPath(); g.moveTo(140,540); g.lineTo(480,170); g.lineTo(820,540); g.fill(); g.fillStyle = '#f4f2fb'; g.beginPath(); g.moveTo(400,260); g.lineTo(480,170); g.lineTo(560,260); g.lineTo(520,245); g.lineTo(480,275); g.lineTo(440,245); g.fill(); ground('#3b4a7a','#1f2747',500); }
+    else if(kind === 'torii'){ sky('#9cd3f2','#e8f4fb',560); ground('#4f8a5d','#2d5b3a',560); g.fillStyle = '#d23a2a'; g.fillRect(300,250,46,420); g.fillRect(614,250,46,420); g.fillStyle = '#1d1414'; g.fillRect(230,190,500,44); g.fillStyle = '#d23a2a'; g.fillRect(270,262,420,36); g.fillRect(462,234,36,70); }
+    else if(kind === 'sakura'){ sky('#bfe0f6','#f6f6fb',600); ground('#86b06a','#5c8a4a',600); [[220,330],[520,280],[800,340]].forEach(([x,y])=>{ g.fillStyle = '#5b3d2e'; g.fillRect(x-14,y,28,340); blossoms(420, x, y, 190, ['#f8bcd0','#f5a3bf','#ffd6e3','#eb8fb0']); }); }
+    else if(kind === 'temple'){ sky('#f7c97a','#f2e6c9',520); ground('#9b8b6e','#6e624b',600); g.fillStyle = '#3a2a22'; for(let k=0;k<3;k++){ const y = 220 + k*120, w = 520 - k*110; g.beginPath(); g.moveTo(480-w/2-40,y); g.lineTo(480+w/2+40,y); g.lineTo(480+w/2,y+30); g.lineTo(480-w/2,y+30); g.fill(); g.fillStyle = '#8a3b28'; g.fillRect(480-w/2+30,y+30,w-60,90); g.fillStyle = '#3a2a22'; } g.fillRect(470,120,20,100); }
+    else if(kind === 'city'){ sky('#141a3a','#2a1f5a',H); for(let i=0;i<22;i++){ const x = i*46 + rnd()*10, h = 160 + rnd()*380; g.fillStyle = `hsl(${240+rnd()*40},35%,${12+rnd()*10}%)`; g.fillRect(x,H-h,40,h);
+        for(let w=0; w<h/22; w++){ if(rnd() > 0.45){ g.fillStyle = ['#ffd27a','#7ad7ff','#ff7ab6','#fff3c4'][Math.floor(rnd()*4)]; g.fillRect(x+6+(w%2)*16, H-h+10+w*20, 10, 8); } } } }
+    else if(kind === 'bamboo'){ sky('#d6efc9','#9ccf8a',H); for(let i=0;i<26;i++){ const x = rnd()*W, w = 14+rnd()*16; g.fillStyle = `hsl(${95+rnd()*25},45%,${30+rnd()*20}%)`; g.fillRect(x,0,w,H); g.fillStyle = 'rgba(0,0,0,.18)'; for(let y=60;y<H;y+=90+rnd()*40) g.fillRect(x,y,w,5); } }
+    else if(kind === 'ramen'){ sky('#3b2418','#1e120c',H); g.fillStyle = '#f3efe8'; g.beginPath(); g.ellipse(480,420,330,190,0,0,6.28); g.fill(); g.fillStyle = '#c9822f'; g.beginPath(); g.ellipse(480,400,290,150,0,0,6.28); g.fill();
+      g.strokeStyle = '#f4d58a'; g.lineWidth = 7; for(let i=0;i<14;i++){ g.beginPath(); g.moveTo(260+i*32,330); g.bezierCurveTo(300+i*30,400,240+i*32,430,300+i*30,480); g.stroke(); }
+      g.fillStyle = '#fff'; g.beginPath(); g.ellipse(600,360,52,40,0,0,6.28); g.fill(); g.fillStyle = '#f1a72b'; g.beginPath(); g.arc(600,360,24,0,6.28); g.fill(); g.fillStyle = '#2f6b2f'; g.fillRect(330,330,80,22); }
+    else if(kind === 'deer'){ sky('#bfe3f3','#eef8fb',520); ground('#7fa65a','#5d7e40',520); g.fillStyle = '#9b6a3e'; g.beginPath(); g.ellipse(480,470,140,70,0,0,6.28); g.fill(); g.fillRect(380,500,22,120); g.fillRect(560,500,22,120); g.fillRect(420,500,22,120); g.fillRect(520,500,22,120);
+      g.beginPath(); g.ellipse(640,370,50,40,-0.5,0,6.28); g.fill(); g.fillRect(600,380,40,90); g.fillStyle = '#f4ecd8'; for(let i=0;i<7;i++){ g.beginPath(); g.arc(400+i*28,450+(i%2)*14,6,0,6.28); g.fill(); } }
+    else if(kind === 'sea'){ sky('#7cc6ef','#d9f1fb',380); g.fillStyle = '#1d76b0'; g.fillRect(0,380,W,H-380); g.fillStyle = 'rgba(255,255,255,.45)'; for(let i=0;i<60;i++){ g.fillRect(rnd()*W, 390+rnd()*320, 30+rnd()*60, 3); }
+      g.fillStyle = '#d23a2a'; g.fillRect(420,250,30,240); g.fillRect(560,250,30,240); g.fillStyle = '#1d1414'; g.fillRect(380,215,250,30); g.fillStyle = '#d23a2a'; g.fillRect(400,282,210,22); }
+    g.fillStyle = 'rgba(255,255,255,.07)'; for(let i=0;i<500;i++) g.fillRect(rnd()*W, rnd()*H, 1.5, 1.5);   // grain photo
+    return new Promise(r=>c.toBlob(r, 'image/jpeg', 0.86));
+  }
+  const DEMO_PICS = {Tokyo:['city','sakura','ramen','torii'], Hakone:['fuji','temple'], Kyoto:['torii','bamboo','temple','sakura'], Hiroshima:['sea','deer'], Osaka:['city','ramen']};
+  const DEMO_TXT = {Tokyo:['Shibuya de nuit, des néons partout','Les cerisiers d’Ueno en pleine floraison','Le meilleur ramen de la ville, 20 min de queue','Meiji-jingu au calme du matin'],
+    Hakone:['Le Fuji enfin sorti des nuages','Onsen au coucher du soleil'], Kyoto:['Mille torii de Fushimi Inari à l’aube','La bambouseraie d’Arashiyama','Le pavillon d’or sous le soleil','Promenade sur le chemin des philosophes'],
+    Hiroshima:['Le torii flottant de Miyajima à marée haute','Les daims de Miyajima nous suivent partout'], Osaka:['Dōtonbori et ses enseignes géantes','Takoyaki dans la rue']};
+  async function demoLoad(){
     if(!M.me){ alert('Indique d’abord ton prénom.'); return; }
-    const ex = demoTrip(); if(ex){ closeSheet(true); M.tab = 'prog'; go(ex.id); return; }
-    const base = new Date(); base.setHours(12,0,0,0); base.setDate(base.getDate() + 180);
-    const day0 = base.toISOString().slice(0,10);
-    const tid = 't' + uid() + 'demo', p1 = 'p' + uid() + 'd1', p2 = 'p' + uid() + 'd2', ids = {}, now = Date.now();
-    const mapId = v => v==='__T__' ? tid : v==='__ME__' ? M.me : v==='__P1__' ? p1 : v==='__P2__' ? p2 : (v[0]==='~' ? (ids[v] = ids[v] || 'i' + uid() + v.slice(1)) : v);
-    const conv = v => typeof v==='string' ? (/^@-?\d+$/.test(v) ? addDays(day0, parseInt(v.slice(1))) : /^(__|~)/.test(v) ? mapId(v) : v)
-      : Array.isArray(v) ? v.map(conv) : (v && typeof v==='object') ? Object.fromEntries(Object.entries(v).map(([k,x])=>[k,conv(x)])) : v;
-    DEMO_TPL.forEach((t,k)=>{
-      const r = conv(clone(t));
-      if(r.type==='day') r.id = 'day:' + tid + ':' + r.date;
-      if(!r.createdBy) r.createdBy = M.me;
-      if(!r.updatedBy) r.updatedBy = r.createdBy;
-      r.createdAt = now + k; r.updatedAt = now + k; r.demo = true;
-      R[r.id] = r;
-    });
-    persist(); closeSheet(true); M.tab = 'prog'; go(tid);
-    toast('👀 Voyage de démo chargé');
+    const ex = demoTrip(); if(ex){ closeSheet(true); M.mode = 'live'; const lv = list('trip', t=>t.demo && tripPhase(t)==='live')[0]; go((lv||ex).id); return; }
+    closeSheet(true); toast('👀 Préparation des voyages de démo…');
+    const now = Date.now(), today = isoToday(), p1 = 'p' + uid() + 'd1', p2 = 'p' + uid() + 'd2', all = [];
+    const mk = (day0, titre) => {
+      const tid = 't' + uid() + 'demo', ids = {};
+      const mapId = v => v==='__T__' ? tid : v==='__ME__' ? M.me : v==='__P1__' ? p1 : v==='__P2__' ? p2 : (v[0]==='~' ? (ids[v] = ids[v] || 'i' + uid() + v.slice(1)) : v);
+      const conv = v => typeof v==='string' ? (/^@-?\d+$/.test(v) ? addDays(day0, parseInt(v.slice(1))) : /^(__|~)/.test(v) ? mapId(v) : v)
+        : Array.isArray(v) ? v.map(conv) : (v && typeof v==='object') ? Object.fromEntries(Object.entries(v).map(([k,x])=>[k,conv(x)])) : v;
+      const recs = [];
+      DEMO_TPL.forEach((t,k)=>{ if(t.type==='profile' && all.some(r=>r.id===mapId(t.id))) return; const r = conv(clone(t)); if(r.type==='day') r.id = 'day:' + tid + ':' + r.date; if(r.type==='trip') r.titre = titre;
+        if(!r.createdBy) r.createdBy = M.me; if(!r.updatedBy) r.updatedBy = r.createdBy; r.createdAt = now + all.length + k; r.updatedAt = r.createdAt; r.demo = true; recs.push(r); });
+      all.push(...recs); return {tid, recs, day0};
+    };
+    const prep = mk(addDays(today, 180), 'Japon · 3 semaines (à préparer)');
+    const live = mk(addDays(today, -6), 'Japon · voyage en cours (démo)');
+    const past = mk(addDays(today, -80), 'Japon · souvenirs (démo)');
+    all.forEach(r=>{ R[r.id] = r; });
+    const cityOn = (v, d) => { const h = v.recs.find(r=>r.type==='item' && r.cat==='hotel' && r.date <= d && (!r.dateFin || r.dateFin > d)); return h ? cityOf(h.titre) : 'Tokyo'; };
+    const coords = c => DEMO_CITY[normQ(c)] || DEMO_CITY.tokyo;
+    let n = 0, photos = 0;
+    const addSouv = async (v, d, i, withPh, txt) => {
+      const c = cityOn(v, d), [la, lo] = coords(c), kinds = DEMO_PICS[c] || ['city'], ph = [];
+      for(let k=0; k<withPh; k++){ const pid = 'ph' + uid() + 'dm' + (n++); await storePhoto(await demoPaint(kinds[(i+k) % kinds.length], i*7 + k + 3), pid); ph.push(pid); photos++; }
+      const r = {id:'s' + uid() + 'dm' + i, type:'souv', trip:v.tid, date:d, titre:(DEMO_TXT[c]||['Belle journée'])[i % (DEMO_TXT[c]||[1]).length], lieu:c + ', Japon', pays:'Japon', cc:'JP',
+        lat:+(la + (Math.sin(i*1.7)*0.03)).toFixed(5), lng:+(lo + (Math.cos(i*1.3)*0.04)).toFixed(5), texte: txt || '', photos:ph, createdBy: i % 3 === 0 ? p2 : i % 3 === 1 ? M.me : p1, createdAt:now+5000+i, updatedAt:now+5000+i, demo:true};
+      R[r.id] = r; if(photos % 6 === 0) toast(`📸 Photos de démo : ${photos}…`);
+    };
+    // ── voyage terminé : un souvenir par jour, photos, steps, comptes à solder ──
+    for(let i=0;i<21;i++) await addSouv(past, addDays(past.day0, i), i, i % 3 === 2 ? 2 : 1, i % 4 === 0 ? 'Une journée parfaite, on en reparlera longtemps.' : '');
+    past.recs.filter(r=>r.type==='item').forEach(r=>{ r.statut = 'paid'; if(!num(r.prix) && num(r.estime)) r.prix = r.estime; });
+    R['rb' + uid() + 'dm'] = {id:'rb' + uid() + 'dm', type:'remb', trip:past.tid, de:p1, a:M.me, montant:'400', date:addDays(past.day0, 25), demo:true, createdAt:now, updatedAt:now};
+    // ── voyage en cours : jour 7, steps des jours passés, traces, tickets, courses, plafond, parts ──
+    for(let i=0;i<6;i++) await addSouv(live, addDays(live.day0, i), i + 3, i % 2 ? 2 : 1, '');
+    live.recs.filter(r=>r.type==='item' && r.date && r.date < today).forEach(r=>{ r.statut = 'paid'; if(!num(r.prix) && num(r.estime)) r.prix = r.estime; });
+    for(let i=0;i<7;i++){ const d = addDays(live.day0, i), [la, lo] = coords(cityOn(live, d)), pts = [];
+      for(let k=0;k<14;k++) pts.push([+(la + Math.sin(k/2 + i)*0.02 + k*0.002).toFixed(5), +(lo + Math.cos(k/3 + i)*0.025 + k*0.003).toFixed(5), now - (7-i)*864e5 + k*1800e3]);
+      R['trk:' + live.tid + ':' + d] = {id:'trk:' + live.tid + ':' + d, type:'trk', trip:live.tid, date:d, pts, demo:true, createdAt:now, updatedAt:now}; }
+    for(const [k, [t, px]] of [['ramen', ['Ramen Ichiran', '24']], ['city', ['Taxi retour Shinjuku', '18']]].entries()){
+      const rc = 'rc' + uid() + 'dm' + k; await storePhoto(await demoPaint(t, 40 + k), rc);
+      R['i' + uid() + 'dmr' + k] = {id:'i' + uid() + 'dmr' + k, type:'item', trip:live.tid, cat:'divers', titre:px[0], date:today, statut:'paid', prix:px[1], partage:'grp', payeur: k ? p1 : M.me, qui:[], recu:rc, demo:true, createdAt:now, updatedAt:now}; }
+    ['Eau ×6', 'Onigiri pour le train', 'Pansements', 'Pass métro Kyoto'].forEach((l,k)=>{ R['c' + uid() + 'dmc' + k] = {id:'c' + uid() + 'dmc' + k, type:'check', trip:live.tid, cat:'🛒 Courses', label:l, done:k===2, createdBy:k%2?p1:M.me, demo:true, createdAt:now+k, updatedAt:now+k}; });
+    Object.assign(R[live.tid], {plafond:'150', coef:{[p2]:0.5}, foyer:{[p1]:'Léo & Inès', [p2]:'Léo & Inès'}});
+    // ── sondage dans les Envies ──
+    R['po' + uid() + 'dm'] = {id:'po' + uid() + 'dm', type:'poll', question:'Prochain voyage : on part où ?', options:['Islande','Lisbonne','Vietnam'], votes:{[M.me]:0, [p1]:2, [p2]:0}, closed:false, demo:true, createdBy:p1, createdAt:now, updatedAt:now};
+    for(const v of [prep, live, past]) Object.values(R).filter(r=>r.demo && (r.trip===v.tid || r.id===v.tid)).forEach(r=>{ r.demo = true; });
+    { const dm = new Set(Object.values(R).filter(r=>r.demo).flatMap(r=>[...(r.photos||[]), r.recu].filter(Boolean))); M.pq = (M.pq||[]).filter(x=>!dm.has(String(x).replace(/\.t$/,''))); }
+    persist(); M.mode = 'live'; M.tab = 'prog'; go(live.tid);
+    setTimeout(()=>alert('👀 3 voyages de démo sont prêts (rien n’est partagé) :\n\n📍 En cours : on est au jour 7 — traceur, steps, tickets, courses, plafond, parts inégales.\n🧳 Préparation : le même Japon dans 6 mois, à organiser.\n🗺️ Passés / 🏁 Bilan : le voyage terminé avec ses photos, son album et ses comptes.\n\nPasse d’un onglet à l’autre en haut de l’écran. « Supprimer la démo » efface tout.'), 300);
   }
   function demoDel(){
     if(!confirm('Supprimer le voyage de démo ?\n\nTes propres voyages ne sont pas touchés.')) return;
@@ -1725,7 +1807,7 @@ const CV = (function(){
   const demoBtn = () => PUBLIC ? (demoTrip()
       ? `<button class="v-btn sec" onclick="CV.demoReset()">↺ Relancer le voyage de démo (remis à neuf)</button>
          <button class="v-btn sec" onclick="CV.demoDel()">🗑 Supprimer le voyage de démo</button>`
-      : `<button class="v-btn sec" onclick="CV.demoLoad()">👀 Voir un voyage de démo (Japon, 3 semaines)</button>`) : '';
+      : `<button class="v-btn sec" onclick="CV.demoLoad()">👀 Voir les voyages de démo (préparation, en cours, souvenirs)</button>`) : '';
   function go(id){ M.trip = id; M.who = 'all'; persist(); applyMode(); window.scrollTo({top:0}); }
   function tab(id){
     M.tab = id; persist(); buildTabs(); render();
@@ -1742,7 +1824,7 @@ const CV = (function(){
     if(modeRender()) return;
     if(!t && !['envies','reglages'].includes(M.tab)){
       body.innerHTML = `<div class="v-box"><h3>Aucun voyage</h3><p>Crée un voyage, ou transforme une envie en voyage depuis l’onglet ✨ Envies.</p>
-        <button class="v-btn" onclick="CV.wizard()">＋ Nouveau voyage</button>${tutoBtn()}${demoBtn()}</div>`;
+        <button class="v-btn" onclick="CV.newTrip()">＋ Nouveau voyage</button>${tutoBtn()}${demoBtn()}</div>`;
       return;
     }
     if(CATS[M.tab]) renderList(M.tab);
@@ -2037,7 +2119,7 @@ const CV = (function(){
     { const di0 = tt && !tt.archived ? docIssues() : []; if(di0.length) h += `<button type="button" class="cv-docalert" onclick="CV.tlDocs()">⚠️ ${di0.length} document${di0.length>1?'s':''} de voyage à vérifier — ${esc(di0[0])}${di0.length>1?'…':''}</button>`; }
     if(tt && !tt.archived) h += discoverCard(true);
     if(ESCALE && tt && !tt.archived) h += `<a class="cv-escale-card" href="${ESCALE}">
-        <span class="ek">Escale · comparateur</span>
+        <span class="ek">Escale · comparateur${new Date() <= new Date('2026-12-31T23:59:59') ? ' · 🎁 Premium offert jusqu’au 31/12' : ''}</span>
         <span class="et">Trouve les vols les moins chers pour ce voyage</span>
         <span class="ed">Compare les prix des compagnies en quelques secondes, puis ajoute ton vol ici.</span>
         <span class="eb">Chercher avec Escale ↗</span>
@@ -2180,7 +2262,7 @@ const CV = (function(){
     const others = profiles().filter(p=>!v.includes(p.id));
     let h = `<div class="v-sum">
         <div class="v-sum-row"><div class="v-sum-big" style="font-size:1rem">👥 ${v.length} voyageur${v.length>1?'s':''}</div>
-          <button class="v-chip" onclick="CV.addCompanion()">＋ Ajouter un compagnon</button></div>
+          <span class="cv-row" style="gap:6px"><button class="v-chip" onclick="CV.partsSheet()">⚖️ Parts & foyers</button><button class="v-chip" onclick="CV.addCompanion()">＋ Compagnon</button></span></div>
         <div class="v-perslist">${v.map(pid=>pchip(pid, v.length>1 ? `<button onclick="CV.removeCompanion('${pid}')" aria-label="Retirer">✕</button>` : '')).join('')}</div>
       </div>
       <div class="v-tiles">
@@ -2533,7 +2615,7 @@ const CV = (function(){
         <button class="v-btn sec" onclick="CV.editTrip('${t.id}')">✏️ Modifier (nom, dates, voyageurs)</button>
         ${t.archived ? `<button class="v-btn sec" onclick="CV.reopenTrip()">↺ Rouvrir le voyage</button>` : `<button class="v-btn sec" onclick="CV.closeTrip()">✓ Clôturer (tout payé et coché, garder la trace)</button>`}
         <button class="v-btn sec" onclick="CV.pdfSheet()">🖨️ Carnet de route à imprimer (PDF)</button>
-        <button class="v-btn sec" onclick="CV.wizard()">＋ Nouveau voyage</button></div>`;
+        <button class="v-btn sec" onclick="CV.newTrip()">＋ Nouveau voyage</button></div>`;
     }
     h += pkgBox();
     h += `<div class="v-box"><h3>📤 Inviter un ami</h3><p>Montre-lui le QR code ou envoie-lui le lien de l’appli.</p><button class="v-btn" onclick="CV.shareSheet()">📤 Partager l’appli (QR code)</button></div>`;
@@ -2679,7 +2761,7 @@ const CV = (function(){
         ${!PUBLIC && old && Array.isArray(old.items) ? `<div class="v-hint">✅ Tes saisies du voyage 2027 (${old.items.length} fiches) seront reprises.</div>` : ''}
         <button class="v-btn" onclick="CV.obCreate()">Commencer</button>
         ${PUBLIC ? `<button class="v-btn sec" onclick="CV.obCreate('demo')">👀 Commencer avec un voyage de démo</button>
-        <div class="v-sum-small" style="margin-top:6px;text-align:center">Un voyage au Japon déjà rempli pour tout découvrir. Il reste sur ton téléphone et se supprime en un geste.</div>` : ''}
+        <div class="v-sum-small" style="margin-top:6px;text-align:center">Trois voyages déjà remplis (à préparer, en cours, terminé) pour tout découvrir. Il reste sur ton téléphone et se supprime en un geste.</div>` : ''}
       </div>
       <div id="cv-ob-join" style="display:none">
         ${hosted ? '' : `<div class="v-f"><label>Adresse de l’appli en ligne</label><input class="v-in" id="cv-surl" placeholder="https://carnet-voyage.pages.dev"></div>`}
@@ -2833,11 +2915,11 @@ const CV = (function(){
   }
   function one(btn){ btn.parentNode.querySelectorAll('button').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); live(); }
   function equilibreHTML(){
-    const bal = balances(), tr = settle(bal);
+    const bal = balances(), hasF = tv().some(p=>tFoyer(p)), SF = hasF ? settleFoyers(bal) : null, tr = hasF ? SF.tr : settle(bal), nm = hasF ? SF.lbl : pname_c;
     return `<div class="v-sum">
       <div class="v-sum-row"><div class="v-sum-big" style="font-size:1rem">⚖️ Qui doit quoi</div><div class="v-sum-small">sur ce qui est déjà réglé</div></div>
       ${bal.map(b=>`<div class="cv-bal">${pchip(b.pid)}<span>a payé ${eur(b.avance)} · sa part ${eur(b.part)}${b.verse>0.5?' · a remboursé '+eur(b.verse):''}${b.recu>0.5?' · a reçu '+eur(b.recu):''}</span><b style="color:${b.solde>0.5?'var(--green)':b.solde<-0.5?'var(--red)':'var(--gray)'}">${Math.abs(b.solde)<0.5 ? '0 €' : (b.solde>0?'+':'') + eur(b.solde)}</b></div>`).join('')}
-      <div class="cv-settle">${tr.length ? tr.map(x=>`<div class="cv-settle-r"><span>➡️ ${pname_c(x.de)} doit <b>${eur(x.v)}</b> à ${pname_c(x.a)}</span><button class="v-chip on" onclick="CV.rembAdd('${x.de}','${x.a}',${x.v.toFixed(2)})">💸 Régler</button><button class="v-chip" onclick="CV.rembAsk('${x.de}','${x.a}',${x.v.toFixed(2)})">📤 Demander</button></div>`).join('') : '✓ Personne ne doit rien à personne.'}</div>
+      <div class="cv-settle">${tr.length ? tr.map(x=>`<div class="cv-settle-r"><span>➡️ ${nm(x.de)} doit <b>${eur(x.v)}</b> à ${nm(x.a)}</span><button class="v-chip on" onclick="CV.rembAdd('${x.de}','${x.a}',${x.v.toFixed(2)})">💸 Régler</button><button class="v-chip" onclick="CV.rembAsk('${x.de}','${x.a}',${x.v.toFixed(2)})">📤 Demander</button></div>`).join('') : '✓ Personne ne doit rien à personne.'}</div>
       ${rembs().length ? `<div class="cv-rbs">${rembs().map(x=>`<div class="cv-rb">💸 ${pname_c(x.de)} a remboursé <b>${eur(num(x.montant))}</b> à ${pname_c(x.a)} <span class="v-sum-small">le ${fdate(x.date)}</span><button class="cv-x" onclick="CV.rembDel('${x.id}')">✕</button></div>`).join('')}</div>` : ''}
     </div>`;
   }
@@ -3363,6 +3445,7 @@ const CV = (function(){
   function photoCode(id){
     const base = String(id).replace(/\.t$/,'');
     const r = Object.values(R).find(x=>x && ((x.photos||[]).includes(base) || x.recu===base || (x.pj||[]).some(p=>p.id===base)));
+    if(r && r.demo) return null;   // les photos de démo restent sur le téléphone
     const t = targets(r)[0];
     return t === 'main' ? (M.sync.on && M.sync.code ? M.sync.code : null) : t;
   }
@@ -3802,15 +3885,16 @@ const CV = (function(){
     const mine = new Set(placesOfStay(d.hid).map(p=>normQ(p.nom)));
     const shown = d.list.filter(p => d.f[p.cat] !== false && (!d.q || normQ(p.nom).includes(normQ(d.q))));
     openSheet(`<h2>🔎 À voir à ${esc(d.city)}</h2>
-      <div class="v-sum-small" style="margin-bottom:8px">${d.list.length} lieux trouvés (Wikipédia, OpenStreetMap), les plus connus en premier. Touche ＋ pour les ajouter à l’étape, puis optimise.</div>
+      <div class="v-sum-small" style="margin-bottom:8px">${d.list.length} lieux trouvés (Wikipédia, OpenStreetMap), les plus connus en premier. Touche une photo ou un nom pour voir le lieu, ＋ pour l’ajouter à l’étape.</div>
       <div class="v-filters" style="flex-wrap:wrap">${Object.entries(POI_CATS).map(([k,c])=>`<button class="v-chip${d.f[k]!==false?' on':''}" onclick="CV.discF('${k}')">${c.icon} ${c.lbl}</button>`).join('')}</div>
       <input class="v-in" id="ds-q" placeholder="Rechercher un lieu…" value="${esc(d.q)}" oninput="CV.discQ(this.value)">
       <div id="ds-list" style="margin-top:8px">${shown.map(p=>{ const i = d.list.indexOf(p), has = mine.has(normQ(p.nom));
-        return `<div class="cv-poi"><span class="ic">${POI_CATS[p.cat].icon}</span><span class="x"><b>${esc(p.nom)}</b>${p.score>=5?' <span class="star">★</span>':''}<small>${POI_CATS[p.cat].lbl}</small></span>
+        return `<div class="cv-poi"><button type="button" class="cv-pth" onclick="CV.discInfo(${i})">${p.wiki ? `<img data-wk="${esc(p.wiki)}" alt="">` : ''}<span class="ic">${POI_CATS[p.cat].icon}</span></button><span class="x" onclick="CV.discInfo(${i})"><b>${esc(p.nom)}</b>${p.score>=5?' <span class="star">★</span>':''}<small>${POI_CATS[p.cat].lbl}</small></span>
           <a href="https://www.google.com/maps/search/?api=1&query=${p.lat.toFixed(6)},${p.lng.toFixed(6)}" target="_blank" rel="noopener">📍</a>
           <button class="cv-x${has?' ok':''}" onclick="CV.discAdd(${i})">${has?'✓':'＋'}</button></div>`; }).join('') || '<div class="v-empty">Aucun lieu avec ces filtres.</div>'}</div>
       <div class="v-actions"><button type="button" class="v-btn" onclick="CV.planCity('${d.hid}')">🏙️ Organiser l’étape</button><button type="button" class="v-btn sec cv-sq" onclick="CV.close()">✕</button></div>`);
     const q = document.getElementById('ds-q'); if(q && d.q){ q.focus(); q.setSelectionRange(d.q.length, d.q.length); }
+    setTimeout(discThumbs, 30);
   }
   function discF(k){ disc.f[k] = disc.f[k]===false; M.poiF = disc.f; persist(); discRender(); }
   let discT = null;
@@ -4112,6 +4196,7 @@ const CV = (function(){
       <div class="v-sum-small" style="margin-bottom:10px">🎬 La vidéo (3 min) montre tout le parcours sur un voyage fictif Paris → Tokyo : menu, passage en premium, dates, calendrier de prix, prix live, hôtels, voiture, activités, puis la saisie dans le carnet. Le détail écrit est juste en dessous.</div>
       <div class="cv-info">
       <p>Escale cherche les vols les moins chers. En <b>mode soft</b> (par défaut), les prix viennent d’un cache gratuit : ce sont des <b>prix indicatifs</b>. Le <b>mode premium</b> interroge les sources en direct.</p>
+      ${new Date() <= new Date('2026-12-31T23:59:59') ? '<p class="cv-warn">🎁 <b>Jusqu’au 31 décembre 2026, le premium est offert à tous</b> : rien à faire, tout est déjà débloqué. À partir du 1er janvier, il faudra la phrase d’accès ci-dessous.</p>' : ''}
       <h3>1. Passer en premium</h3>
       <p>Ouvre Escale, puis touche le bouton <b>« ◐ Mode SOFT · appuyer pour PREMIUM »</b> sous le titre (ou menu <b>☰ → Réglages → Changer de mode</b>). Saisis la phrase d’accès : l’appli se recharge et affiche <b>« ● Mode PREMIUM »</b>.</p>
       <p>La <b>phrase d’accès</b> au premium t’est donnée par la personne qui t’a invité sur l’appli. Elle ne se trouve pas dans le carnet.</p>
@@ -6680,11 +6765,11 @@ ${pm.join('\n')}</Document></kml>`;
   function modeBar(){
     let el = document.getElementById('cv-modes');
     if(!el){ el = document.createElement('div'); el.id = 'cv-modes'; el.className = 'cv-modes'; const tc = document.getElementById('tabsC'); tc.parentNode.insertBefore(el, tc); }
-    const live = trips().some(t=>!t.demo && tripPhase(t)==='live');
+    const live = trips().some(t=>tripPhase(t)==='live');
     el.innerHTML = MODES.map(([k,ic,l])=>`<button type="button" class="${(M.mode||'prep')===k?'on':''}" onclick="CV.modeGo('${k}')"><i>${ic}</i><span>${l}</span>${k==='live' && live ? '<b class="dotlive"></b>' : ''}</button>`).join('');
   }
   function modeGo(k){
-    M.mode = k; const td = isoToday(), ts = trips().filter(t=>!t.demo || k==='prep');
+    M.mode = k; const td = isoToday(), ts = trips();
     const pick = {prep: t=>tripPhase(t)==='prep', live: t=>tripPhase(t)==='live', past: t=>tripPhase(t)==='past', bilan: t=>tripPhase(t)!=='prep'};
     const cur = trip();
     if(k !== 'past' && !(cur && pick[k](cur))){ const c = k==='bilan' ? ts.filter(pick.bilan).sort((a,b)=>(b.fin||'').localeCompare(a.fin||''))[0] : ts.find(pick[k]); if(c) M.trip = c.id; }
@@ -6704,7 +6789,7 @@ ${pm.join('\n')}</Document></kml>`;
   }
   function liveHTML(){
     const t = trip(), live = t && tripPhase(t) === 'live';
-    if(!live){ const nx = trips().filter(x=>!x.demo && tripPhase(x)==='prep' && x.debut).sort((a,b)=>a.debut.localeCompare(b.debut))[0];
+    if(!live){ const nx = trips().filter(x=>tripPhase(x)==='prep' && x.debut).sort((a,b)=>a.debut.localeCompare(b.debut))[0];
       return `<div class="v-box"><h3>📍 Aucun voyage en cours</h3><p>${nx ? `Prochain départ : <b>${esc(nx.titre)}</b>, le ${fdate(nx.debut)}. Cet espace s’allume tout seul le jour J : fiche du jour, steps, traceur, dépenses.` : 'Cet espace s’allume pendant un voyage : fiche du jour, steps, traceur, dépenses.'}</p>
         <button class="v-btn sec" onclick="CV.modeGo('prep')">🧳 Aller à la préparation</button></div>`; }
     const k = dayList().indexOf(isoToday()), info = dayInfo(isoToday()), {own, night} = itemsForDay(isoToday());
@@ -6717,7 +6802,7 @@ ${pm.join('\n')}</Document></kml>`;
       <button class="v-btn sec" onclick="CV.modeGo('prep');CV.tab('souv')">📸 Voir les souvenirs</button>`;
   }
   function pastHTML(){
-    const ps = trips().filter(t=>!t.demo && tripPhase(t)==='past').sort((a,b)=>(b.debut||'').localeCompare(a.debut||''));
+    const ps = trips().filter(t=>tripPhase(t)==='past').sort((a,b)=>(b.debut||'').localeCompare(a.debut||''));
     const card = t => { const sv = list('souv', s=>s.trip===t.id), ph = (sv.find(s=>(s.photos||[]).length) || {}).photos, n = sv.reduce((a,s)=>a+(s.photos||[]).length,0);
       return `<div class="cv-past"><div class="cov">${ph ? `<img data-ph="${esc(ph[0])}.t" alt="">` : '<span>🧳</span>'}</div><div class="bd"><b>${esc(t.titre)}</b><small>${tripDatesLong(t)}</small><small>${sv.length} souvenir${sv.length>1?'s':''} · ${n} photo${n>1?'s':''}</small>
         <div class="bt"><button type="button" onclick="CV.go('${t.id}');CV.modeGo('bilan')">🏁 Bilan</button><button type="button" onclick="CV.go('${t.id}');CV.albumSheet()">📕 Album</button><button type="button" onclick="CV.go('${t.id}');CV.modeGo('prep');CV.tab('souv')">📸</button></div></div></div>`; };
@@ -6732,7 +6817,7 @@ ${pm.join('\n')}</Document></kml>`;
     const daysNo = dayList().filter(d=>!sv.some(s=>s.date===d));
     const byCat = {}; all.forEach(i=>{ byCat[i.cat] = (byCat[i.cat]||0) + totalOf(i); }); const mx = Math.max(1, ...Object.values(byCat));
     const chk = (ok, l, extra) => `<div class="cv-bchk${ok?' ok':''}"><i>${ok ? '✓' : '!'}</i><span>${l}${extra ? '<small>' + extra + '</small>' : ''}</span></div>`;
-    const pick = trips().filter(x=>!x.demo && tripPhase(x)!=='prep');
+    const pick = trips().filter(x=>tripPhase(x)!=='prep');
     return `<div class="v-sum"><div class="v-sum-row"><div class="v-sum-big">🏁 Bilan · ${esc(t.titre)}</div></div>
         ${pick.length > 1 ? `<select class="v-in" style="margin-top:6px" onchange="CV.go(this.value);CV.modeGo('bilan')">${pick.map(x=>`<option value="${x.id}"${x.id===t.id?' selected':''}>${esc(x.titre)}</option>`).join('')}</select>` : ''}</div>
       <div class="v-box"><h3>✅ À vérifier</h3>
@@ -6955,7 +7040,7 @@ ${pm.join('\n')}</Document></kml>`;
     try {
       await loadCss('https://cdn.jsdelivr.net/npm/maplibre-gl@5/dist/maplibre-gl.css');
       if(!window.maplibregl) await loadJs('https://cdn.jsdelivr.net/npm/maplibre-gl@5/dist/maplibre-gl.js');
-      const style = {version:8, projection:{type:'globe'},
+      const style = {version:8, projection:{type:'globe'}, glyphs:'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
         sources:{
           sat:{type:'raster', tiles:['https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2020_3857/default/g/{z}/{y}/{x}.jpg'], tileSize:256, maxzoom:15, attribution:'Sentinel-2 cloudless – s2maps.eu par EOX'},
           lbl:{type:'raster', tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}'], tileSize:256, attribution:'Noms © Esri'}},
@@ -6976,51 +7061,9 @@ ${pm.join('\n')}</Document></kml>`;
     const step = () => { if(!wm || !wm.spin || map.getZoom() > 3.2){ return; } const c = map.getCenter(); c.lng -= 6; map.easeTo({center:c, duration:1000, easing:n=>n}); };
     map.on('moveend', step); step();
   }
-  async function worldData(){
-    const map = wm.map, ts = trips().filter(t=>!t.demo), data = {trips:[], steps:[], pays:{}, photos:[]};
-    const addPays = (cc, pays, lat, lng) => { const k = cc || ccOf(pays); if(!k) return; if(!data.pays[k]) data.pays[k] = {cc:k, pays: pays || (()=>{ try { return new Intl.DisplayNames(['fr'],{type:'region'}).of(k); } catch(e){ return k; } })(), lat, lng}; };
-    for(const t of ts){
-      const hs = list('item', i=>i.trip===t.id && i.cat==='hotel' && i.date && !i.deleted).sort((a,b)=>a.date.localeCompare(b.date)), pts = [];
-      for(const h of hs){ const c = cityOf(h.titre); if(!c) continue;
-        let g = h.lat != null ? {lat:h.lat, lng:h.lng} : geoCached(c); if(!g){ wmInfo('📡 Je place ' + esc(c) + '…'); g = await geocode(c, null).catch(()=>null); }
-        if(g){ pts.push({lat:g.lat, lng:g.lng, city:c}); if(t.debut && t.debut <= isoToday()){ const co = (M.ctry||{})[normQ(c)] || await countryOf(c).catch(()=>null); if(co) addPays(co.cc, co.pays, g.lat, g.lng); } } }
-      const st = [...list('souv', s=>s.trip===t.id && !s.deleted), ...list('step', s=>s.trip===t.id)].sort((a,b)=>(a.date||'').localeCompare(b.date||'') || (a.ordre||0)-(b.ordre||0) || (a.heure||'').localeCompare(b.heure||''));
-      const steps = [];
-      for(const s of st){ let lat = s.lat, lng = s.lng; if(lat == null && s.lieu){ const g = geoCached(s.lieu); if(g){ lat = g.lat; lng = g.lng; } } if(lat == null) continue;
-        const o = {id:s.id, lat, lng, titre:s.titre||s.lieu||'Step', lieu:s.lieu||'', date:s.date, ph:(s.photos||[])[0] || null, n:(s.photos||[]).length, texte:s.texte||'', trip:t.id, cc:s.cc || ccOf(s.pays)};
-        steps.push(o); data.steps.push(o); addPays(o.cc, s.pays, lat, lng); if(o.ph) data.photos.push(o); }
-      const trk = list('trk', r=>r.trip===t.id).sort((a,b)=>a.date.localeCompare(b.date)).flatMap(r=>r.pts.map(p=>[p[1], p[0]]));
-      const line = trk.length > 1 ? trk : steps.length > 1 ? steps.map(s=>[s.lng, s.lat]) : pts.map(p=>[p.lng, p.lat]);
-      const all = [...pts, ...steps]; if(!all.length) continue;
-      let dist = 0; for(let i=1;i<line.length;i++) dist += km({lat:line[i-1][1], lng:line[i-1][0]}, {lat:line[i][1], lng:line[i][0]});
-      data.trips.push({id:t.id, titre:t.titre, dates:tripDatesLong(t), debut:t.debut||'', pts:all, line, steps, photo:(steps.find(s=>s.ph)||{}).ph || null, trk:trk.length > 1, km:dist, phase:tripPhase(t)});
-    }
-    data.trips.sort((a,b)=>(b.debut||'').localeCompare(a.debut||''));
-    wm.data = data;
-    const feat = data.trips.filter(t=>t.line.length > 1).map(t=>({type:'Feature', properties:{id:t.id, trk:t.trk?1:0}, geometry:{type:'LineString', coordinates:t.line}}));
-    map.addSource('routes', {type:'geojson', data:{type:'FeatureCollection', features:feat}});
-    map.addLayer({id:'routes-glow', type:'line', source:'routes', layout:{'line-join':'round','line-cap':'round'}, paint:{'line-color':['case',['==',['get','trk'],1],'#fbbf24','#c4b5fd'], 'line-width':9, 'line-blur':6, 'line-opacity':0.45}});
-    map.addLayer({id:'routes', type:'line', source:'routes', layout:{'line-join':'round','line-cap':'round'}, paint:{'line-color':['case',['==',['get','trk'],1],'#fde68a','#ffffff'], 'line-width':2.4, 'line-opacity':0.95}});
-    map.addSource('steps', {type:'geojson', data:{type:'FeatureCollection', features:data.steps.map(s=>({type:'Feature', properties:{id:s.id, titre:s.titre, date:s.date||'', trip:s.trip}, geometry:{type:'Point', coordinates:[s.lng, s.lat]}}))}});
-    map.addLayer({id:'steps', type:'circle', source:'steps', paint:{'circle-radius':['interpolate',['linear'],['zoom'],1,2.5,6,5,10,7], 'circle-color':'#ffffff', 'circle-stroke-color':'#e11d48', 'circle-stroke-width':2.5}});
-    map.on('click', 'steps', e=>{ const id = e.features[0].properties.id, s = data.steps.find(x=>x.id===id); if(s) stepCard(s); });
-    map.on('mouseenter', 'steps', ()=>map.getCanvas().style.cursor = 'pointer'); map.on('mouseleave', 'steps', ()=>map.getCanvas().style.cursor = '');
-    // pays visités colorés (Natural Earth, chargé à la demande)
-    try {
-      const codes = Object.keys(data.pays);
-      if(codes.length){ const gj = await (await fetch('https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_110m_admin_0_countries.geojson')).json();
-        gj.features = gj.features.filter(f=>{ const p = f.properties || {}, c = p.ISO_A2_EH && p.ISO_A2_EH !== '-99' ? p.ISO_A2_EH : p.ISO_A2; return codes.includes(c); });
-        map.addSource('pays', {type:'geojson', data:gj});
-        map.addLayer({id:'pays-fill', type:'fill', source:'pays', paint:{'fill-color':'#e11d48', 'fill-opacity':0.32}}, 'routes-glow');
-        map.addLayer({id:'pays-line', type:'line', source:'pays', paint:{'line-color':'#fb7185', 'line-width':1.4, 'line-opacity':0.9}}, 'routes-glow'); }
-    } catch(e){}
-    const totKm = data.trips.reduce((s,t)=>s+t.km,0);
-    document.getElementById('wm-chips').innerHTML = `<span>🧳 <b>${data.trips.length}</b> voyages</span><span>🏳️ <b>${Object.keys(data.pays).length}</b> pays</span><span>📍 <b>${data.steps.length}</b> steps</span><span>✈️ <b>${Math.round(totKm).toLocaleString('fr-FR')}</b> km</span>`;
-    wmInfo('Touche un voyage ci-dessous pour t’y envoler ✨');
-  }
   function worldCarousel(){
     const c = document.getElementById('wm-car'); if(!c || !wm) return;
-    c.innerHTML = wm.data.trips.map(t=>`<button type="button" class="wm-card${wm.sel===t.id?' on':''}" data-id="${t.id}" onclick="CV.worldFly('${t.id}')"><span class="im">${t.photo ? `<img data-ph="${esc(t.photo)}.t" alt="">` : '<i>🧳</i>'}</span><span class="tx"><b>${esc(t.titre)}</b><small>${esc(t.dates)}</small><small>${t.steps.length} step${t.steps.length>1?'s':''} · ${Math.round(t.km).toLocaleString('fr-FR')} km${t.phase==='live' ? ' · <em>en cours</em>' : ''}</small></span></button>`).join('') || '<div class="wm-empty">Ajoute des hébergements ou des steps 📍 pour voir tes voyages ici.</div>';
+    c.innerHTML = wm.data.trips.map(t=>`<button type="button" class="wm-card${wm.sel===t.id?' on':''}" data-id="${t.id}" onclick="CV.worldFly('${t.id}')"><span class="im">${t.photo ? `<img data-ph="${esc(t.photo)}.t" alt="" loading="lazy">` : '<i>🧳</i>'}</span><span class="tx"><b>${esc(t.titre)}</b><small>${esc(t.dates)}</small><small>${t.steps.length} step${t.steps.length>1?'s':''} · ${Math.round(t.km).toLocaleString('fr-FR')} km${t.phase==='live' ? ' · <em>en cours</em>' : ''}</small></span></button>`).join('') || '<div class="wm-empty">Ajoute des hébergements ou des steps 📍 pour voir tes voyages ici.</div>';
     hydrate();
   }
   function bounds(pts){ const b = new maplibregl.LngLatBounds(); pts.forEach(p=>b.extend([p.lng, p.lat])); return b; }
@@ -7058,26 +7101,128 @@ ${pm.join('\n')}</Document></kml>`;
       if(r) r.value = i; worldStep(id, i); i++; wm.play = setTimeout(next, 3600); };
     next();
   }
+  /* 🌍 Carte du monde — version « gros volumes » (des milliers de photos, des dizaines de voyages) :
+     1) on affiche tout de suite avec ce qui est déjà connu (positions en mémoire), sans attendre le réseau ;
+     2) les villes manquantes sont placées ensuite, petit à petit, en arrière-plan ;
+     3) les photos sont regroupées par le moteur de la carte (bulles avec nombre), et seules ~40 vignettes
+        visibles à l'écran sont dessinées ; 4) les tracés sont allégés. */
+  const yieldUI = () => new Promise(r=>setTimeout(r, 0));
+  const thin = (c, max) => { if(c.length <= max) return c; const st = c.length / max, out = []; for(let i=0;i<c.length;i+=st) out.push(c[Math.floor(i)]); out.push(c[c.length-1]); return out; };
+  async function worldData(){
+    const map = wm.map, ts = trips(), data = {trips:[], steps:[], pays:{}, photos:[]}, missing = new Set();
+    const nm = {}; try { const dn = new Intl.DisplayNames(['fr'], {type:'region'}); data.dn = c => { try { return dn.of(c); } catch(e){ return c; } }; } catch(e){ data.dn = c => c; }
+    const addPays = (cc, pays, lat, lng) => { const k = cc || ccOf(pays); if(!k || data.pays[k]) return; data.pays[k] = {cc:k, pays: pays || data.dn(k), lat, lng}; };
+    // index des souvenirs / steps / traces par voyage (un seul passage sur toutes les fiches)
+    const byTrip = {}; let k = 0;
+    for(const r of Object.values(R)){
+      if(++k % 2000 === 0) await yieldUI();
+      if(!r || r.deleted || !r.trip) continue;
+      const b = byTrip[r.trip] || (byTrip[r.trip] = {h:[], s:[], trk:[]});
+      if(r.type==='item' && r.cat==='hotel' && r.date) b.h.push(r); else if(r.type==='souv' || r.type==='step') b.s.push(r); else if(r.type==='trk') b.trk.push(r);
+    }
+    for(const t of ts){
+      await yieldUI();
+      const b = byTrip[t.id] || {h:[], s:[], trk:[]}, pts = [];
+      b.h.sort((x,y)=>x.date.localeCompare(y.date)).forEach(h=>{ const c = cityOf(h.titre); if(!c) return;
+        const g = h.lat != null ? {lat:h.lat, lng:h.lng} : geoCached(c); if(!g){ missing.add(c); return; }
+        pts.push({lat:g.lat, lng:g.lng, city:c}); const co = (M.ctry||{})[normQ(c)]; if(co && t.debut && t.debut <= isoToday()) addPays(co.cc, co.pays, g.lat, g.lng); });
+      const steps = [];
+      b.s.sort((x,y)=>(x.date||'').localeCompare(y.date||'') || (x.ordre||0)-(y.ordre||0) || (x.heure||'').localeCompare(y.heure||'')).forEach(s=>{
+        let lat = s.lat, lng = s.lng; if(lat == null && s.lieu){ const g = geoCached(s.lieu); if(g){ lat = g.lat; lng = g.lng; } } if(lat == null) return;
+        const o = {id:s.id, lat:+lat, lng:+lng, titre:s.titre||s.lieu||'Step', lieu:s.lieu||'', date:s.date, ph:(s.photos||[])[0] || null, n:(s.photos||[]).length, texte:s.texte||'', trip:t.id, cc:s.cc || ccOf(s.pays)};
+        steps.push(o); data.steps.push(o); addPays(o.cc, s.pays, o.lat, o.lng); if(o.ph) data.photos.push(o); });
+      const trk = b.trk.sort((x,y)=>x.date.localeCompare(y.date)).flatMap(r=>r.pts.map(p=>[p[1], p[0]]));
+      const line = thin(trk.length > 1 ? trk : steps.length > 1 ? steps.map(s=>[s.lng, s.lat]) : pts.map(p=>[p.lng, p.lat]), 400);
+      const all = [...pts, ...steps]; if(!all.length) continue;
+      let dist = 0; for(let i=1;i<line.length;i++) dist += km({lat:line[i-1][1], lng:line[i-1][0]}, {lat:line[i][1], lng:line[i][0]});
+      data.trips.push({id:t.id, titre:t.titre, dates:tripDatesLong(t), debut:t.debut||'', pts:all, line, steps, photo:(steps.find(s=>s.ph)||{}).ph || null, trk:trk.length > 1, km:dist, phase:tripPhase(t)});
+    }
+    data.trips.sort((a,b)=>(b.debut||'').localeCompare(a.debut||''));
+    wm.data = data;
+    const routesFC = () => ({type:'FeatureCollection', features:wm.data.trips.filter(t=>t.line.length > 1).map(t=>({type:'Feature', properties:{id:t.id, trk:t.trk?1:0}, geometry:{type:'LineString', coordinates:t.line}}))});
+    map.addSource('routes', {type:'geojson', data:routesFC(), tolerance:0.6});
+    map.addLayer({id:'routes-glow', type:'line', source:'routes', layout:{'line-join':'round','line-cap':'round'}, paint:{'line-color':['case',['==',['get','trk'],1],'#fbbf24','#c4b5fd'], 'line-width':8, 'line-blur':5, 'line-opacity':0.4}});
+    map.addLayer({id:'routes', type:'line', source:'routes', layout:{'line-join':'round','line-cap':'round'}, paint:{'line-color':['case',['==',['get','trk'],1],'#fde68a','#ffffff'], 'line-width':2.2, 'line-opacity':0.95}});
+    map.addSource('steps', {type:'geojson', data:{type:'FeatureCollection', features:data.steps.map(s=>({type:'Feature', properties:{id:s.id}, geometry:{type:'Point', coordinates:[s.lng, s.lat]}}))}});
+    map.addLayer({id:'steps', type:'circle', source:'steps', minzoom:2.5, paint:{'circle-radius':['interpolate',['linear'],['zoom'],2.5,2,6,4.5,10,6.5], 'circle-color':'#ffffff', 'circle-stroke-color':'#e11d48', 'circle-stroke-width':2}});
+    const stepById = id => wm.data.steps.find(x=>x.id===id) || wm.data.photos.find(x=>x.id===id);
+    const first = !wm.h; wm.h = 1;
+    if(first) map.on('click', 'steps', e=>{ const s = stepById(e.features[0].properties.id); if(s) stepCard(s); });
+    // photos regroupées par la carte elle-même (rapide même avec des milliers de photos)
+    map.addSource('photos', {type:'geojson', cluster:true, clusterRadius:55, clusterMaxZoom:13, data:{type:'FeatureCollection', features:data.photos.map(p=>({type:'Feature', properties:{id:p.id, n:p.n}, geometry:{type:'Point', coordinates:[p.lng, p.lat]}}))}});
+    map.addLayer({id:'ph-cluster', type:'circle', source:'photos', filter:['has','point_count'], layout:{visibility:'none'},
+      paint:{'circle-color':'#e11d48', 'circle-opacity':0.85, 'circle-stroke-color':'#fff', 'circle-stroke-width':2.5, 'circle-radius':['step',['get','point_count'],14,10,18,50,24,200,30]}});
+    map.addLayer({id:'ph-count', type:'symbol', source:'photos', filter:['has','point_count'], layout:{visibility:'none', 'text-field':['get','point_count_abbreviated'], 'text-font':['Open Sans Bold'], 'text-size':12, 'text-allow-overlap':true}, paint:{'text-color':'#fff'}});
+    map.addLayer({id:'ph-point', type:'circle', source:'photos', filter:['!',['has','point_count']], layout:{visibility:'none'}, paint:{'circle-radius':6, 'circle-color':'#fff', 'circle-stroke-color':'#e11d48', 'circle-stroke-width':2}});
+    if(first) map.on('click', 'ph-cluster', async e=>{ const f = e.features[0]; try { const z = await map.getSource('photos').getClusterExpansionZoom(f.properties.cluster_id); map.easeTo({center:f.geometry.coordinates, zoom:z + 0.5, duration:900}); } catch(err){ map.easeTo({center:f.geometry.coordinates, zoom:map.getZoom() + 2}); } });
+    if(first) map.on('click', 'ph-point', e=>{ const s = stepById(e.features[0].properties.id); if(s) stepCard(s); });
+    if(first) map.on('moveend', ()=>{ if(wm && wm.mode === 'photos') photoThumbs(); });
+    // pays visités colorés
+    paysFill();
+    worldChips();
+    wmInfo('Touche un voyage ci-dessous pour t’y envoler ✨');
+    // arrière-plan : placer les villes manquantes (1 par seconde, règle d'OpenStreetMap), puis rafraîchir
+    if(missing.size) setTimeout(async ()=>{
+      let n = 0;
+      for(const c of [...missing].slice(0, 60)){
+        if(!wm) return; await geocode(c, null).catch(()=>null); n++;
+        const co = await countryOf(c).catch(()=>null);
+        if(n % 8 === 0 || n === Math.min(60, missing.size)){ if(!wm) return; worldRefresh(); }
+      }
+    }, 1500);
+  }
+  function worldChips(){
+    const d = wm.data, totKm = d.trips.reduce((s,t)=>s+t.km,0), el = document.getElementById('wm-chips'); if(!el) return;
+    el.innerHTML = `<span>🧳 <b>${d.trips.length}</b> voyages</span><span>🏳️ <b>${Object.keys(d.pays).length}</b> pays</span><span>📍 <b>${d.steps.length}</b> steps</span><span>📸 <b>${d.photos.reduce((s,p)=>s+p.n,0).toLocaleString('fr-FR')}</b> photos</span><span>✈️ <b>${Math.round(totKm).toLocaleString('fr-FR')}</b> km</span>`;
+  }
+  async function paysFill(){
+    try {
+      const codes = Object.keys(wm.data.pays); if(!codes.length || !wm) return;
+      if(!wm.ne) wm.ne = await (await fetch('https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_110m_admin_0_countries.geojson')).json();
+      const gj = {type:'FeatureCollection', features:wm.ne.features.filter(f=>{ const p = f.properties || {}, c = p.ISO_A2_EH && p.ISO_A2_EH !== '-99' ? p.ISO_A2_EH : p.ISO_A2; return codes.includes(c); })};
+      const src = wm.map.getSource('pays');
+      if(src) src.setData(gj);
+      else { wm.map.addSource('pays', {type:'geojson', data:gj});
+        wm.map.addLayer({id:'pays-fill', type:'fill', source:'pays', paint:{'fill-color':'#e11d48', 'fill-opacity':0.3}}, 'routes-glow');
+        wm.map.addLayer({id:'pays-line', type:'line', source:'pays', paint:{'line-color':'#fb7185', 'line-width':1.3, 'line-opacity':0.9}}, 'routes-glow'); }
+    } catch(e){}
+  }
+  let wmRefT = null;
+  function worldRefresh(){
+    clearTimeout(wmRefT);
+    wmRefT = setTimeout(async ()=>{ if(!wm) return; const keep = {mode:wm.mode, sel:wm.sel};
+      ['ph-count','ph-point','ph-cluster','steps','routes','routes-glow','pays-line','pays-fill'].forEach(l=>{ try { if(wm.map.getLayer(l)) wm.map.removeLayer(l); } catch(e){} });
+      ['photos','steps','routes','pays'].forEach(s=>{ try { if(wm.map.getSource(s)) wm.map.removeSource(s); } catch(e){} });
+      await worldData(); worldCarousel(); worldMode(keep.mode); }, 400);
+  }
+  const thumbM = new Map();
+  function photoThumbs(){
+    if(!wm) return; const map = wm.map;
+    const feats = map.getZoom() < 3 ? [] : map.queryRenderedFeatures({layers:['ph-point']}).slice(0, 40), keep = new Set();
+    feats.forEach(f=>{ const id = f.properties.id; keep.add(id); if(thumbM.has(id)) return; const p = wm.data.photos.find(x=>x.id===id); if(!p) return;
+      const el = document.createElement('button'); el.type = 'button'; el.className = 'wm-photo'; el.innerHTML = `<img alt="">${p.n > 1 ? `<span>${p.n}</span>` : ''}`;
+      photoURL(p.ph + '.t').then(u=>{ if(u) el.querySelector('img').src = u; }).catch(()=>{});
+      el.onclick = ev => { ev.stopPropagation(); wm.spin = false; map.flyTo({center:[p.lng, p.lat], zoom:Math.max(10, map.getZoom()), pitch:50, duration:1400}); stepCard(p); };
+      thumbM.set(id, new maplibregl.Marker({element:el}).setLngLat([p.lng, p.lat]).addTo(map)); });
+    for(const [id, mk] of thumbM){ if(!keep.has(id)){ mk.remove(); thumbM.delete(id); } }
+  }
   async function worldMode(m){
     if(!wm || !wm.data) return; wm.mode = m;
     document.querySelectorAll('.wm-seg button').forEach(b=>b.classList.toggle('on', b.dataset.m === m));
-    wm.markers.forEach(x=>x.remove()); wm.markers = [];
+    wm.markers.forEach(x=>x.remove()); wm.markers = []; for(const [, mk] of thumbM) mk.remove(); thumbM.clear();
     const vis = (l, v) => { try { if(wm.map.getLayer(l)) wm.map.setLayoutProperty(l, 'visibility', v ? 'visible' : 'none'); } catch(e){} };
-    vis('routes', m !== 'pays'); vis('routes-glow', m !== 'pays'); vis('steps', m === 'trips');
+    vis('routes', m !== 'pays'); vis('routes-glow', m !== 'pays'); vis('steps', m === 'trips'); ['ph-cluster','ph-count','ph-point'].forEach(l=>vis(l, m === 'photos'));
     const add = (el, ll, anchor) => wm.markers.push(new maplibregl.Marker({element:el, anchor:anchor||'center'}).setLngLat(ll).addTo(wm.map));
     if(m === 'trips'){
       for(const t of wm.data.trips){ const p0 = t.steps[0] || t.pts[0];
         const el = document.createElement('button'); el.type = 'button'; el.className = 'wm-pin' + (t.phase==='live' ? ' live' : '');
-        el.innerHTML = `<span class="ph">${t.photo ? `<img alt="">` : '🧳'}</span><span class="n">${t.steps.length || t.pts.length}</span>`;
+        el.innerHTML = `<span class="ph">${t.photo ? `<img alt="" loading="lazy">` : '🧳'}</span><span class="n">${t.steps.length || t.pts.length}</span>`;
         if(t.photo) photoURL(t.photo + '.t').then(u=>{ if(u) el.querySelector('img').src = u; }).catch(()=>{});
         el.onclick = ev => { ev.stopPropagation(); worldFly(t.id); };
         add(el, [p0.lng, p0.lat], 'bottom'); }
     } else if(m === 'photos'){
-      for(const p of wm.data.photos){ const el = document.createElement('button'); el.type = 'button'; el.className = 'wm-photo'; el.innerHTML = `<img alt="">${p.n > 1 ? `<span>${p.n}</span>` : ''}`;
-        photoURL(p.ph + '.t').then(u=>{ if(u) el.querySelector('img').src = u; }).catch(()=>{});
-        el.onclick = ev => { ev.stopPropagation(); wm.spin = false; wm.map.flyTo({center:[p.lng, p.lat], zoom:Math.max(9, wm.map.getZoom()), pitch:50, duration:1600}); stepCard(p); };
-        add(el, [p.lng, p.lat]); }
-      wmInfo(`📸 <b>${wm.data.photos.length}</b> lieu(x) en photos — touche une vignette`);
+      photoThumbs();
+      wmInfo(`📸 <b>${wm.data.photos.reduce((s,p)=>s+p.n,0).toLocaleString('fr-FR')}</b> photos sur ${wm.data.photos.length} lieux — touche une bulle pour zoomer, une vignette pour voir les photos`);
     } else {
       Object.values(wm.data.pays).forEach(c=>{ const el = document.createElement('div'); el.className = 'wm-flag'; el.textContent = flag(c.cc); el.title = c.pays || ''; add(el, [c.lng, c.lat]); });
       wmInfo(`🏳️ <b>${Object.keys(wm.data.pays).length} pays</b><div class="wm-flags">${Object.values(wm.data.pays).map(c=>`<span>${flag(c.cc)} ${esc(c.pays||'')}</span>`).join('') || 'Commence un voyage ou ajoute un step 📍'}</div>`);
@@ -7086,6 +7231,187 @@ ${pm.join('\n')}</Document></kml>`;
   }
   function worldOpen(id){ worldClose(); go(id); M.mode = tripPhase(R[id]) === 'past' ? 'bilan' : tripPhase(R[id]); persist(); applyMode(); }
   function worldClose(){ stopStory(); const ov = document.getElementById('cv-world'); if(wm && wm.map){ try { wm.map.remove(); } catch(e){} } wm = null; if(ov){ ov.style.display = 'none'; ov.innerHTML = ''; } document.body.style.overflow = ''; }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     ⚖️ PARTS INÉGALES & FOYERS · 🔎 LIEUX ILLUSTRÉS (Wikipédia) · 🧭 NOUVEAU VOYAGE : 3 FAÇONS
+     ══════════════════════════════════════════════════════════════════════════ */
+  /* ---------- ⚖️ Parts du voyage (enfant, couple, invité…) et foyers ---------- */
+  const tCoef = pid => { const t = trip(); const c = t && t.coef && t.coef[pid]; return c == null || c === '' ? 1 : Math.max(0, num(c)); };
+  const tFoyer = pid => { const t = trip(); return (t && t.foyer && t.foyer[pid]) || ''; };
+  function partsSheet(){
+    const t = trip(), v = tv();
+    openSheet(`<h2>⚖️ Parts et foyers</h2>
+      <div class="v-sum-small" style="margin-bottom:10px">Par défaut, chaque dépense « partagée » se divise à parts égales. Ici, tu règles pour tout le voyage :<br>
+      • <b>Part</b> : 1 = une part normale, 0,5 = un enfant ou quelqu’un qui ne profite qu’à moitié, 2 = un couple compté ensemble…<br>
+      • <b>Foyer</b> : même nom pour ceux qui partagent un porte-monnaie (ex. « Anthony & Claire ») : « qui doit quoi » se calcule alors entre foyers.<br>
+      Une fiche peut toujours avoir sa propre répartition (Paiement → Montants).</div>
+      ${v.map(pid=>`<div class="cv-prt">${pchip(pid)}<label>Part <input class="v-in" inputmode="decimal" data-coef="${pid}" value="${esc(String((t.coef||{})[pid] ?? 1)).replace('.', ',')}"></label><label>Foyer <input class="v-in" data-foyer="${pid}" value="${esc((t.foyer||{})[pid]||'')}" placeholder="—"></label></div>`).join('')}
+      <div class="v-actions"><button type="button" class="v-btn" onclick="CV.partsSave()">Enregistrer</button><button type="button" class="v-btn sec cv-sq" onclick="CV.close()">✕</button></div>`);
+  }
+  function partsSave(){
+    const t = clone(trip()); t.coef = {}; t.foyer = {};
+    document.querySelectorAll('[data-coef]').forEach(i=>{ const v = num(i.value); if(i.value.trim() !== '' && v !== 1) t.coef[i.dataset.coef] = v; });
+    document.querySelectorAll('[data-foyer]').forEach(i=>{ const v = i.value.trim(); if(v) t.foyer[i.dataset.foyer] = v; });
+    put(t, '⚖️ Répartition enregistrée'); closeSheet(true); refresh();
+  }
+  // « qui doit quoi » entre foyers : on additionne les soldes des membres d'un même foyer
+  function settleFoyers(bal){
+    const g = {}; bal.forEach(b=>{ const f = tFoyer(b.pid) || b.pid; (g[f] = g[f] || {pid:b.pid, solde:0, mem:[]}); g[f].solde += b.solde; g[f].mem.push(b.pid); });
+    const tr = settle(Object.values(g));
+    const lbl = pid => { const f = tFoyer(pid); return f ? '👪 ' + esc(f) : pname_c(pid); };
+    return {tr, lbl};
+  }
+
+  /* ---------- 🔎 Lieux à voir illustrés : vignette + fiche Wikipédia au toucher ---------- */
+  const wkCache = {};
+  const wkParse = w => { if(!w) return null; let m = String(w).match(/^https?:\/\/(\w+)\.wikipedia\.org\/wiki\/(.+)$/); if(m) return {lang:m[1], title:decodeURIComponent(m[2]).replace(/_/g,' ')};
+    m = String(w).match(/^(\w{2,3}):(.+)$/); return m ? {lang:m[1], title:m[2]} : {lang:'fr', title:String(w)}; };
+  async function wkThumbs(list){
+    const by = {}; list.forEach(p=>{ const w = wkParse(p.wiki); if(w && !((w.lang+':'+w.title) in wkCache)) (by[w.lang] = by[w.lang] || []).push(w.title); });
+    for(const [lang, titles] of Object.entries(by)){
+      for(let i=0;i<titles.length;i+=50){
+        const chunk = titles.slice(i, i+50);
+        try { const j = await (await fetch(`https://${lang}.wikipedia.org/w/api.php?action=query&prop=pageimages&piprop=thumbnail&pithumbsize=200&redirects=1&format=json&origin=*&titles=` + encodeURIComponent(chunk.join('|')))).json();
+          const red = {}; ((j.query||{}).redirects||[]).concat((j.query||{}).normalized||[]).forEach(r=>red[r.to] = r.from);
+          chunk.forEach(t=>wkCache[lang+':'+t] = '');
+          Object.values((j.query||{}).pages||{}).forEach(pg=>{ const u = pg.thumbnail && pg.thumbnail.source; if(u){ wkCache[lang+':'+pg.title] = u; if(red[pg.title]) wkCache[lang+':'+red[pg.title]] = u; const r2 = red[red[pg.title]]; if(r2) wkCache[lang+':'+r2] = u; } });
+        } catch(e){}
+      }
+    }
+  }
+  async function discThumbs(){
+    if(!disc) return;
+    const imgs = [...document.querySelectorAll('#ds-list img[data-wk]')]; if(!imgs.length) return;
+    await wkThumbs(imgs.map(i=>({wiki:i.dataset.wk})));
+    imgs.forEach(i=>{ const w = wkParse(i.dataset.wk), u = w && wkCache[w.lang+':'+w.title]; if(u){ i.src = u; i.parentNode.classList.add('has'); } });
+  }
+  async function discInfo(i){
+    const p = disc && disc.list[i]; if(!p) return;
+    const mine = placesOfStay(disc.hid).some(x=>normQ(x.nom)===normQ(p.nom));
+    openSheet(`<h2>${POI_CATS[p.cat].icon} ${esc(p.nom)}</h2><div id="wk-box" class="cv-route-load">📖 Recherche sur Wikipédia…</div>
+      <div class="v-actions"><button type="button" class="v-btn" onclick="CV.discAdd(${i})">${mine ? '↩️ Retirer de l’itinéraire' : '＋ Ajouter à l’itinéraire'}</button><button type="button" class="v-btn sec" onclick="CV.discBack()">← Liste</button></div>`);
+    let w = wkParse(p.wiki), data = null;
+    try {
+      if(!w){ const s = await (await fetch(`https://fr.wikipedia.org/w/api.php?action=query&list=search&srlimit=1&format=json&origin=*&srsearch=` + encodeURIComponent(p.nom + ' ' + disc.city))).json();
+        const hit = ((s.query||{}).search||[])[0]; if(hit) w = {lang:'fr', title:hit.title}; }
+      if(w){ const j = await (await fetch(`https://${w.lang}.wikipedia.org/w/api.php?action=query&prop=pageimages|extracts&piprop=thumbnail&pithumbsize=640&exintro=1&explaintext=1&exsentences=5&redirects=1&format=json&origin=*&titles=` + encodeURIComponent(w.title))).json();
+        data = Object.values((j.query||{}).pages||{})[0]; }
+    } catch(e){}
+    const b = document.getElementById('wk-box'); if(!b) return; b.className = '';
+    const url = w ? `https://${w.lang}.wikipedia.org/wiki/${encodeURIComponent((data && data.title || w.title).replace(/ /g,'_'))}` : '';
+    b.innerHTML = (data && data.thumbnail ? `<img class="wk-img" src="${esc(data.thumbnail.source)}" alt="">` : '')
+      + (data && data.extract ? `<p class="wk-tx">${esc(data.extract)}</p>` : '<p class="v-sum-small">Pas de fiche Wikipédia trouvée pour ce lieu.</p>')
+      + `<div class="cv-row" style="gap:6px;flex-wrap:wrap">${url ? `<a class="v-day-edit" href="${url}" target="_blank" rel="noopener">📖 Lire sur Wikipédia</a>` : ''}<a class="v-day-edit" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent(p.nom + ' ' + disc.city)}" target="_blank" rel="noopener">🖼️ Plus de photos</a><a class="v-day-edit" href="https://www.google.com/maps/search/?api=1&query=${p.lat.toFixed(6)},${p.lng.toFixed(6)}" target="_blank" rel="noopener">📍 Plan</a></div>`
+      + (data && data.extract ? `<div class="v-sum-small" style="margin-top:6px">Texte : Wikipédia (CC BY-SA).</div>` : '');
+  }
+  function discBack(){ discRender(); }
+
+  /* ---------- 🧭 Nouveau voyage : je sais où / je ne sais pas encore / voyage vierge ---------- */
+  function newTrip(){
+    openSheet(`<h2>🧳 Nouveau voyage</h2><div class="v-sum-small" style="margin-bottom:10px">Comment veux-tu commencer ?</div>
+      <button type="button" class="cv-choice" onclick="CV.close();CV.wizard()"><i>🧭</i><span><b>Je sais où je vais</b><small>L’assistant crée le programme, les hébergements et les trajets en 5 étapes.</small></span></button>
+      <button type="button" class="cv-choice" onclick="CV.inspire()"><i>💡</i><span><b>Je ne sais pas encore où aller</b><small>Quelques questions, et l’appli te propose des destinations adaptées avec ses conseils.</small></span></button>
+      <button type="button" class="cv-choice" onclick="CV.blankTrip()"><i>📄</i><span><b>Voyage vierge</b><small>Juste un nom : tu remplis tout toi-même, à ton rythme.</small></span></button>
+      <div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.close()">Annuler</button></div>`);
+  }
+  function blankTrip(){
+    const n = prompt('Nom du voyage :', 'Mon prochain voyage'); if(n === null) return;
+    const tid = 't' + uid();
+    put({id:tid, type:'trip', titre:n.trim() || 'Mon prochain voyage', sous:'', debut:'', fin:'', voyageurs:M.me ? [M.me] : [], objectif:''}, '📄 Voyage vierge créé');
+    closeSheet(true); M.mode = 'prep'; M.tab = 'prog'; go(tid);
+    setTimeout(()=>CV.editTrip && CV.editTrip(tid), 300);
+  }
+  // Base d'idées (ordres de grandeur depuis la France ; à vérifier avec Escale pour les prix réels)
+  // [nom, pays, cc, tags, meilleurs mois, heures de vol depuis Paris, budget sur place €/jour/pers, durée idéale, conseil, climat]
+  const DESTS = [
+    ['Lisbonne','Portugal','PT','ville culture gastronomie mer',[3,4,5,6,9,10],2.5,90,'4–5 j','Tramway 28 tôt le matin, miradouros au coucher du soleil, Sintra en excursion.','doux'],
+    ['Porto','Portugal','PT','ville gastronomie culture',[4,5,6,9,10],2,80,'3–4 j','Caves de porto à Gaia, vallée du Douro en train.','doux'],
+    ['Açores','Portugal','PT','nature randonnée mer aventure',[5,6,7,8,9],4,90,'7–10 j','Louer une voiture ; météo changeante, prévoir des couches.','doux'],
+    ['Séville','Espagne','ES','ville culture gastronomie',[3,4,5,10,11],2,90,'3–4 j','Éviter juillet-août (40 °C) ; flamenco à Triana.','chaud'],
+    ['Barcelone','Espagne','ES','ville plage culture fête',[4,5,6,9,10],1.7,110,'4 j','Réserver la Sagrada Família à l’avance.','chaud'],
+    ['Majorque','Espagne','ES','plage détente nature',[5,6,9,10],2,110,'7 j','Criques de l’est hors juillet-août ; Serra de Tramuntana à pied.','chaud'],
+    ['Canaries (Tenerife)','Espagne','ES','plage nature randonnée détente',[1,2,3,4,10,11,12],4.3,90,'7 j','Le soleil d’hiver à 4 h : Teide au lever du jour.','chaud'],
+    ['Rome','Italie','IT','ville culture histoire gastronomie',[3,4,5,9,10,11],2,120,'4–5 j','Colisée et Vatican réservés en ligne ; Trastevere le soir.','doux'],
+    ['Pouilles','Italie','IT','mer gastronomie détente culture',[5,6,9,10],2.2,100,'7–10 j','Voiture indispensable ; Polignano, Alberobello, Lecce.','chaud'],
+    ['Sicile','Italie','IT','mer culture gastronomie nature',[4,5,6,9,10],2.5,100,'8–10 j','Etna, Taormine, Palerme : boucle en voiture.','chaud'],
+    ['Dolomites','Italie','IT','montagne randonnée nature',[6,7,8,9],1.5,130,'5–7 j','Refuges à réserver tôt ; lacs de Braies et Tre Cime.','frais'],
+    ['Amsterdam','Pays-Bas','NL','ville culture fête',[4,5,6,9],1.3,130,'3 j','Vélo partout ; Rijksmuseum réservé.','frais'],
+    ['Prague','Tchéquie','CZ','ville culture histoire fête',[4,5,6,9,10,12],1.8,80,'3–4 j','Marché de Noël en décembre ; château tôt le matin.','frais'],
+    ['Budapest','Hongrie','HU','ville bains culture fête',[4,5,6,9,10],2.2,75,'3–4 j','Bains Széchenyi, ruin bars, Danube de nuit.','frais'],
+    ['Croatie (Split & Dubrovnik)','Croatie','HR','mer plage culture bateau',[5,6,9],2.2,110,'7–10 j','Ferries entre les îles ; Dubrovnik tôt avant les croisiéristes.','chaud'],
+    ['Athènes & Cyclades','Grèce','GR','mer plage histoire détente',[5,6,9,10],3.3,100,'8–10 j','Acropole à l’ouverture ; ferries vers Naxos, Paros, Milos.','chaud'],
+    ['Crète','Grèce','GR','plage nature randonnée gastronomie',[5,6,9,10],3.5,85,'8–10 j','Gorges de Samaria, plages de Balos et Elafonissi.','chaud'],
+    ['Malte','Malte','MT','mer histoire plongée',[4,5,6,9,10,11],2.7,90,'4–6 j','La Valette, Gozo, Blue Lagoon tôt le matin.','chaud'],
+    ['Istanbul','Turquie','TR','ville culture histoire gastronomie',[4,5,9,10,11],3.5,70,'4–5 j','Bosphore en ferry public ; Sainte-Sophie hors heures de prière.','doux'],
+    ['Cappadoce','Turquie','TR','nature aventure montgolfière',[4,5,6,9,10],4.5,80,'3–4 j','Montgolfière à réserver ; nuits en hôtel troglodyte.','doux'],
+    ['Marrakech','Maroc','MA','ville culture désert gastronomie',[3,4,5,10,11],3.3,60,'4–5 j','Riad dans la médina ; excursion Atlas ou Agafay.','chaud'],
+    ['Égypte (Nil)','Égypte','EG','histoire culture désert croisière',[10,11,12,1,2,3],4.5,70,'8–10 j','Croisière Louxor–Assouan ; éviter l’été (très chaud).','chaud'],
+    ['Islande','Islande','IS','nature aventure aurores randonnée',[6,7,8,9,2,3],3.3,180,'8–10 j','Route 1 en van ; aurores de septembre à mars.','frais'],
+    ['Norvège (fjords)','Norvège','NO','nature randonnée bateau',[6,7,8],2.3,170,'7–10 j','Train Flåm, Preikestolen, Lofoten si le temps le permet.','frais'],
+    ['Écosse','Royaume-Uni','GB','nature château randonnée whisky',[5,6,7,8,9],1.7,120,'7–9 j','Highlands en voiture ; Skye ; prévoir l’anti-moustique (midges).','frais'],
+    ['Londres','Royaume-Uni','GB','ville culture musées fête',[4,5,6,7,9,12],1.2,150,'3–4 j','Musées gratuits ; Oyster/contactless dans le métro.','frais'],
+    ['New York','États-Unis','US','ville culture shopping fête',[4,5,6,9,10,12],8.5,200,'5–7 j','ESTA à faire avant ; CityPASS si beaucoup de visites.','doux'],
+    ['Ouest américain','États-Unis','US','nature road-trip parcs aventure',[5,6,9,10],11,170,'14–21 j','Pass « America the Beautiful » ; réserver Yosemite tôt.','chaud'],
+    ['Québec','Canada','CA','nature ville randonnée',[6,7,8,9,10],7.5,130,'10–14 j','AVE obligatoire ; couleurs d’automne fin septembre.','frais'],
+    ['Japon','Japon','JP','culture gastronomie ville nature',[3,4,5,10,11],14,130,'14–21 j','Cerisiers fin mars-avril ; pass régionaux plutôt que JR Pass national.','doux'],
+    ['Thaïlande','Thaïlande','TH','plage culture gastronomie détente',[11,12,1,2,3],12,55,'14–21 j','Bangkok, Chiang Mai, puis îles côté mer d’Andaman en hiver.','chaud'],
+    ['Vietnam','Vietnam','VN','culture gastronomie nature aventure',[2,3,4,10,11],12.5,45,'14–21 j','Du nord au sud ; baie d’Halong en croisière de 2 jours.','chaud'],
+    ['Bali','Indonésie','ID','plage détente nature culture',[5,6,7,8,9],16,55,'12–15 j','Ubud pour les rizières, Nusa Penida en bateau.','chaud'],
+    ['Réunion','France','RE','nature randonnée volcan plage',[5,6,7,8,9,10,11],11,90,'12–15 j','Cirques de Mafate à pied ; pas de passeport nécessaire.','chaud'],
+    ['Guadeloupe','France','GP','plage nature plongée détente',[12,1,2,3,4,5],8.5,100,'10–14 j','Basse-Terre pour la nature, Marie-Galante pour les plages.','chaud'],
+    ['Costa Rica','Costa Rica','CR','nature aventure faune plage',[12,1,2,3,4],12,90,'14–18 j','Saison sèche de décembre à avril ; volcan Arenal, Corcovado.','chaud'],
+    ['Mexique (Yucatán)','Mexique','MX','plage culture histoire plongée',[11,12,1,2,3,4],11.5,75,'12–15 j','Cenotes, Chichén Itzá tôt ; éviter la saison des ouragans.','chaud'],
+    ['Corse','France','FR','mer nature randonnée plage',[5,6,9],1.5,110,'7–10 j','Voiture indispensable ; GR20 pour les marcheurs aguerris.','chaud'],
+    ['Bretagne (Finistère)','France','FR','mer nature randonnée gastronomie',[5,6,7,8,9],0,90,'4–7 j','Presqu’île de Crozon, Ouessant, crêpes et fruits de mer.','frais'],
+  ];
+  const INSP_TAGS = [['plage','🏖️ Plage'],['ville','🏙️ Ville'],['culture','🏛️ Culture'],['nature','🌿 Nature'],['randonnée','🥾 Rando'],['gastronomie','🍝 Gastronomie'],['aventure','🧗 Aventure'],['détente','🧘 Détente'],['fête','🎉 Fête'],['mer','⛵ Mer'],['montagne','🏔️ Montagne'],['histoire','🏺 Histoire']];
+  function inspire(sample){
+    const S = sample || M.insp || {mois:'', duree:'7', budget:'1200', vol:'6', climat:'', tags:[], qui:'couple'};
+    const MOIS = ['','janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+    openSheet(`<h2>💡 Où partir ?</h2><div class="v-sum-small" style="margin-bottom:8px">Réponds en 30 secondes, l’appli te propose des destinations qui te ressemblent, avec ses conseils.</div>
+      <div class="v-f2"><div class="v-f"><label>Quand ?</label><select class="v-in" id="in-mois"><option value="">Je suis flexible</option>${MOIS.slice(1).map((m,i)=>`<option value="${i+1}"${+S.mois===i+1?' selected':''}>${m}</option>`).join('')}</select></div>
+        <div class="v-f"><label>Combien de jours ?</label><select class="v-in" id="in-duree">${[['3','Week-end (2–3 j)'],['5','4–5 jours'],['7','1 semaine'],['12','10–14 jours'],['21','3 semaines et +']].map(([v,l])=>`<option value="${v}"${S.duree===v?' selected':''}>${l}</option>`).join('')}</select></div></div>
+      <div class="v-f2"><div class="v-f"><label>Budget total / personne</label><input class="v-in" id="in-budget" inputmode="numeric" value="${esc(S.budget)}" placeholder="€, vols compris"></div>
+        <div class="v-f"><label>Vol au maximum</label><select class="v-in" id="in-vol">${[['3','3 h'],['6','6 h'],['12','12 h'],['99','Peu importe']].map(([v,l])=>`<option value="${v}"${S.vol===v?' selected':''}>${l}</option>`).join('')}</select></div></div>
+      <div class="v-f2"><div class="v-f"><label>Climat</label><select class="v-in" id="in-climat">${[['','Peu importe'],['chaud','Chaud'],['doux','Doux'],['frais','Frais']].map(([v,l])=>`<option value="${v}"${S.climat===v?' selected':''}>${l}</option>`).join('')}</select></div>
+        <div class="v-f"><label>Avec qui ?</label><select class="v-in" id="in-qui">${[['solo','Seul(e)'],['couple','En couple'],['amis','Entre amis'],['famille','En famille']].map(([v,l])=>`<option value="${v}"${S.qui===v?' selected':''}>${l}</option>`).join('')}</select></div></div>
+      <div class="v-f"><label>Envies (plusieurs choix)</label><div class="v-filters" style="flex-wrap:wrap">${INSP_TAGS.map(([k,l])=>`<button type="button" class="v-chip${(S.tags||[]).includes(k)?' on':''}" data-tag="${k}" onclick="this.classList.toggle('on')">${l}</button>`).join('')}</div></div>
+      <div class="v-actions"><button type="button" class="v-btn" onclick="CV.inspireGo()">✨ Me proposer des destinations</button><button type="button" class="v-btn sec" onclick="CV.inspireDemo()">👀 Exemple</button></div>`);
+  }
+  function inspireDemo(){ inspire({mois:'5', duree:'7', budget:'1100', vol:'3', climat:'chaud', tags:['mer','gastronomie','culture'], qui:'couple'}); }
+  function inspireGo(){
+    const g = id => document.getElementById(id).value;
+    const S = M.insp = {mois:g('in-mois'), duree:g('in-duree'), budget:g('in-budget'), vol:g('in-vol'), climat:g('in-climat'), qui:g('in-qui'), tags:[...document.querySelectorAll('[data-tag].on')].map(b=>b.dataset.tag)}; persist();
+    const days = +S.duree, bud = num(S.budget), mois = +S.mois, maxVol = +S.vol;
+    const scored = DESTS.map(d=>{
+      const [nom, pays, cc, tg, best, vol, perDay, dur, tip, clim] = d, tags = tg.split(' ');
+      const volCost = vol < 0.5 ? 60 : vol < 3 ? 180 : vol < 5 ? 300 : vol < 9 ? 650 : 900, est = Math.round(volCost + perDay * days);
+      let sc = 0; const why = [];
+      const hit = S.tags.filter(t=>tags.includes(t)); sc += hit.length * 3; if(hit.length) why.push('✔︎ ' + hit.join(', '));
+      if(mois){ if(best.includes(mois)){ sc += 4; why.push('📅 très bonne période'); } else sc -= 3; }
+      if(vol > maxVol){ sc -= 6; } else if(maxVol < 99) why.push(vol < 0.5 ? '🚗 sans avion' : `✈️ ${String(vol).replace('.', ',')} h de vol`);
+      if(bud){ if(est <= bud){ sc += 2; why.push(`💶 ≈ ${eur(est)} / pers.`); } else if(est > bud*1.25) sc -= 4; else sc -= 1; }
+      if(S.climat && clim === S.climat) sc += 2;
+      const dmin = parseInt(dur); if(days < dmin * 0.6) sc -= 3;
+      if(S.qui === 'famille' && tags.includes('fête')) sc -= 1;
+      return {d, sc, est, why, nom, pays, cc, dur, tip, best};
+    }).sort((a,b)=>b.sc-a.sc).slice(0, 6);
+    const MO = ['jan','fév','mars','avr','mai','juin','juil','août','sept','oct','nov','déc'];
+    openSheet(`<h2>✨ Mes idées de voyage</h2><div class="v-sum-small" style="margin-bottom:8px">Classées selon tes réponses. Budgets = ordres de grandeur (vols + vie sur place), à vérifier avec Escale.</div>
+      ${scored.map((x,i)=>`<div class="cv-idea"><div class="hd"><b>${flag(x.cc)} ${esc(x.nom)}</b><small>${esc(x.pays)} · idéal ${esc(x.dur)} · meilleurs mois : ${x.best.map(m=>MO[m-1]).join(', ')}</small></div>
+        <div class="why">${x.why.map(esc).join(' · ') || 'Une idée à explorer'}</div><p>💡 ${esc(x.tip)}</p>
+        <div class="cv-row" style="gap:6px;flex-wrap:wrap"><button type="button" class="v-day-edit" onclick="CV.inspireCreate(${DESTS.indexOf(x.d)})">🧳 Créer ce voyage</button><a class="v-day-edit" href="${ESCALE}">✈️ Prix des vols</a><a class="v-day-edit" href="https://fr.wikipedia.org/wiki/${encodeURIComponent(x.nom.split(' (')[0])}" target="_blank" rel="noopener">📖 Découvrir</a></div></div>`).join('')}
+      <div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.inspire()">← Modifier mes réponses</button><button type="button" class="v-btn sec cv-sq" onclick="CV.close()">✕</button></div>`);
+  }
+  function inspireCreate(i){
+    const d = DESTS[i]; if(!d) return; const S = M.insp || {}, days = +(S.duree||7);
+    const now = new Date(); let y = now.getFullYear(), m = +S.mois || (d[4].find(x=>x > now.getMonth()+1) || d[4][0]); if(m <= now.getMonth()+1) y++;
+    const debut = `${y}-${String(m).padStart(2,'0')}-01`, fin = addDays(debut, days), tid = 't' + uid(), ville = d[0].split(' (')[0];
+    putMany([{id:tid, type:'trip', titre:ville + ' · ' + (days >= 7 ? Math.round(days/7) + ' semaine' + (days >= 14 ? 's' : '') : days + ' jours'), sous:ville, debut, fin, voyageurs:M.me ? [M.me] : [], objectif:num(S.budget)||''},
+      {id:'i'+uid()+'h', type:'item', trip:tid, cat:'hotel', titre:ville, date:debut, dateFin:fin, statut:'todo', partage:'grp', qui:[]}], '🧳 Voyage créé : ' + ville);
+    closeSheet(true); M.mode = 'prep'; M.tab = 'prog'; go(tid);
+    setTimeout(()=>alert(`🧳 « ${ville} » est créé, du ${fdate(debut)} au ${fdate(fin)} (dates modifiables).\n\nEnsuite : ✈️ cherche les vols avec Escale, 🔎 « Que voir » pour les visites, 🪄 « Remplir mes journées ».`), 300);
+  }
 
   function infoHTML(){
     return `<div class="cv-info">
@@ -7165,7 +7491,7 @@ ${pm.join('\n')}</Document></kml>`;
     envF:setEnvF, envP:setEnvP, like, editWish, saveWish, delWish, wishToTrip,
     editTrip, saveTrip, delTrip, closeTrip, reopenTrip,
     live, one, echAdd, echDel, echSpread, echToggle, lisser, echReset, echRange, echRangeReset,
-    planDay, plCfg, plAdd, plDel, plOpt, wizard, zipSheet, zipExport, zipImport, worldFly, worldStep, worldStory, cfSegGo, trkToggle, modeGo, bilanClose, albumSheet, albCover, albumGo, tripShare, tripShareSheet, tripInvite, tripUnshare, tripJoin, tripJoinGo, tripWho, tripWhoSet, impSheet, impPick, jrSheet, jrTog, jrAll, worldMap, worldMode, worldOpen, worldClose, pjAdd, pjDel, pjOpen, cfSheet, cfGo, tlCo2, hereNow, tlStats, tlKml, tlFill, tlFillGo, rcView, rcAttach, tlIcsGo, capSet, shopSheet, shopAdd, shopTick, shopClear, rembAsk, pollNew, pollSave, pollVote, pollClose, pollDel, pdfRoute, pdfJournal, pdfShare, pdfOpen, pkgPick, pkgApply, hydrateMaps, renderOutils, tlDay, tlIcs, fxTool, fxFill, tlMeteo, tlReceipt, tlRcPhoto, tlRcOcr, tlRcSave, tlReceipts, tlMap, tlBags, tlBagsGo, tlDocs, tlDocEdit, tlDocSave, tlDocDel, tlJournal, pkgSheet, pkgExport, pkgImport, pinToggle, shareSheet, shareLink, askErase, tutoSheet, escaleTuto, demoLoad, demoDel, demoReset, wzGo, wzDates, wzEt, wzSum, wzTpl, wzCreate,
+    planDay, plCfg, plAdd, plDel, plOpt, wizard, partsSheet, partsSave, discInfo, discBack, newTrip, blankTrip, inspire, inspireDemo, inspireGo, inspireCreate, zipSheet, zipExport, zipImport, worldFly, worldStep, worldStory, cfSegGo, trkToggle, modeGo, bilanClose, albumSheet, albCover, albumGo, tripShare, tripShareSheet, tripInvite, tripUnshare, tripJoin, tripJoinGo, tripWho, tripWhoSet, impSheet, impPick, jrSheet, jrTog, jrAll, worldMap, worldMode, worldOpen, worldClose, pjAdd, pjDel, pjOpen, cfSheet, cfGo, tlCo2, hereNow, tlStats, tlKml, tlFill, tlFillGo, rcView, rcAttach, tlIcsGo, capSet, shopSheet, shopAdd, shopTick, shopClear, rembAsk, pollNew, pollSave, pollVote, pollClose, pollDel, pdfRoute, pdfJournal, pdfShare, pdfOpen, pkgPick, pkgApply, hydrateMaps, renderOutils, tlDay, tlIcs, fxTool, fxFill, tlMeteo, tlReceipt, tlRcPhoto, tlRcOcr, tlRcSave, tlReceipts, tlMap, tlBags, tlBagsGo, tlDocs, tlDocEdit, tlDocSave, tlDocDel, tlJournal, pkgSheet, pkgExport, pkgImport, pinToggle, shareSheet, shareLink, askErase, tutoSheet, escaleTuto, demoLoad, demoDel, demoReset, wzGo, wzDates, wzEt, wzSum, wzTpl, wzCreate,
     pickColor, newProfile, editProfile, saveProfile, delProfile, whoSheet, setMe,
     genCode, syncOn, syncOff, syncNow, shareCode, exportShare, exportDownload, importPick, wipe, obCreate, obJoin,
     _R:()=>R, _M:()=>M};
