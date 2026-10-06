@@ -1178,7 +1178,25 @@ const CV = (function(){
     r.updatedAt = Math.max(n, (r.updatedAt||0) + 1);
     r.updatedBy = M.me;
   }
-  function markDirty(id){ if(R[id] && R[id].demo) return; if(!M.dirty.includes(id)) M.dirty.push(id); }   // le voyage de démo reste sur ce téléphone
+  /* Partage voyage par voyage : M.tripSpace = {idVoyage: code} (gardé sur ce téléphone seulement),
+     M.spaces = [{code, since, dirty, last, err}]. Un voyage sans code propre suit le carnet principal (M.sync). */
+  const TS = () => M.tripSpace || (M.tripSpace = {});
+  const spaceObj = code => (M.spaces || (M.spaces = [])).find(x=>x.code===code);
+  function targets(r){
+    if(!r) return ['main'];
+    const sp = id => { const c = TS()[id]; return c && spaceObj(c) ? c : null; };
+    if(r.type==='trip') return [sp(r.id) || 'main'];
+    if(r.trip) return [sp(r.trip) || 'main'];
+    if(r.type==='profile'){ const out = new Set(['main']); Object.entries(TS()).forEach(([tid, c])=>{ const t = R[tid]; if(t && spaceObj(c) && (t.voyageurs||[]).includes(r.id)) out.add(c); }); return [...out]; }
+    return ['main'];
+  }
+  function markDirty(id){
+    const r = R[id]; if(r && r.demo) return;
+    targets(r).forEach(t=>{ const L = t==='main' ? M.dirty : spaceObj(t).dirty || (spaceObj(t).dirty = []); if(!L.includes(id)) L.push(id);
+      // un voyage partagé emporte les profils de ses voyageurs
+      if(t !== 'main' && r && r.type==='trip') (r.voyageurs||[]).forEach(pid=>{ if(R[pid] && !L.includes(pid)) L.push(pid); }); });
+  }
+  const isDirty = id => M.dirty.includes(id) || (M.spaces||[]).some(x=>(x.dirty||[]).includes(id));
   function put(r, msg){ stamp(r); R[r.id] = r; markDirty(r.id); persist(); toast(msg); queueSync(); return r; }
   function putMany(arr, msg){ arr.forEach(r=>{ stamp(r); R[r.id] = r; markDirty(r.id); }); persist(); toast(msg); queueSync(); }
   function drop(id, msg){ const r = R[id]; if(!r) return; r.deleted = true; put(r, msg || '🗑 Supprimé'); }
@@ -1307,7 +1325,7 @@ const CV = (function(){
     if(!u && /^https?:/.test(location.protocol)) u = location.origin;
     return u ? u.replace(/\/+$/,'') + '/api/sync' : '';
   }
-  function queueSync(){ if(!M.sync.on) return; syncDot(); clearTimeout(syncT); syncT = setTimeout(()=>syncNow(), 1200); }
+  function queueSync(){ if(!M.sync.on && !(M.spaces||[]).length) return; syncDot(); clearTimeout(syncT); syncT = setTimeout(()=>syncNow(), 1200); }
   /* ── Chiffrement de bout en bout (version publique) ──
      Le code du carnet ne quitte jamais le téléphone : le serveur reçoit seulement une empreinte
      (pour ranger les données) et des fiches/photos chiffrées en AES-256-GCM avec une clé tirée du code. */
@@ -1316,27 +1334,27 @@ const CV = (function(){
   const hex = buf => [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
   const b64 = u8 => { let s = ''; for(let i=0;i<u8.length;i+=0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i+0x8000)); return btoa(s); };
   const unb64 = s => Uint8Array.from(atob(s), ch=>ch.charCodeAt(0));
-  let ck = null;
-  async function keys(){
-    const code = M.sync.code;
-    if(ck && ck.code===code) return ck;
+  let ck = {};
+  async function keys(code){
+    code = code || M.sync.code;
+    if(ck[code]) return ck[code];
     const base = await crypto.subtle.importKey('raw', te.encode(code), 'PBKDF2', false, ['deriveKey','deriveBits']);
     const key = await crypto.subtle.deriveKey({name:'PBKDF2', salt:te.encode('carnet-voyage/e2e/v1'), iterations:200000, hash:'SHA-256'}, base, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']);
     const hb = await crypto.subtle.deriveBits({name:'PBKDF2', salt:te.encode('carnet-voyage/ids/v1'), iterations:200000, hash:'SHA-256'}, base, 256);
     const hkey = await crypto.subtle.importKey('raw', hb, {name:'HMAC', hash:'SHA-256'}, false, ['sign']);
     const token = hex(await crypto.subtle.digest('SHA-256', te.encode('carnet-voyage/space/v1:' + code)));
-    return ck = {code, key, hkey, token};
+    return ck[code] = {code, key, hkey, token};
   }
-  async function authCode(){ return E2E ? (await keys()).token : M.sync.code; }
-  async function sid(id){ if(!E2E) return id; return 'x' + hex(await crypto.subtle.sign('HMAC', (await keys()).hkey, te.encode(id))).slice(0, 40); }
-  async function seal(bytes){
+  async function authCode(code){ code = code || M.sync.code; return E2E ? (await keys(code)).token : code; }
+  async function sid(id, code){ if(!E2E) return id; return 'x' + hex(await crypto.subtle.sign('HMAC', (await keys(code)).hkey, te.encode(id))).slice(0, 40); }
+  async function seal(bytes, code){
     const iv = crypto.getRandomValues(new Uint8Array(12));
-    const ct = new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM', iv}, (await keys()).key, bytes));
+    const ct = new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM', iv}, (await keys(code)).key, bytes));
     const out = new Uint8Array(12 + ct.length); out.set(iv); out.set(ct, 12); return out;
   }
-  async function unseal(u8){ return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM', iv:u8.slice(0,12)}, (await keys()).key, u8.slice(12))); }
-  async function sealRec(r){ return {id: await sid(r.id), updatedAt: r.updatedAt, enc: b64(await seal(te.encode(JSON.stringify(r))))}; }
-  async function openRec(x){ if(!x || !x.enc) return E2E ? null : x; try { return JSON.parse(td.decode(await unseal(unb64(x.enc)))); } catch(e){ return null; } }
+  async function unseal(u8, code){ return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM', iv:u8.slice(0,12)}, (await keys(code)).key, u8.slice(12))); }
+  async function sealRec(r, code){ return {id: await sid(r.id, code), updatedAt: r.updatedAt, enc: b64(await seal(te.encode(JSON.stringify(r)), code))}; }
+  async function openRec(x, code){ if(!x || !x.enc) return E2E ? null : x; try { return JSON.parse(td.decode(await unseal(unb64(x.enc), code))); } catch(e){ return null; } }
   // Bandeau « chiffrement en cours » (version publique) : montre que les données partent chiffrées
   let cbT = null, cbSince = 0;
   function cryptShow(txt){
@@ -1350,14 +1368,14 @@ const CV = (function(){
     clearTimeout(cbT); cbT = setTimeout(()=>{ el.classList.remove('show'); cbSince = 0; }, wait);
   }
 
-  async function call(since, changes){
+  async function call(since, changes, code){
     const url = apiUrl(); if(!url) throw new Error('Adresse du serveur inconnue');
-    if(E2E) changes = await Promise.all(changes.map(sealRec));
-    const res = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json','X-Carnet-Code':await authCode()}, body:JSON.stringify({since, changes})});
+    if(E2E) changes = await Promise.all(changes.map(r=>sealRec(r, code)));
+    const res = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json','X-Carnet-Code':await authCode(code)}, body:JSON.stringify({since, changes})});
     let j = {}; try { j = await res.json(); } catch(e){}
     if(!res.ok) throw new Error(j.error || ('Erreur serveur ' + res.status));
     if(!Array.isArray(j.records)) throw new Error('Réponse inattendue du serveur');
-    if(E2E) j.records = (await Promise.all(j.records.map(openRec))).filter(Boolean);
+    if(E2E) j.records = (await Promise.all(j.records.map(x=>openRec(x, code)))).filter(Boolean);
     return j;
   }
   function mergeRemote(records){
@@ -1365,19 +1383,38 @@ const CV = (function(){
     for(const r of records){
       if(!r || !r.id) continue;
       const l = R[r.id];
-      if(l && M.dirty.includes(r.id) && (l.updatedAt||0) > (r.updatedAt||0)) continue;
+      if(l && isDirty(r.id) && (l.updatedAt||0) > (r.updatedAt||0)) continue;
       if(!l || (r.updatedAt||0) > (l.updatedAt||0)){ R[r.id] = r; changed++; }
     }
     return changed;
   }
+  async function syncSpace(sp){
+    sp.dirty = sp.dirty || []; let changed = 0;
+    try {
+      const ids = [...sp.dirty]; let first = true;
+      for(let i = 0; first || i < ids.length; i += 500){
+        first = false;
+        const chunk = ids.slice(i, i+500).map(id => R[id]).filter(Boolean);
+        const sent = {}; chunk.forEach(c => sent[c.id] = c.updatedAt);
+        const j = await call(Math.max(0, (sp.since||0) - 5000), chunk, sp.code);
+        sp.dirty = sp.dirty.filter(id => !(id in sent) || (R[id] && R[id].updatedAt !== sent[id]));
+        j.records.forEach(r=>{ if(r && r.type==='trip' && !TS()[r.id]) TS()[r.id] = sp.code; });
+        changed += mergeRemote(j.records); sp.since = j.now;
+      }
+      sp.last = Date.now(); sp.err = '';
+    } catch(e){ sp.err = e.message || String(e); }
+    return changed;
+  }
   async function syncNow(manual){
-    if(!M.sync.on || !M.sync.code) return;
+    const mainOn = !!(M.sync.on && M.sync.code);
+    if(!mainOn && !(M.spaces||[]).length) return;
     if(syncing){ again = true; return; }
     syncing = true; syncDot();
     const showC = E2E && (manual || M.dirty.length > 0);
     if(showC) cryptShow('🔐 Chiffrement de tes données en cours…');
     let changed = 0;
     try {
+      if(mainOn){
       const ids = [...M.dirty];
       let first = true;
       for(let i = 0; first || i < ids.length; i += 500){
@@ -1390,6 +1427,8 @@ const CV = (function(){
         M.sync.since = j.now;
       }
       M.sync.last = Date.now(); M.sync.err = '';
+      }
+      for(const sp of (M.spaces||[])) changed += await syncSpace(sp);
       if(showC) cryptHide('🔒 Données chiffrées et synchronisées');
       else if(manual) toast('☁️ Synchronisé');
       setTimeout(uploadQueue, 100);
@@ -1455,11 +1494,79 @@ const CV = (function(){
     me.innerHTML = `${esc(M.me ? (pname(M.me)[0]||'?').toUpperCase() : '?')}<span class="sd" id="cv-sd"></span>`;
     syncDot();
   }
+  /* ══════════ 🔗 Partage voyage par voyage ══════════ */
+  function tripShare(id){
+    const t = R[id || M.trip]; if(!t) return;
+    const code = TS()[t.id];
+    if(code && spaceObj(code)) return tripShareSheet(t.id);
+    if(!apiUrl()){ alert('Le partage a besoin de l’appli en ligne (adresse du serveur).'); return; }
+    if(!confirm(`Partager « ${t.titre} » avec son propre code ?\n\nSeules les personnes qui ont ce code verront CE voyage (et pas tes autres voyages).\nLes compagnons déjà synchronisés par le code principal gardent ce qu’ils ont déjà, mais ne recevront plus les nouveautés de ce voyage.`)) return;
+    const c = genCode(); (M.spaces = M.spaces || []).push({code:c, since:0, dirty:[], last:0, err:''}); TS()[t.id] = c;
+    Object.values(R).filter(r=>!r.demo && (r.id===t.id || r.trip===t.id)).forEach(r=>markDirty(r.id));
+    persist(); syncNow(true); tripShareSheet(t.id);
+  }
+  function tripShareSheet(id){
+    const t = R[id], code = TS()[id], sp = spaceObj(code) || {};
+    openSheet(`<h2>🔗 ${esc(t.titre)}</h2><div class="v-sum-small" style="margin-bottom:8px">Ce voyage a son propre code : seuls ceux qui l’ont le voient. Tes autres voyages restent privés.</div>
+      <div class="cv-bigcode">${esc(code)}</div>
+      <div class="v-sum-small" style="margin:6px 0 10px">État : ${sp.err ? '🔴 ' + esc(sp.err) : (sp.dirty||[]).length ? '🟠 ' + sp.dirty.length + ' modif(s) en attente' : sp.last ? '🟢 À jour (' + when(sp.last) + ')' : '⏳ première synchro…'}</div>
+      <button class="v-btn" onclick="CV.tripInvite('${id}')">📤 Envoyer l’invitation (adresse + code)</button>
+      <button class="v-btn sec" onclick="CV.syncNow(true)">🔄 Synchroniser maintenant</button>
+      <button class="v-btn danger" onclick="CV.tripUnshare('${id}')">Arrêter le partage de ce voyage sur ce téléphone</button>
+      <div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.close()">Fermer</button></div>`);
+  }
+  async function tripInvite(id){
+    const t = R[id], url = M.sync.url || (/^https?:/.test(location.protocol) ? location.origin + location.pathname : '');
+    const text = `Rejoins notre voyage « ${t.titre} » 🧳\n${url}\nCode du voyage : ${TS()[id]}\n(Mes voyages → 🔗 Rejoindre un voyage partagé → colle le code)`;
+    if(navigator.share){ try { await navigator.share({title:t.titre, text}); return; } catch(e){ return; } }
+    try { await navigator.clipboard.writeText(text); toast('📋 Invitation copiée'); } catch(e){ prompt('Copie ce texte :', text); }
+  }
+  function tripUnshare(id){
+    if(!confirm('Arrêter le partage de ce voyage sur ce téléphone ?\nTon voyage reste ici ; tu ne recevras plus les modifications des autres. (Il repasse dans ton carnet principal si celui-ci est synchronisé.)')) return;
+    const code = TS()[id]; delete TS()[id];
+    if(!Object.values(TS()).includes(code)) M.spaces = (M.spaces||[]).filter(x=>x.code!==code);
+    Object.values(R).filter(r=>!r.demo && (r.id===id || r.trip===id)).forEach(r=>markDirty(r.id));
+    persist(); closeSheet(true); refresh();
+  }
+  function tripJoin(){
+    const hosted = /^https?:/.test(location.protocol);
+    openSheet(`<h2>🔗 Rejoindre un voyage partagé</h2><div class="v-sum-small" style="margin-bottom:8px">Colle le <b>code du voyage</b> reçu : ce voyage s’ajoute à tes voyages, sans rien partager des tiens.</div>
+      ${hosted || M.sync.url ? '' : `<div class="v-f"><label>Adresse de l’appli en ligne</label><input class="v-in" id="tj-url" placeholder="https://carnet-voyage.pages.dev"></div>`}
+      <div class="v-f"><label>Code du voyage</label><input class="v-in" id="tj-code" placeholder="XXXX-XXXX-XXXX" autocapitalize="characters" autocomplete="off"></div>
+      <div id="tj-msg" class="v-sum-small"></div>
+      <div class="v-actions"><button type="button" class="v-btn" onclick="CV.tripJoinGo()">🔗 Rejoindre</button><button type="button" class="v-btn sec cv-sq" onclick="CV.close()">✕</button></div>`);
+  }
+  async function tripJoinGo(){
+    const code = (document.getElementById('tj-code').value||'').trim().toUpperCase(), u = document.getElementById('tj-url'), msg = document.getElementById('tj-msg');
+    if(code.length < 8){ msg.textContent = 'Colle le code complet (au moins 8 caractères).'; return; }
+    if(u && u.value.trim()) M.sync.url = u.value.trim();
+    if(code === M.sync.code){ msg.textContent = 'C’est le code de ton carnet principal : tu as déjà ces voyages.'; return; }
+    if(!spaceObj(code)) (M.spaces = M.spaces || []).push({code, since:0, dirty:[], last:0, err:''});
+    msg.textContent = '📡 Connexion…';
+    const sp = spaceObj(code); await syncSpace(sp);
+    if(sp.err){ msg.textContent = '⚠️ ' + sp.err; return; }
+    const got = Object.entries(TS()).filter(([,c])=>c===code).map(([tid])=>R[tid]).filter(t=>t && !t.deleted);
+    if(!got.length){ M.spaces = M.spaces.filter(x=>x.code!==code); persist(); msg.textContent = 'Aucun voyage trouvé avec ce code. Vérifie-le auprès de la personne qui te l’a envoyé.'; return; }
+    persist(); closeSheet(true); go(got[0].id); refresh();
+    const t = got[0];
+    if(M.me && !(t.voyageurs||[]).includes(M.me)) tripWho(t.id); else toast('🔗 Voyage « ' + t.titre + ' » ajouté');
+  }
+  function tripWho(id){
+    const t = R[id];
+    openSheet(`<h2>👤 Qui es-tu dans « ${esc(t.titre)} » ?</h2><div class="v-sum-small" style="margin-bottom:8px">Pour signer tes ajouts et compter ta part du budget.</div>
+      <div class="cv-plist">${(t.voyageurs||[]).filter(prof).map(pid=>`<button class="cv-prow" onclick="CV.tripWhoSet('${id}','${pid}')">${pchip(pid)}<span>C’est moi</span></button>`).join('')}</div>
+      <button class="v-btn sec" style="margin-top:10px" onclick="CV.tripWhoSet('${id}','')">＋ Je n’y suis pas : m’ajouter${M.me && prof(M.me) ? ' (' + esc(pname(M.me)) + ')' : ''}</button>`, true);
+  }
+  function tripWhoSet(id, pid){
+    if(pid){ M.me = pid; persist(); }
+    else { const t = clone(R[id]); t.voyageurs = [...new Set([...(t.voyageurs||[]), M.me])]; put(t, '👋 Tu es ajouté au voyage'); }
+    closeSheet(true); applyMode(); refresh(); queueSync();
+  }
   function tripSheet(){
     const cur = M.trip;
     openSheet(`<h2>Mes voyages</h2>
       <div class="cv-triplist">${trips().map(t=>`<button class="cv-tripcard${t.id===cur?' on':''}" onclick="CV.close();CV.go('${t.id}')">
-          <span class="tt">${esc(t.titre)}${t.archived?' <small>✓ clôturé</small>':''}</span>
+          <span class="tt">${TS()[t.id] ? '🔗 ' : ''}${esc(t.titre)}${t.archived?' <small>✓ clôturé</small>':''}</span>
           <span class="td">${tripDatesLong(t) || 'dates à fixer'}</span>
           <span class="ins">${(t.voyageurs||[]).filter(prof).map(ini).join('')}</span></button>`).join('')}
         ${!PUBLIC && !(R.t2026 && !R.t2026.deleted) ? `<button class="cv-tripcard legacy" onclick="CV.convert2026()"><span class="tt">Road trip Europe</span><span class="td">juillet 2026 · touche pour le passer au nouveau format</span></button>` : ''}
@@ -1470,6 +1577,8 @@ const CV = (function(){
       <button class="v-btn sec" onclick="CV.psPick()">📥 Importer des voyages Polarsteps</button>
       ${!PUBLIC && !(R.t2025 && !R.t2025.deleted) ? `<button class="v-btn sec" onclick="CV.seedUSA2025()">📦 Ajouter l’archive USA 2025</button>` : ''}
       ${ESCALE ? `<a class="v-btn sec cv-escale" href="${ESCALE}">✈️ Chercher des vols avec Escale</a><button class="v-btn sec" onclick="CV.escaleTuto()">🎓 Tuto Escale premium</button>` : ''}
+      ${trip() && !trip().demo ? `<button class="v-btn sec" onclick="CV.tripShare('${M.trip}')">🔗 ${TS()[M.trip] ? 'Partage de « ' + esc(trip().titre) + ' » (code du voyage)' : 'Partager « ' + esc(trip().titre) + ' » seul (son propre code)'}</button>` : ''}
+      <button class="v-btn sec" onclick="CV.tripJoin()">🔗 Rejoindre un voyage partagé (code)</button>
       ${trip() ? `<button class="v-btn sec" onclick="CV.editTrip('${M.trip}')">✏️ Modifier « ${esc(trip().titre)} »</button>` : ''}
       <div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.close()">✕ Fermer</button></div>`);
   }
@@ -2320,7 +2429,12 @@ const CV = (function(){
         </div>`;
     if(!isInstalled()) h += `<div class="v-box">${installHTML(false)}</div>`;
     if(PUBLIC) h += `<div class="v-box"><h3>🔐 Confidentialité</h3><p>Ton carnet est chiffré avec son code : personne d’autre que vous ne peut le lire.</p><button class="v-btn sec" onclick="CV.infoSheet()">Comment ça marche ?</button>${s.on ? `<button class="v-btn sec" onclick="CV.codeSheet()">📝 Revoir mon code</button>` : ''}</div>`;
-    h += `<div class="v-box"><h3>☁️ Carnet partagé</h3>`;
+    { const sh = Object.entries(TS()).map(([tid,c])=>({t:R[tid], c, sp:spaceObj(c)})).filter(x=>x.t && x.sp);
+      h += `<div class="v-box"><h3>🔗 Voyages partagés séparément</h3><p>Un voyage peut avoir son propre code : seuls ceux qui l’ont le voient (par ex. Claire voit 2 voyages, Alex 1 seul). Ton code principal ci-dessous partage le reste.</p>
+        ${sh.map(x=>`<button class="cv-prow" onclick="CV.tripShareSheet('${x.t.id}')"><span>🔗 <b>${esc(x.t.titre)}</b></span><span>${x.sp.err ? '🔴' : (x.sp.dirty||[]).length ? '🟠' : '🟢'} ${esc(x.c)}</span></button>`).join('') || '<div class="v-sum-small">Aucun pour l’instant.</div>'}
+        ${trip() && !trip().demo && !TS()[M.trip] ? `<button class="v-btn sec" onclick="CV.tripShare('${M.trip}')">🔗 Partager « ${esc(trip().titre)} » seul</button>` : ''}
+        <button class="v-btn sec" onclick="CV.tripJoin()">🔗 Rejoindre un voyage partagé</button></div>`; }
+    h += `<div class="v-box"><h3>☁️ Carnet partagé (code principal)</h3>`;
     if(s.on){
       h += `<p>État : <b>${state}</b><br>Dernière synchro : ${s.last ? when(s.last) : 'jamais'}<br>Code du carnet : <b class="cv-code">${esc(s.code)}</b>${s.url?'<br>Serveur : '+esc(s.url):''}</p>
         <button class="v-btn" onclick="CV.syncNow(true)">🔄 Synchroniser maintenant</button>
@@ -3165,14 +3279,21 @@ const CV = (function(){
   })();
   const urls = {};
   const photoApi = () => { const u = apiUrl(); return u ? u.replace(/\/sync$/, '/photo') : ''; };
+  // à quel carnet appartient une photo ? (celui de la fiche qui la contient)
+  function photoCode(id){
+    const base = String(id).replace(/\.t$/,'');
+    const r = Object.values(R).find(x=>x && ((x.photos||[]).includes(base) || x.recu===base || (x.pj||[]).some(p=>p.id===base)));
+    const t = targets(r)[0];
+    return t === 'main' ? (M.sync.on && M.sync.code ? M.sync.code : null) : t;
+  }
   async function photoBlob(id){
     try { const o = await IDB.get(id); if(o && o.blob) return o.blob; } catch(e){}
-    if(!M.sync.on || !M.sync.code || !photoApi()) return null;
+    const code = photoCode(id); if(!code || !photoApi()) return null;
     try {
-      const r = await fetch(photoApi() + '?id=' + encodeURIComponent(await sid(id)), {headers:{'X-Carnet-Code':await authCode()}});
+      const r = await fetch(photoApi() + '?id=' + encodeURIComponent(await sid(id, code)), {headers:{'X-Carnet-Code':await authCode(code)}});
       if(!r.ok) return null;
       let b = await r.blob();
-      if(E2E) b = new Blob([await unseal(new Uint8Array(await b.arrayBuffer()))], {type:'image/jpeg'});
+      if(E2E) b = new Blob([await unseal(new Uint8Array(await b.arrayBuffer()), code)], {type:'image/jpeg'});
       try { await IDB.put({id, blob:b, up:1}); } catch(e){}
       return b;
     } catch(e){ return null; }
@@ -3213,20 +3334,21 @@ const CV = (function(){
   }
   let uploading = false;
   async function uploadQueue(){
-    if(uploading || !M.sync.on || !M.sync.code || !(M.pq||[]).length || !photoApi()) return;
+    if(uploading || !(M.pq||[]).length || !photoApi()) return;
+    if(!(M.sync.on && M.sync.code) && !(M.spaces||[]).length) return;
     uploading = true;
     cryptShow('🔐 Chiffrement des photos… (' + Math.ceil(M.pq.length/2) + ')');
     try {
-      while(M.pq.length){
-        const id = M.pq[0];
+      for(const id of [...M.pq]){
+        const code = photoCode(id); if(!code) continue;          // pas encore de carnet en ligne pour cette photo : on la garde
         let o = null; try { o = await IDB.get(id); } catch(e){}
         if(o && o.blob){
-          const body = E2E ? new Blob([await seal(new Uint8Array(await o.blob.arrayBuffer()))], {type:'image/jpeg'}) : o.blob;
-          const r = await fetch(photoApi(), {method:'POST', headers:{'X-Carnet-Code':await authCode(), 'X-Photo-Id':await sid(id), 'Content-Type':'image/jpeg'}, body});
+          const body = E2E ? new Blob([await seal(new Uint8Array(await o.blob.arrayBuffer()), code)], {type:'image/jpeg'}) : o.blob;
+          const r = await fetch(photoApi(), {method:'POST', headers:{'X-Carnet-Code':await authCode(code), 'X-Photo-Id':await sid(id, code), 'Content-Type':'image/jpeg'}, body});
           if(!r.ok && r.status !== 413) break;
           try { await IDB.put({id, blob:o.blob, up:1}); } catch(e){}
         }
-        M.pq.shift(); persist(); syncDot();
+        M.pq = M.pq.filter(x=>x!==id); persist(); syncDot();
         if(M.pq.length) cryptShow('🔐 Chiffrement des photos… (' + Math.ceil(M.pq.length/2) + ' restante' + (M.pq.length > 2 ? 's' : '') + ')');
       }
     } catch(e){}
@@ -6543,7 +6665,7 @@ ${pm.join('\n')}</Document></kml>`;
     envF:setEnvF, envP:setEnvP, like, editWish, saveWish, delWish, wishToTrip,
     editTrip, saveTrip, delTrip, closeTrip, reopenTrip,
     live, one, echAdd, echDel, echSpread, echToggle, lisser, echReset, echRange, echRangeReset,
-    planDay, plCfg, plAdd, plDel, plOpt, wizard, impSheet, impPick, jrSheet, jrTog, jrAll, worldMap, worldMode, worldOpen, worldClose, pjAdd, pjDel, pjOpen, cfSheet, cfGo, tlCo2, hereNow, tlStats, tlKml, tlFill, tlFillGo, rcView, rcAttach, tlIcsGo, capSet, shopSheet, shopAdd, shopTick, shopClear, rembAsk, pollNew, pollSave, pollVote, pollClose, pollDel, pdfRoute, pdfJournal, pdfShare, pdfOpen, pkgPick, pkgApply, hydrateMaps, renderOutils, tlDay, tlIcs, fxTool, fxFill, tlMeteo, tlReceipt, tlRcPhoto, tlRcOcr, tlRcSave, tlReceipts, tlMap, tlBags, tlBagsGo, tlDocs, tlDocEdit, tlDocSave, tlDocDel, tlJournal, pkgSheet, pkgExport, pkgImport, pinToggle, shareSheet, shareLink, askErase, tutoSheet, escaleTuto, demoLoad, demoDel, demoReset, wzGo, wzDates, wzEt, wzSum, wzTpl, wzCreate,
+    planDay, plCfg, plAdd, plDel, plOpt, wizard, tripShare, tripShareSheet, tripInvite, tripUnshare, tripJoin, tripJoinGo, tripWho, tripWhoSet, impSheet, impPick, jrSheet, jrTog, jrAll, worldMap, worldMode, worldOpen, worldClose, pjAdd, pjDel, pjOpen, cfSheet, cfGo, tlCo2, hereNow, tlStats, tlKml, tlFill, tlFillGo, rcView, rcAttach, tlIcsGo, capSet, shopSheet, shopAdd, shopTick, shopClear, rembAsk, pollNew, pollSave, pollVote, pollClose, pollDel, pdfRoute, pdfJournal, pdfShare, pdfOpen, pkgPick, pkgApply, hydrateMaps, renderOutils, tlDay, tlIcs, fxTool, fxFill, tlMeteo, tlReceipt, tlRcPhoto, tlRcOcr, tlRcSave, tlReceipts, tlMap, tlBags, tlBagsGo, tlDocs, tlDocEdit, tlDocSave, tlDocDel, tlJournal, pkgSheet, pkgExport, pkgImport, pinToggle, shareSheet, shareLink, askErase, tutoSheet, escaleTuto, demoLoad, demoDel, demoReset, wzGo, wzDates, wzEt, wzSum, wzTpl, wzCreate,
     pickColor, newProfile, editProfile, saveProfile, delProfile, whoSheet, setMe,
     genCode, syncOn, syncOff, syncNow, shareCode, exportShare, exportDownload, importPick, wipe, obCreate, obJoin,
     _R:()=>R, _M:()=>M};
