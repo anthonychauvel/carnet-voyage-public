@@ -1039,6 +1039,7 @@ try { sessionStorage.setItem('app_started','1'); localStorage.setItem('app_last'
   .cv-switch{position:static;height:44px;padding:0 14px;border-radius:12px;
     display:flex;align-items:center;gap:6px;text-decoration:none;font:700 14px/1 -apple-system,system-ui,sans-serif;
     background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--brass-rim);color:var(--brass,#e8c27a);box-shadow:0 4px 14px rgba(0,0,0,.35)}
+  .promo-banner{margin:10px 0 0;padding:10px 12px;border-radius:12px;border:1px solid var(--brass-rim);background:linear-gradient(90deg,rgba(232,194,122,.18),rgba(232,194,122,.05));color:var(--ink);font-size:13px;line-height:1.4}
 </style>
 </head>
 <body>
@@ -1058,7 +1059,8 @@ try { sessionStorage.setItem('app_started','1'); localStorage.setItem('app_last'
     </div>
   </header>
 
-  <div id="targetBanner" class="launch-banner" hidden></div>
+  <div class="promo-banner" id="promoBanner"></div><script>(function(){ var b=document.getElementById("promoBanner"); if(new Date() <= new Date("2026-12-31T23:59:59")) b.innerHTML="🎁 <b>Escale Premium offert jusqu’au 31 décembre 2026</b> — prix réels ⚡, hôtels, voitures, activités. Ensuite, accès premium sur code."; else b.remove(); })();</script>
+<div id="targetBanner" class="launch-banner" hidden></div>
   <div id="installBanner" class="launch-banner install" hidden></div>
 
   <!-- Radar : bloc repliable (fermé par défaut pour alléger l'accueil) -->
@@ -1579,11 +1581,16 @@ let view=new Date(); view.setDate(1);
 // Mode soft/premium : en soft (défaut), les API à token payant (⚡ prix réel, Booking,
 // voitures) sont coupées pour protéger les quotas. Le premium se débloque par code.
 const SOFT_KEY="ESCALE_SOFT";
-let SOFT_MODE = (localStorage.getItem(SOFT_KEY)||"soft")!=="premium";
+// 🎁 Premium offert à tous jusqu'au 31/12/2026 inclus ; ensuite, la phrase d'accès redevient nécessaire.
+const PROMO_END = "2026-12-31", PROMO = new Date() <= new Date(PROMO_END + "T23:59:59");
+let SOFT_MODE = PROMO ? false : (localStorage.getItem(SOFT_KEY)||"soft")!=="premium";
 // Bouton mode soft/premium dans la bulle de bienvenue (protégé par code). Câblé ici, au tout
 // début, pour qu'il fonctionne toujours (le script est en fin de <body> : le bouton existe déjà).
 (function(){
   const mt=document.getElementById("modeToggle"); if(!mt)return;
+  if(PROMO){ mt.textContent = "🎁 PREMIUM offert jusqu’au 31/12"; mt.classList.add("premium");
+    mt.onclick = ()=>alert("🎁 Escale Premium est offert à tous jusqu’au 31 décembre 2026 : ⚡ prix réels, hôtels avec photos, voitures, activités…\nÀ partir du 1er janvier, le premium sera accessible avec la phrase d’accès.");
+    return; }
   mt.textContent = SOFT_MODE ? "◐ Mode SOFT · appuyer pour PREMIUM" : "● Mode PREMIUM · appuyer pour SOFT";
   mt.classList.toggle("premium", !SOFT_MODE);
   mt.onclick=()=>{ if(SOFT_MODE){ const code=prompt("Phrase pour passer en premium :"); if(code===null)return; if(String(code).trim().toLowerCase()!=="je voyage avec tony"){alert("Phrase incorrecte.");return;} localStorage.setItem(SOFT_KEY,"premium"); } else { localStorage.setItem(SOFT_KEY,"soft"); } location.reload(); };
