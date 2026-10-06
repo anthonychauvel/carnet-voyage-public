@@ -1082,6 +1082,8 @@ a.v-btn.cv-escale{display:block;text-align:center;text-decoration:none}
 #wm-map .maplibregl-canvas-container{touch-action:none}
 #cv-world .maplibregl-ctrl-top-right{top:calc(env(safe-area-inset-top,0px) + 58px)}
 #cv-world .maplibregl-ctrl-group button{width:40px;height:40px}
+#cv-world.wm-wait #wm-map{pointer-events:none}
+#cv-world.wm-wait::after{content:'🌍 Préparation de ta carte…';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:5;background:rgba(10,12,30,.8);color:#fff;border-radius:16px;padding:12px 18px;font-weight:700;font-size:.9rem;pointer-events:none}
 .wm-chips{position:absolute;top:calc(env(safe-area-inset-top,0px) + 64px);left:10px;right:64px;display:flex;gap:6px;flex-wrap:wrap;z-index:2;pointer-events:none}
 .wm-chips span{background:rgba(10,12,30,.6);color:#e9e4ff;border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:4px 10px;font-size:.74rem;backdrop-filter:blur(8px)}
 .wm-chips b{color:#fff}
@@ -1869,9 +1871,7 @@ const CV = (function(){
       ? `<button class="v-btn sec" onclick="CV.demoReset()">↺ Relancer le voyage de démo (remis à neuf)</button>
          <button class="v-btn sec" onclick="CV.demoDel()">🗑 Supprimer le voyage de démo</button>`
       : `<button class="v-btn sec" onclick="CV.demoLoad()">👀 Voir les voyages de démo (préparation, en cours, souvenirs)</button>`) : '';
-  function go(id){ M.trip = id; M.who = 'all'; M.modeTrip = M.modeTrip || {};
-    { const ph = R[id] ? tripPhase(R[id]) : 'prep'; const want = ph === 'prep' ? 'prep' : ph === 'live' ? 'live' : (M.mode === 'past' || M.mode === 'bilan' ? M.mode : 'bilan');
-      if(M.mode && M.mode !== want && !(M.mode === 'past' && want === 'bilan')) M.mode = want; M.modeTrip[M.mode === 'past' ? 'bilan' : M.mode] = id; }
+  function go(id){ M.trip = id; M.who = 'all';
     persist(); applyMode(); window.scrollTo({top:0}); }
   function tab(id){
     M.tab = id; persist(); buildTabs(); render();
@@ -6837,16 +6837,13 @@ ${pm.join('\n')}</Document></kml>`;
     el.innerHTML = MODES.map(([k,ic,l])=>`<button type="button" class="${(M.mode||'prep')===k?'on':''}" onclick="CV.modeGo('${k}')"><i>${ic}</i><span>${l}</span>${k==='live' && live ? '<b class="dotlive"></b>' : ''}</button>`).join('');
   }
   function modeGo(k){
-    M.modeTrip = M.modeTrip || {}; if(M.mode && M.mode !== 'past' && M.trip && R[M.trip]){ const ph = tripPhase(R[M.trip]); if((M.mode === 'prep' && ph === 'prep') || (M.mode === 'live' && ph === 'live') || (M.mode === 'bilan' && ph !== 'prep')) M.modeTrip[M.mode] = M.trip; }
-    M.mode = k; const td = isoToday(), ts = trips();
-    { const want = k === 'past' ? 'bilan' : k, keep = M.modeTrip[want] && R[M.modeTrip[want]], okPh = t => k === 'prep' ? tripPhase(t)==='prep' : k === 'live' ? tripPhase(t)==='live' : tripPhase(t)!=='prep';
-      if(keep && !keep.deleted && okPh(keep)) M.trip = keep.id; }
-    const pick = {prep: t=>tripPhase(t)==='prep', live: t=>tripPhase(t)==='live', past: t=>tripPhase(t)==='past', bilan: t=>tripPhase(t)==='past'};
-    const cur = trip();
-    if(k !== 'past' && !(cur && pick[k](cur))){ const c = k==='bilan' ? (ts.filter(t=>tripPhase(t)==='past').sort((a,b)=>(b.fin||'').localeCompare(a.fin||''))[0] || ts.find(pick.bilan)) : ts.find(pick[k]); if(c) M.trip = c.id; }
+    // les 4 onglets montrent tous LE MÊME voyage (celui choisi dans « Mes voyages ») ; seul l'angle de vue change
+    M.mode = k;
+    if(!trip()){ const t = trips()[0]; if(t) M.trip = t.id; }
     if(k === 'prep' && !groupOf(M.tab)) M.tab = 'prog';
     persist(); applyMode(); window.scrollTo({top:0});
   }
+
   function modeRender(){
     const k = M.mode || 'prep', tc = document.getElementById('tabsC'), nav = document.getElementById('cv-nav');
     modeBar();
@@ -6861,9 +6858,9 @@ ${pm.join('\n')}</Document></kml>`;
   }
   function liveHTML(){
     const t = trip(), live = t && tripPhase(t) === 'live';
-    if(!live){ const nx = trips().filter(x=>tripPhase(x)==='prep' && x.debut).sort((a,b)=>a.debut.localeCompare(b.debut))[0];
-      return `<div class="v-box"><h3>📍 Aucun voyage en cours</h3><p>${nx ? `Prochain départ : <b>${esc(nx.titre)}</b>, le ${fdate(nx.debut)}. Cet espace s’allume tout seul le jour J : fiche du jour, steps, traceur, dépenses.` : 'Cet espace s’allume pendant un voyage : fiche du jour, steps, traceur, dépenses.'}</p>
-        <button class="v-btn sec" onclick="CV.modeGo('prep')">🧳 Aller à la préparation</button></div>`; }
+    if(!live){ const ph = t ? tripPhase(t) : 'prep', lv = trips().find(x=>tripPhase(x)==='live');
+      return `<div class="v-box"><h3>📍 ${t ? esc(t.titre) : 'Aucun voyage'}</h3><p>${!t ? 'Crée un voyage pour commencer.' : ph === 'prep' ? (t.debut ? `Ce voyage commence le <b>${fdate(t.debut)}</b> : cet espace s’allumera le jour J (fiche du jour, steps, traceur, dépenses).` : 'Ajoute des dates à ce voyage : cet espace s’allumera le jour J.') : `Ce voyage est terminé depuis le ${fdate(t.fin || t.debut)} : retrouve-le dans 🏁 Bilan.`}</p>
+        ${lv && lv.id !== (t||{}).id ? `<button class="v-btn" onclick="CV.go('${lv.id}')">📍 Ouvrir le voyage en cours : ${esc(lv.titre)}</button>` : ''}</div>`; }
     const k = dayList().indexOf(isoToday()), info = dayInfo(isoToday()), {own, night} = itemsForDay(isoToday());
     const tile = (ic, l, fn) => `<button type="button" class="cv-tile" onclick="${fn}"><i>${ic}</i><span>${l}</span></button>`;
     return `${trkHTML()}${liveCard()}
@@ -7150,17 +7147,19 @@ ${pm.join('\n')}</Document></kml>`;
       if(!window.maplibregl) await loadJs('https://cdn.jsdelivr.net/npm/maplibre-gl@5/dist/maplibre-gl.js');
       const style = {version:8, projection:{type:'globe'}, glyphs:'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
         sources:{
-          sat:{type:'raster', tiles:['https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2020_3857/default/g/{z}/{y}/{x}.jpg'], tileSize:256, maxzoom:15, attribution:'Sentinel-2 cloudless – s2maps.eu par EOX'},
-          lbl:{type:'raster', tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}'], tileSize:256, attribution:'Noms © Esri'}},
+          sat:{type:'raster', tiles:['https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2020_3857/default/g/{z}/{y}/{x}.jpg'], tileSize:256, maxzoom:12, attribution:'Sentinel-2 cloudless – s2maps.eu par EOX'},
+          lbl:{type:'raster', tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}'], tileSize:256, maxzoom:10, attribution:'Noms © Esri'}},
         layers:[{id:'sat', type:'raster', source:'sat', paint:{'raster-saturation':0.15, 'raster-contrast':0.08}}, {id:'lbl', type:'raster', source:'lbl', paint:{'raster-opacity':0.85}}],
         sky:{'sky-color':'#0b1a3a', 'horizon-color':'#5fa8ff', 'fog-color':'#0b1a3a', 'sky-horizon-blend':0.6, 'horizon-fog-blend':0.4, 'fog-ground-blend':0.2, 'atmosphere-blend':['interpolate',['linear'],['zoom'],0,1,5,1,7,0]}};
-      const map = new maplibregl.Map({container:'wm-map', style, center:[8, 38], zoom:1.25, pitch:0, attributionControl:{compact:true}, maxPitch:75,
+      const map = new maplibregl.Map({container:'wm-map', style, center:[8, 38], zoom:1.6, pitch:0, attributionControl:{compact:true}, maxPitch:60, maxZoom:14,
+        pixelRatio:Math.min(2, window.devicePixelRatio || 1), maxTileCacheSize:80, fadeDuration:0, refreshExpiredTiles:false,
         interactive:true, dragPan:true, dragRotate:true, scrollZoom:true, touchZoomRotate:true, touchPitch:true, doubleClickZoom:true, keyboard:true, cooperativeGestures:false});
       map.addControl(new maplibregl.NavigationControl({visualizePitch:true}), 'top-right');
       wm = {map, markers:[], mode:'trips', spin:true, sel:null, play:null};
+      document.getElementById('cv-world').classList.add('wm-wait');
       map.on('load', async ()=>{
-        await worldData(); worldMode('trips'); worldCarousel(); spinGlobe();
-        map.easeTo({zoom:1.9, duration:2600, easing:t=>1-Math.pow(1-t,3)});
+        try { await worldData(); worldMode('trips'); worldCarousel(); } finally { const o = document.getElementById('cv-world'); if(o) o.classList.remove('wm-wait'); }
+        spinGlobe();
       });
     } catch(e){ wmInfo('⚠️ ' + esc(e.message)); }
   }
@@ -7180,14 +7179,14 @@ ${pm.join('\n')}</Document></kml>`;
   }
   function bounds(pts){ const b = new maplibregl.LngLatBounds(); pts.forEach(p=>b.extend([p.lng, p.lat])); return b; }
   function worldFly(id){
-    if(!wm) return; const t = wm.data.trips.find(x=>x.id===id); if(!t) return;
+    if(!wm || !wm.data || !wm.map.getLayer('routes')) return; const t = wm.data.trips.find(x=>x.id===id); if(!t) return;
     wm.spin = false; wm.sel = id; stopStory();
     document.querySelectorAll('.wm-card').forEach(b=>b.classList.toggle('on', b.dataset.id===id));
     const card = document.querySelector(`.wm-card[data-id="${id}"]`); if(card) card.scrollIntoView({behavior:'smooth', inline:'center', block:'nearest'});
     try { wm.map.setPaintProperty('routes', 'line-opacity', ['case',['==',['get','id'],id],1,0.25]); wm.map.setPaintProperty('routes-glow', 'line-opacity', ['case',['==',['get','id'],id],0.7,0.1]); wm.map.setPaintProperty('routes', 'line-width', ['case',['==',['get','id'],id],3.6,2]); } catch(e){}
     const b = bounds(t.pts), single = t.pts.length < 2;
-    if(single) wm.map.flyTo({center:[t.pts[0].lng, t.pts[0].lat], zoom:9, pitch:55, bearing:-20, duration:3200, essential:true});
-    else wm.map.fitBounds(b, {padding:{top:110, bottom:230, left:40, right:40}, pitch:45, bearing:-12, duration:3200, maxZoom:11});
+    if(single) wm.map.flyTo({center:[t.pts[0].lng, t.pts[0].lat], zoom:8, pitch:35, bearing:-15, duration:2600, essential:true});
+    else wm.map.fitBounds(b, {padding:{top:110, bottom:230, left:40, right:40}, pitch:30, bearing:-10, duration:2600, maxZoom:9});
     wmInfo(`<b>${esc(t.titre)}</b> · ${esc(t.dates)}${t.steps.length ? `<div class="wm-tl"><button type="button" class="wm-play" onclick="CV.worldStory('${id}')">▶ Revivre le voyage</button><input type="range" min="0" max="${t.steps.length-1}" value="0" oninput="CV.worldStep('${id}', this.value)" aria-label="Frise des steps"></div>` : '<br><small>Ajoute des steps 📍 pour la frise et « Revivre le voyage ».</small>'}<button type="button" class="wm-open" onclick="CV.worldOpen('${id}')">Ouvrir ce voyage</button>`);
   }
   function stepCard(s){
@@ -7199,7 +7198,7 @@ ${pm.join('\n')}</Document></kml>`;
   }
   function worldStep(id, i){
     const t = wm && wm.data.trips.find(x=>x.id===id); if(!t) return; const s = t.steps[+i]; if(!s) return;
-    wm.map.flyTo({center:[s.lng, s.lat], zoom:Math.max(8, Math.min(12, wm.map.getZoom())), pitch:60, bearing:(+i * 37) % 360 - 30, duration:1800, essential:true});
+    wm.map.flyTo({center:[s.lng, s.lat], zoom:Math.max(7, Math.min(10, wm.map.getZoom())), pitch:40, bearing:(+i * 37) % 360 - 30, duration:1800, essential:true});
     stepCard(s);
   }
   function stopStory(){ if(wm && wm.play){ clearTimeout(wm.play); wm.play = null; } const b = document.querySelector('.wm-play'); if(b) b.textContent = '▶ Revivre le voyage'; }
