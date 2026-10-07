@@ -1222,6 +1222,8 @@ a.v-btn.cv-escale{display:block;text-align:center;text-decoration:none}
 .cv-cgu{background:#F3EAFF;border:1.5px solid #C4A5F5;border-radius:14px;padding:8px 12px;margin:12px 0 4px}
 .cv-cgu .cv-checkline{align-items:flex-start;line-height:1.4}
 .cv-cgu .cv-checkline input{margin-top:3px;flex:0 0 auto}
+.cv-inst-tip{display:block;margin-top:6px;font-size:.78rem;line-height:1.4;color:#7a4a00}
+#cv-gate .gw{background:#FFF4D6;border:1px solid #F5C451;color:#5a4200;border-radius:12px;padding:9px 11px;font-size:.82rem;line-height:1.45;text-align:left;margin:10px 0}
 .cv-warn{background:#FFE9E4;border-radius:12px;padding:9px 11px;font-size:.84rem;color:#8A2A1E;line-height:1.45}
 .cv-bigcode{font-family:ui-monospace,Menlo,monospace;font-size:1.5rem;font-weight:700;letter-spacing:2px;text-align:center;background:#fff;border:2px dashed var(--sun2);border-radius:16px;padding:16px;margin:6px 0 12px;color:var(--ink)}
 .cv-escale-mini small{display:block;font-size:.68rem;color:var(--gray);margin-top:3px}
@@ -2073,6 +2075,7 @@ const CV = (function(){
     const bg = document.getElementById('v-sheet-bg');
     if(bg && bg.dataset.locked && force!==true) return;
     if(bg) bg.remove();
+    try { localStorage.removeItem('cv-resume'); } catch(e){}
     document.body.style.overflow = '';
     editing = null;
   }
@@ -3884,6 +3887,7 @@ const CV = (function(){
     setTimeout(backupNag, 4000);
     if(PUBLIC && !M.infoSeen) infoSheet(true);
     else if(!M.me || !prof(M.me)){ if(M.sync.on && profiles().length) whoSheet(); else onboarding(); }
+    else setTimeout(resumeLoad, 300);
     syncNow();
   }
 
@@ -7669,7 +7673,7 @@ ${pm.join('\n')}</Document></kml>`;
     const ua = navigator.userAgent, ios = isIOS(), iosOther = ios && /CriOS|FxiOS|EdgiOS|OPiOS/.test(ua), android = /Android/i.test(ua);
     const steps = ios ? (iosOther ? `<li>Ouvre cette page dans <b>Safari</b> (sur iPhone, seul Safari sait installer une appli web).</li><li>Puis suis les étapes ci-dessous.</li>` : '')
         + `<li>Touche <b>Partager</b> <span class="gk">⬆︎</span> en bas de Safari.</li><li>Choisis <b>« Sur l’écran d’accueil »</b> <span class="gk">＋</span>.</li><li>Touche <b>Ajouter</b>, puis ouvre <b>Carnet</b> depuis ton écran d’accueil.</li>`
-      : android ? `<li>${installEvt ? 'Touche le bouton ci-dessous' : 'Touche le menu <b>⋮</b> de Chrome, puis <b>« Installer l’application »</b> (ou « Ajouter à l’écran d’accueil »)'}.</li><li>Ouvre <b>Carnet</b> depuis ton écran d’accueil.</li>`
+      : android ? `<li>Ouvre cette page dans <b>Chrome</b> (pas depuis WhatsApp, Messenger ou Gmail : menu ⋮ → « Ouvrir dans Chrome »).</li><li>${installEvt ? 'Touche le bouton ci-dessous' : 'Touche le menu <b>⋮</b> de Chrome, puis <b>« Installer l’application »</b> (ou « Ajouter à l’écran d’accueil »)'}.</li><li>Ouvre <b>Carnet</b> depuis ton écran d’accueil, ou glisse vers le haut pour la trouver dans tes applis.</li></ol><p class="gw">⚠️ Icône introuvable (Honor, Huawei, Xiaomi…) ? Autorise Chrome à créer des raccourcis : <b>Paramètres → Applications → Chrome → Autorisations → « Créer des raccourcis sur l’écran d’accueil »</b>, puis réinstalle. Sur Honor, glisse vers le bas au milieu de l’écran et tape « Carnet » pour la chercher.</p><ol class="gs" style="display:none">`
       : `<li>${installEvt ? 'Clique sur le bouton ci-dessous' : 'Dans Chrome ou Edge : l’icône <b>Installer</b> à droite de la barre d’adresse. Dans Safari (Mac) : menu <b>Fichier → Ajouter au Dock</b>'}.</li><li>Ouvre <b>Carnet</b> depuis tes applications.</li>`;
     g.innerHTML = `<div class="gt"><img src="icon-192.png" alt="" class="gi"><h1>Carnet de voyage</h1>
       <p>Pour garder tes voyages <b>sur ton téléphone</b>, fonctionner <b>sans réseau</b> et protéger tes données, l’appli s’utilise <b>installée sur ton écran d’accueil</b>. C’est gratuit et ça prend 10 secondes.</p>
@@ -7679,7 +7683,7 @@ ${pm.join('\n')}</Document></kml>`;
   }
   async function gateInstall(){ if(!installEvt) return; installEvt.prompt(); try { await installEvt.userChoice; } catch(e){} installEvt = null; gateRender(); }
   window.addEventListener('beforeinstallprompt', ()=>setTimeout(gateRender, 50));
-  window.addEventListener('appinstalled', ()=>{ const g = document.getElementById('cv-gate'); if(g) g.innerHTML = '<div class="gt"><h1>✅ Appli installée</h1><p>Ouvre maintenant <b>Carnet</b> depuis ton écran d’accueil.</p></div>'; });
+  window.addEventListener('appinstalled', ()=>{ const g = document.getElementById('cv-gate'); if(g) g.innerHTML = '<div class="gt"><h1>✅ Appli installée</h1><p>Ouvre maintenant <b>Carnet</b> depuis ton écran d’accueil' + (/Android/i.test(navigator.userAgent) ? ', ou glisse vers le haut et cherche « Carnet » dans tes applis.</p><p class="gw">⚠️ Icône introuvable (Honor, Huawei, Xiaomi…) ? Autorise Chrome à créer des raccourcis : <b>Paramètres → Applications → Chrome → Autorisations → « Créer des raccourcis sur l’écran d’accueil »</b>, puis réinstalle. Sur Honor, glisse vers le bas au milieu de l’écran et tape « Carnet » pour la chercher.</p>' : '.</p>') + '</div>'; });
   function countInstall(){
     if(!isInstalled() || M.instSent || !/^https?:/.test(location.protocol)) return;
     M.instId = M.instId || (Date.now().toString(36) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)).slice(0, 32);
@@ -7826,7 +7830,8 @@ ${pm.join('\n')}</Document></kml>`;
     const [la, lo] = [x.d[3], x.d[4]];
     // résumé (Wikivoyage, sinon Wikipédia)
     (async()=>{ for(const host of ['fr.wikivoyage.org','fr.wikipedia.org']){ try { const j = await (await fetch(`https://${host}/w/api.php?action=query&prop=extracts|pageimages&exintro=1&explaintext=1&exsentences=4&piprop=thumbnail&pithumbsize=800&redirects=1&format=json&origin=*&titles=` + encodeURIComponent(x.wk))).json();
-        const pg = Object.values((j.query||{}).pages||{})[0]; if(pg && pg.extract){ const e = document.getElementById('cp-sum'); if(e) e.innerHTML = esc(pg.extract) + ` <small>(${host.includes('voyage') ? 'Wikivoyage' : 'Wikipédia'}, CC BY-SA)</small>`;
+        const pg = Object.values((j.query||{}).pages||{})[0]; if(pg && pg.extract){ const h = esc(pg.extract) + ` <small>(${host.includes('voyage') ? 'Wikivoyage' : 'Wikipédia'}, CC BY-SA)</small>`; if(comp && comp.i === i){ comp.sum = h; if(pg.thumbnail) comp.img = pg.thumbnail.source; }
+          const e = document.getElementById('cp-sum'); if(e) e.innerHTML = h;
           if(pg.thumbnail){ const im = document.getElementById('cp-img'); if(im){ im.src = pg.thumbnail.source; im.parentNode.classList.add('has'); } } return; } } catch(e){} } })();
     // positions des étapes, puis lieux à voir
     for(const s of comp.stops){ if(!comp || comp.i !== i) return; const g = s.c === x.d[9][0][0] && x.d[3] ? null : await geocode(s.c + (x.pays ? ', ' + x.pays : ''), null).catch(()=>null);
@@ -7848,6 +7853,7 @@ ${pm.join('\n')}</Document></kml>`;
       <div id="cp-places">${c.stops.map((s,k)=>`<div class="cp-pl" id="cp-pl-${k}"><b>${esc(s.c)}</b><div class="cp-grid">${(c.places[s.c]||null) ? '' : '<div class="v-sum-small">📡 Recherche…</div>'}</div></div>`).join('')}</div>
       <div class="v-actions"><button type="button" class="v-btn" onclick="CV.compCreate()">🧳 Créer mon voyage (${c.stops.length} étape${c.stops.length>1?'s':''}, ${Object.values(c.sel).reduce((s,a)=>s+a.length,0)} lieu${Object.values(c.sel).reduce((s,a)=>s+a.length,0)>1?'x':''})</button><button type="button" class="v-btn sec cv-sq" onclick="CV.inspBack()">←</button></div>`);
     const im = document.getElementById('cp-img'); if(c.img && im){ im.src = c.img; im.parentNode.classList.add('has'); }
+    if(c.sum){ const e = document.getElementById('cp-sum'); if(e) e.innerHTML = c.sum; }
     if(c.near) compNear(); c.stops.forEach(s=>{ if(c.places[s.c]) compPlacesPaint(s); });
   }
   function compNear(){
@@ -8022,6 +8028,49 @@ ${pm.join('\n')}</Document></kml>`;
       </div>
       <div class="v-actions">${ESCALE ? `<a class="v-btn" href="${ESCALE}">✈️ Ouvrir Escale</a>` : ''}<button type="button" class="v-btn sec cv-sq" onclick="CV.close()">✕</button></div>`);
   }
+  /* ══════════ ↩️ Reprise : Android recharge parfois l'appli quand on passe sur une autre (Chrome…).
+     On garde l'écran en cours (idées, composition, assistant) et on le rouvre au même endroit. ══════════ */
+  const RESUME_K = 'cv-resume';
+  function inspFormRead(){
+    const g = id => (document.getElementById(id)||{}).value;
+    return Object.assign({}, M.insp, {dep:g('in-dep'), mois:g('in-mois'), duree:g('in-duree'), nb:g('in-nb'), budget:g('in-budget'), style:g('in-style'), vol:g('in-vol'), climat:g('in-climat'), qui:g('in-qui'), rythme:g('in-rythme'),
+      depTxt:(g('in-deptxt')||'').trim(), iata:(g('in-iata')||'').trim().toUpperCase(), cni:!!(document.getElementById('in-cni')||{}).checked, tags:[...document.querySelectorAll('[data-tag].on')].map(b=>b.dataset.tag)});
+  }
+  function resumeSave(){
+    try {
+      const bg = document.getElementById('v-sheet-bg'), sh = bg && bg.querySelector('.v-sheet');
+      let o = null;
+      if(bg && document.getElementById('in-dep')) o = {v:'inspForm', S:inspFormRead()};
+      else if(bg && comp && document.getElementById('cp-stops')) o = {v:'comp', c:{i:comp.i, x:comp.x, nights:comp.nights, stops:comp.stops, sel:comp.sel, places:comp.places, near:comp.near, img:comp.img||'', sum:comp.sum||''}};
+      else if(bg && M.insp && inspRes.length && document.querySelector('#v-sheet-bg .cv-idea')) o = {v:'insp', n:inspN};
+      else if(bg && wz && document.getElementById('wz')){ try { wzRead(); } catch(e){} o = {v:'wz', wz}; }
+      if(o){ o.y = sh ? sh.scrollTop : 0; o.t = Date.now(); localStorage.setItem(RESUME_K, JSON.stringify(o)); }
+      else localStorage.removeItem(RESUME_K);
+    } catch(e){}
+  }
+  function resumeLoad(){
+    let o = null; try { o = JSON.parse(localStorage.getItem(RESUME_K) || 'null'); } catch(e){}
+    if(!o || Date.now() - (o.t||0) > 24*3600e3 || document.getElementById('v-sheet-bg')) return;
+    try {
+      if(o.v === 'inspForm') inspire(o.S);
+      else if(o.v === 'insp'){ if(!M.insp) return; inspRes = inspCalc(M.insp); inspN = o.n || 8; inspShow(inspN); }
+      else if(o.v === 'comp'){
+        if(!M.insp || !o.c || !o.c.x) return; inspRes = inspCalc(M.insp);
+        const x = o.c.x; if(!DESTS[x.i] || DESTS[x.i][0] !== x.d[0]){ x.i = DESTS.push(x.d) - 1; }
+        if(!inspRes.some(r=>r.i === x.i)) inspRes.unshift(x);
+        comp = Object.assign({}, o.c, {i:x.i, x}); compRender();
+        const i = comp.i;
+        comp.stops.forEach(s=>{ if(!comp.places[s.c] && s.lat != null) compPlaces(s); });
+        if(!comp.near) wdNear(x.d[3], x.d[4], (+(M.insp.duree||7)) > 9 ? 280 : 160).then(n=>{ if(comp && comp.i === i){ comp.near = n; compNear(); } }).catch(()=>{ if(comp) comp.near = []; });
+      }
+      else if(o.v === 'wz' && o.wz){ wz = o.wz; wzRender(); }
+      else return;
+      setTimeout(()=>{ const sh = document.querySelector('#v-sheet-bg .v-sheet'); if(sh) sh.scrollTop = o.y || 0; }, 350);
+      toast('↩️ On reprend là où tu en étais');
+    } catch(e){ localStorage.removeItem(RESUME_K); }
+  }
+  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState === 'hidden') resumeSave(); });
+  window.addEventListener('pagehide', resumeSave);
   function infoHTML(){
     return `<div class="cv-info">
       <p style="text-align:center;margin:6px 0 10px"><a href="mentions-legales.html">🔒 Mentions légales</a> · <a href="privacy.html">Confidentialité</a></p>
@@ -8078,7 +8127,7 @@ ${pm.join('\n')}</Document></kml>`;
       <b>📲 Installe d’abord l’appli sur ton écran d’accueil</b>
       <p>Ouverte dans le navigateur, l’appli peut voir ses données effacées si tu ne l’utilises pas pendant quelques jours (Safari le fait après 7 jours). Installée, elle garde tout dans ton téléphone, s’ouvre en plein écran et marche hors ligne.</p>
       <div class="cv-inst-os${ios?' on':''}"><b>iPhone</b> : dans <b>Safari</b>, touche <b>Partager</b> (carré avec flèche ⬆️) → <b>« Sur l’écran d’accueil »</b> → <b>Ajouter</b>.</div>
-      <div class="cv-inst-os${!ios?' on':''}"><b>Android</b> : dans <b>Chrome</b>, menu <b>⋮</b> → <b>« Installer l’application »</b> (ou « Ajouter à l’écran d’accueil »).</div>
+      <div class="cv-inst-os${!ios?' on':''}"><b>Android</b> : dans <b>Chrome</b>, menu <b>⋮</b> → <b>« Installer l’application »</b> (ou « Ajouter à l’écran d’accueil »). L’appli s’appelle <b>Carnet</b> : si elle n’est pas sur l’écran d’accueil, glisse vers le haut pour la trouver dans tes applis.<small class="cv-inst-tip">⚠️ Icône introuvable (Honor, Huawei, Xiaomi…) ? Autorise Chrome à créer des raccourcis : <b>Paramètres → Applications → Chrome → Autorisations → « Créer des raccourcis sur l’écran d’accueil »</b>, puis réinstalle. Sur Honor, glisse vers le bas au milieu de l’écran et tape « Carnet » pour la chercher.</small></div>
       ${installEvt ? `<button type="button" class="v-btn" onclick="CV.installNow()">📲 Installer maintenant</button>` : ''}
       ${short ? '' : `<p class="cv-warn">Ensuite, ouvre toujours l’appli depuis son icône. Le navigateur et l’appli installée ne partagent pas leurs données : crée ou rejoins ton carnet depuis l’icône.</p>`}
     </div>`;
