@@ -1217,6 +1217,11 @@ a.v-btn.cv-escale{display:block;text-align:center;text-decoration:none}
 .cv-escale-mini{display:block;margin-top:10px;font-size:.8rem;color:var(--ink);text-decoration:none;background:#F3EAFF;border-radius:12px;padding:8px 10px}
 .cv-info h3{font-family:var(--display);font-style:italic;font-size:1.15rem;margin:12px 0 4px;color:var(--ink)}
 .cv-info p{font-size:.86rem;line-height:1.5;color:#4d3b50;margin-bottom:6px}
+.v-sheet-bg.cv-first{background:var(--cream,#FBF6EE);backdrop-filter:none;-webkit-backdrop-filter:none;align-items:stretch}
+.v-sheet-bg.cv-first .v-sheet{max-height:none;height:100%;border-radius:0;padding-top:calc(18px + env(safe-area-inset-top));box-shadow:none}
+.cv-cgu{background:#F3EAFF;border:1.5px solid #C4A5F5;border-radius:14px;padding:8px 12px;margin:12px 0 4px}
+.cv-cgu .cv-checkline{align-items:flex-start;line-height:1.4}
+.cv-cgu .cv-checkline input{margin-top:3px;flex:0 0 auto}
 .cv-warn{background:#FFE9E4;border-radius:12px;padding:9px 11px;font-size:.84rem;color:#8A2A1E;line-height:1.45}
 .cv-bigcode{font-family:ui-monospace,Menlo,monospace;font-size:1.5rem;font-weight:700;letter-spacing:2px;text-align:center;background:#fff;border:2px dashed var(--sun2);border-radius:16px;padding:16px;margin:6px 0 12px;color:var(--ink)}
 .cv-escale-mini small{display:block;font-size:.68rem;color:var(--gray);margin-top:3px}
@@ -1754,7 +1759,7 @@ const CV = (function(){
       <button class="v-btn sec" onclick="CV.shareSheet()">📤 Partager l’appli à un ami (QR code)</button>
       <button class="v-btn sec" onclick="CV.psPick()">📥 Importer des voyages Polarsteps</button>
       ${!PUBLIC && !(R.t2025 && !R.t2025.deleted) ? `<button class="v-btn sec" onclick="CV.seedUSA2025()">📦 Ajouter l’archive USA 2025</button>` : ''}
-      ${ESCALE ? `<a class="v-btn sec cv-escale" href="${ESCALE}">✈️ Chercher des vols avec Escale</a><button class="v-btn sec" onclick="CV.escaleTuto()">🎓 Tuto Escale premium</button>` : ''}
+      ${ESCALE ? `<a class="v-btn sec cv-escale" href="${ESCALE}">✈️ Chercher des vols avec Escale</a><button class="v-btn sec" onclick="CV.escaleTuto()">🎓 Tuto Escale premium</button><button class="v-btn sec" onclick="CV.radarTuto()">✦ Tuto Radar des prix</button>` : ''}
       ${trip() && !trip().demo ? `<button class="v-btn sec" onclick="CV.tripShare('${M.trip}')">🔗 ${TS()[M.trip] ? 'Partage de « ' + esc(trip().titre) + ' » (code du voyage)' : 'Partager « ' + esc(trip().titre) + ' » seul (son propre code)'}</button>` : ''}
       <button class="v-btn sec" onclick="CV.tripJoin()">🔗 Rejoindre un voyage partagé (code)</button>
       ${trip() ? `<button class="v-btn sec" onclick="CV.editTrip('${M.trip}')">✏️ Modifier « ${esc(trip().titre)} »</button>` : ''}
@@ -1814,6 +1819,14 @@ const CV = (function(){
       g.fillStyle = '#fff'; g.beginPath(); g.ellipse(600,360,52,40,0,0,6.28); g.fill(); g.fillStyle = '#f1a72b'; g.beginPath(); g.arc(600,360,24,0,6.28); g.fill(); g.fillStyle = '#2f6b2f'; g.fillRect(330,330,80,22); }
     else if(kind === 'deer'){ sky('#bfe3f3','#eef8fb',520); ground('#7fa65a','#5d7e40',520); g.fillStyle = '#9b6a3e'; g.beginPath(); g.ellipse(480,470,140,70,0,0,6.28); g.fill(); g.fillRect(380,500,22,120); g.fillRect(560,500,22,120); g.fillRect(420,500,22,120); g.fillRect(520,500,22,120);
       g.beginPath(); g.ellipse(640,370,50,40,-0.5,0,6.28); g.fill(); g.fillRect(600,380,40,90); g.fillStyle = '#f4ecd8'; for(let i=0;i<7;i++){ g.beginPath(); g.arc(400+i*28,450+(i%2)*14,6,0,6.28); g.fill(); } }
+    else if(kind === 'ticket'){ // reçu / ticket de caisse (seed = montant)
+      g.fillStyle = '#5b5f6b'; g.fillRect(0,0,W,H); g.save(); g.translate(W/2, H/2); g.rotate((rnd()-0.5)*0.12);
+      g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(-196,-316,400,640); g.fillStyle = '#fbfaf5'; g.fillRect(-200,-320,400,640);
+      g.fillStyle = '#2b2b33'; g.textAlign = 'center'; g.font = 'bold 34px sans-serif'; g.fillText(['ホテル','レストラン','チケット','HOTEL'][seed % 4], 0, -250);
+      g.font = '22px monospace'; g.fillText('TOKYO · ' + String(10 + seed % 18) + '/07', 0, -212); g.textAlign = 'left';
+      for(let k=0;k<8;k++){ g.fillStyle = '#9a9aa6'; g.fillRect(-160,-170+k*38,150+rnd()*90,10); g.fillRect(90,-170+k*38,70,10); }
+      g.fillStyle = '#2b2b33'; g.fillRect(-160,150,320,3); g.font = 'bold 38px monospace'; g.fillText('TOTAL', -160, 205); g.textAlign = 'right'; g.fillText(String(seed) + ' €', 160, 205);
+      g.textAlign = 'left'; for(let k=0;k<40;k++){ g.fillStyle = '#2b2b33'; g.fillRect(-160 + k*8, 240, (k*7 % 5) + 2, 50); } g.restore(); }
     else if(kind === 'sea'){ sky('#7cc6ef','#d9f1fb',380); g.fillStyle = '#1d76b0'; g.fillRect(0,380,W,H-380); g.fillStyle = 'rgba(255,255,255,.45)'; for(let i=0;i<60;i++){ g.fillRect(rnd()*W, 390+rnd()*320, 30+rnd()*60, 3); }
       g.fillStyle = '#d23a2a'; g.fillRect(420,250,30,240); g.fillRect(560,250,30,240); g.fillStyle = '#1d1414'; g.fillRect(380,215,250,30); g.fillStyle = '#d23a2a'; g.fillRect(400,282,210,22); }
     g.fillStyle = 'rgba(255,255,255,.07)'; for(let i=0;i<500;i++) g.fillRect(rnd()*W, rnd()*H, 1.5, 1.5);   // grain photo
@@ -1855,6 +1868,9 @@ const CV = (function(){
     // ── voyage terminé : un souvenir par jour, photos, steps, comptes à solder ──
     for(let i=0;i<21;i++) await addSouv(past, addDays(past.day0, i), i, i % 3 === 2 ? 2 : 1, i % 4 === 0 ? 'Une journée parfaite, on en reparlera longtemps.' : '');
     past.recs.filter(r=>r.type==='item').forEach(r=>{ r.statut = 'paid'; if(!num(r.prix) && num(r.estime)) r.prix = r.estime; });
+    // justificatifs : quelques tickets et reçus déjà photographiés (Bilan › Budget)
+    { const its = past.recs.filter(r=>r.type==='item' && num(r.prix) > 0 && r.cat !== 'transport').slice(0, 6);
+      for(const [k, r] of its.entries()){ const rc = 'rc' + uid() + 'dmp' + k; await storePhoto(await demoPaint('ticket', Math.round(num(r.prix)) || 20 + k), rc); r.recu = rc; } }
     R['rb' + uid() + 'dm'] = {id:'rb' + uid() + 'dm', type:'remb', trip:past.tid, de:p1, a:M.me, montant:'400', date:addDays(past.day0, 25), demo:true, createdAt:now, updatedAt:now};
     // ── voyage en cours : jour 7, steps des jours passés, traces, tickets, courses, plafond, parts ──
     for(let i=0;i<6;i++) await addSouv(live, addDays(live.day0, i), i + 3, i % 2 ? 2 : 1, '');
@@ -2695,7 +2711,7 @@ const CV = (function(){
     }
     h += pkgBox();
     h += `<div class="v-box"><h3>📤 Inviter un ami</h3><p>Montre-lui le QR code ou envoie-lui le lien de l’appli.</p><button class="v-btn" onclick="CV.shareSheet()">📤 Partager l’appli (QR code)</button></div>`;
-    h += `<div class="v-box"><h3>🎬 Tutos</h3><p>Toutes les fonctions de l’appli en 5 minutes, et comment chercher tes vols avec Escale.</p>${tutoBtn()}${ESCALE ? `<button type="button" class="v-btn sec" onclick="CV.escaleTuto()">🎓 Tuto Escale premium</button>` : ''}</div>`;
+    h += `<div class="v-box"><h3>🎬 Tutos</h3><p>Les 4 espaces du carnet (Préparation, En cours, Passés, Bilan), comment chercher tes vols avec Escale, et le Radar qui surveille les prix.</p>${tutoBtn()}${ESCALE ? `<button type="button" class="v-btn sec" onclick="CV.escaleTuto()">🎓 Tuto Escale premium</button><button type="button" class="v-btn sec" onclick="CV.radarTuto()">✦ Tuto Radar des prix (3 min)</button>` : ''}</div>`;
     h += `<div class="v-box"><h3>🕘 Activité récente</h3>${activity()}</div>
       <div class="v-box"><h3>💾 Sauvegarde</h3>
         <p>Tout est enregistré sur ce téléphone (${Math.round(size/1024)} Ko)${s.on?' et sur le serveur':''}. L’export reste ta copie de secours, et il contient aussi l’archive 2026.</p>
@@ -4266,10 +4282,10 @@ const CV = (function(){
 
   /* ══════════ 🔐 Fonctionnement & confidentialité (version publique) ══════════ */
   const TUTO = 'tuto.mp4';
-  const tutoBtn = (cls) => `<button type="button" class="v-btn ${cls||'sec'}" onclick="CV.tutoSheet()">🎬 Voir le tuto vidéo (5 min)</button>`;
+  const tutoBtn = (cls) => `<button type="button" class="v-btn ${cls||'sec'}" onclick="CV.tutoSheet()">🎬 Voir le tuto vidéo du carnet (5 min)</button>`;
   function tutoSheet(){
     openSheet(`<h2>🎬 Tuto vidéo</h2>
-      <div class="v-sum-small" style="margin-bottom:10px">Créer un voyage de 3 semaines à plusieurs : étapes, vols, hôtels, budget, qui doit quoi, souvenirs et PDF.</div>
+      <div class="v-sum-small" style="margin-bottom:10px">Les 4 espaces sur les voyages de démo : 🧳 Préparation (programme, résas, budget, envies, checklist, outils), 📍 En cours (journée, dépenses, souvenirs), 🗺️ Passés (album, carte, stats) et 🏁 Bilan (à vérifier, qui doit quoi, remboursements, justificatifs).</div>
       <div class="cv-tuto"><video src="${TUTO}" controls playsinline preload="metadata"></video></div>
       <div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.close()">Fermer</button></div>`);
   }
@@ -7993,10 +8009,22 @@ ${pm.join('\n')}</Document></kml>`;
     rbProof = null; closeSheet(true); render();
   }
 
+  function radarTuto(){
+    openSheet(`<h2>✦ Le Radar des prix (Escale)</h2>
+      <div class="cv-tuto" style="margin-bottom:8px"><video src="escale/radar-tuto.mp4" poster="escale/radar-tuto.jpg" controls playsinline preload="metadata"></video></div>
+      <div class="cv-info">
+      <p>Le Radar surveille le prix des vols <b>pour toi</b> et te montre les baisses à chaque ouverture d’Escale.</p>
+      <h3>1. Choisir son aéroport</h3><p>Dans Escale, étape <b>1 · Départ</b> : touche ton aéroport. Les modèles du Radar s’activent.</p>
+      <h3>2. Créer une zone</h3><p>Ouvre <b>✦ Radar</b> et choisis un modèle : week-ends pas chers, vacances d’été, 3 prochains mois, ponts et jours fériés, ou <b>sur mesure</b>.</p>
+      <h3>3. Lire les résultats</h3><p>Destination, prix, dates, direct ou escale. Filtre par prix, ☆ pour épingler, ⚡ pour le prix réel, puis liens Skyscanner, Kayak, Booking… déjà remplis.</p>
+      <h3>4. Réglages ⚙</h3><p>🎯 seuil cible, 📌 dates prioritaires, ★ destinations surveillées, 🔁 suivi automatique, et chaque zone modifiable (mois, jours, semaines paires/impaires, direct, ponts).</p>
+      <h3>5. À chaque ouverture</h3><p>« Ce qui a baissé depuis ta dernière visite » en tête, et un bandeau 🎯 si un vol passe sous ta cible.</p>
+      </div>
+      <div class="v-actions">${ESCALE ? `<a class="v-btn" href="${ESCALE}">✈️ Ouvrir Escale</a>` : ''}<button type="button" class="v-btn sec cv-sq" onclick="CV.close()">✕</button></div>`);
+  }
   function infoHTML(){
     return `<div class="cv-info">
-      ${tutoBtn()}
-      <p style="text-align:center;margin:6px 0 10px"><a href="mentions-legales.html">🔒 Mentions légales et confidentialité</a></p>
+      <p style="text-align:center;margin:6px 0 10px"><a href="mentions-legales.html">🔒 Mentions légales</a> · <a href="privacy.html">Confidentialité</a></p>
       ${installHTML(false)}
       <h3>🔐 Vos données restent à vous</h3>
       <p>Vos voyages, notes, dépenses et photos sont <b>chiffrés sur votre téléphone</b>, avec le code de votre carnet, avant d’être envoyés sur le serveur.</p>
@@ -8011,12 +8039,20 @@ ${pm.join('\n')}</Document></kml>`;
     </div>`;
   }
   function infoSheet(first){
-    openSheet(`<h2>Comment ça marche</h2>${infoHTML()}
-      ${first ? `<label class="cv-checkline"><input type="checkbox" id="if-ok"> J’ai compris : je garderai précieusement le code de mon carnet.</label>` : ''}
-      <div class="v-actions"><button type="button" class="v-btn" onclick="CV.infoOk(${first?'true':'false'})">${first ? 'C’est parti' : 'Fermer'}</button></div>`, !!first);
+    openSheet(`<h2>${first ? 'Avant de commencer' : 'Comment ça marche'}</h2>
+      ${first ? `<div class="v-sum-small" style="margin-bottom:10px">Lis ces quelques lignes et accepte les conditions pour accéder à l’appli.</div>` : ''}${infoHTML()}
+      ${first ? `<div class="cv-cgu"><label class="cv-checkline"><input type="checkbox" id="if-cgu"> J’ai lu et j’accepte les <a href="mentions-legales.html" target="_blank" rel="noopener">mentions légales</a> et la <a href="privacy.html" target="_blank" rel="noopener">politique de confidentialité</a>.</label>
+      <label class="cv-checkline"><input type="checkbox" id="if-ok"> J’ai compris : je garderai précieusement le code de mon carnet.</label></div>` : ''}
+      <div class="v-actions"><button type="button" class="v-btn" onclick="CV.infoOk(${first?'true':'false'})">${first ? 'J’accepte et je continue' : 'Fermer'}</button></div>`, !!first);
+    if(first){ const bg = document.getElementById('v-sheet-bg'); if(bg) bg.classList.add('cv-first'); }
   }
   function infoOk(first){
-    if(first){ const c = document.getElementById('if-ok'); if(c && !c.checked){ alert('Coche la case pour confirmer que tu garderas ton code.'); return; } }
+    if(first){
+      const a = document.getElementById('if-cgu'), c = document.getElementById('if-ok');
+      if(a && !a.checked){ alert('Pour utiliser l’appli, accepte les mentions légales et la politique de confidentialité.'); return; }
+      if(c && !c.checked){ alert('Coche la case pour confirmer que tu garderas ton code.'); return; }
+      M.cguOk = new Date().toISOString();
+    }
     M.infoSeen = true; persist(); closeSheet(true);
     if(!M.me || !prof(M.me)){ if(M.sync.on && profiles().length) whoSheet(); else onboarding(); }
   }
@@ -8071,7 +8107,7 @@ ${pm.join('\n')}</Document></kml>`;
     envF:setEnvF, envP:setEnvP, like, editWish, saveWish, delWish, wishToTrip,
     editTrip, saveTrip, delTrip, closeTrip, reopenTrip,
     live, one, echAdd, echDel, echSpread, echToggle, lisser, echReset, echRange, echRangeReset,
-    planDay, plCfg, plAdd, plDel, plOpt, wizard, rcOpen, rbSheet, rbPhoto, rbSave, zipSavePart, zipCancel, innerGo, inspDeal, inspOpen, compN, compDel, compAdd, compTog, compCreate, inspBack, inspMore, inspFav, inspSurprise, inspVote, gateInstall, partsSheet, partsSave, discInfo, discBack, newTrip, blankTrip, inspire, inspireDemo, inspireGo, inspireCreate, zipSheet, zipExport, zipImport, worldFly, worldStep, worldStory, cfSegGo, trkToggle, modeGo, bilanClose, albumSheet, albCover, albumGo, tripShare, tripShareSheet, tripInvite, tripUnshare, tripJoin, tripJoinGo, tripWho, tripWhoSet, impSheet, impPick, jrSheet, jrTog, jrAll, worldMap, worldMode, worldOpen, worldClose, pjAdd, pjDel, pjOpen, cfSheet, cfGo, tlCo2, hereNow, tlStats, tlKml, tlFill, tlFillGo, rcView, rcAttach, tlIcsGo, capSet, shopSheet, shopAdd, shopTick, shopClear, rembAsk, pollNew, pollSave, pollVote, pollClose, pollDel, pdfRoute, pdfJournal, pdfShare, pdfOpen, pkgPick, pkgApply, hydrateMaps, renderOutils, tlDay, tlIcs, fxTool, fxFill, tlMeteo, tlReceipt, tlRcPhoto, tlRcOcr, tlRcSave, tlReceipts, tlMap, tlBags, tlBagsGo, tlDocs, tlDocEdit, tlDocSave, tlDocDel, tlJournal, pkgSheet, pkgExport, pkgImport, pinToggle, shareSheet, shareLink, askErase, tutoSheet, escaleTuto, demoLoad, demoDel, demoReset, wzGo, wzDates, wzEt, wzSum, wzTpl, wzCreate,
+    planDay, plCfg, plAdd, plDel, plOpt, wizard, radarTuto, rcOpen, rbSheet, rbPhoto, rbSave, zipSavePart, zipCancel, innerGo, inspDeal, inspOpen, compN, compDel, compAdd, compTog, compCreate, inspBack, inspMore, inspFav, inspSurprise, inspVote, gateInstall, partsSheet, partsSave, discInfo, discBack, newTrip, blankTrip, inspire, inspireDemo, inspireGo, inspireCreate, zipSheet, zipExport, zipImport, worldFly, worldStep, worldStory, cfSegGo, trkToggle, modeGo, bilanClose, albumSheet, albCover, albumGo, tripShare, tripShareSheet, tripInvite, tripUnshare, tripJoin, tripJoinGo, tripWho, tripWhoSet, impSheet, impPick, jrSheet, jrTog, jrAll, worldMap, worldMode, worldOpen, worldClose, pjAdd, pjDel, pjOpen, cfSheet, cfGo, tlCo2, hereNow, tlStats, tlKml, tlFill, tlFillGo, rcView, rcAttach, tlIcsGo, capSet, shopSheet, shopAdd, shopTick, shopClear, rembAsk, pollNew, pollSave, pollVote, pollClose, pollDel, pdfRoute, pdfJournal, pdfShare, pdfOpen, pkgPick, pkgApply, hydrateMaps, renderOutils, tlDay, tlIcs, fxTool, fxFill, tlMeteo, tlReceipt, tlRcPhoto, tlRcOcr, tlRcSave, tlReceipts, tlMap, tlBags, tlBagsGo, tlDocs, tlDocEdit, tlDocSave, tlDocDel, tlJournal, pkgSheet, pkgExport, pkgImport, pinToggle, shareSheet, shareLink, askErase, tutoSheet, escaleTuto, demoLoad, demoDel, demoReset, wzGo, wzDates, wzEt, wzSum, wzTpl, wzCreate,
     pickColor, newProfile, editProfile, saveProfile, delProfile, whoSheet, setMe,
     genCode, syncOn, syncOff, syncNow, shareCode, exportShare, exportDownload, importPick, wipe, obCreate, obJoin,
     _R:()=>R, _M:()=>M};
