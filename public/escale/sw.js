@@ -2,7 +2,7 @@
 // - Le "shell" (page + icônes) est mis en cache → lancement instantané et hors-ligne.
 // - Les appels /api/ passent toujours par le réseau (données fraîches, jamais en cache).
 
-const CACHE = "escale-v126-carnet";
+const CACHE = "escale-v128-carnet";
 const SHELL = ["./", "./index.html", "./manifest.json",
   "./icon-192.png", "./icon-512.png",
   "./icon-maskable-192.png", "./icon-maskable-512.png", "./favicon.png"];
@@ -53,6 +53,8 @@ self.addEventListener("fetch", (e) => {
     ));
     return;
   }
+  // Vidéo du tuto Radar : lue en direct, par morceaux (pas de cache).
+  if (url.pathname.endsWith(".mp4")) return;
   // Shell : cache d'abord, réseau en repli.
   e.respondWith(
     caches.match(e.request).then((hit) => hit || fetch(e.request))
