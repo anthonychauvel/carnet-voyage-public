@@ -1758,6 +1758,7 @@ const CV = (function(){
       <div class="v-sum-small" style="margin:6px 0 10px">État : ${sp.err ? '🔴 ' + esc(sp.err) : (sp.dirty||[]).length ? '🟠 ' + sp.dirty.length + ' modif(s) en attente' : sp.last ? '🟢 À jour (' + when(sp.last) + ')' : '⏳ première synchro…'}</div>
       <button class="v-btn" onclick="CV.tripInvite('${id}')">📤 Envoyer l’invitation (adresse + code)</button>
       <button class="v-btn sec" onclick="CV.syncNow(true)">🔄 Synchroniser maintenant</button>
+      <button class="v-btn sec" onclick="CV.photoResend('${id}')">📤 Tout renvoyer (voyage + photos)</button>
       <button class="v-btn danger" onclick="CV.tripUnshare('${id}')">Arrêter le partage de ce voyage sur ce téléphone</button>
       <div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.close()">Fermer</button></div>`);
   }
@@ -3729,15 +3730,15 @@ const CV = (function(){
     M.pq = M.pq || []; M.pq.push(id, id+'.t');
   }
   let uploading = false;
-  async function photoResend(){
-    // 1) toutes les fiches repartent vers leur carnet (principal ou code du voyage), depuis le début
+  async function photoResend(only){
+    const inScope = r => r && r.id && !r.demo && (!only || r.id === only || r.trip === only);
     let nr = 0;
-    if(M.sync) M.sync.since = 0;
-    (M.spaces||[]).forEach(sp=>{ sp.since = 0; });
-    Object.values(R).forEach(r=>{ if(r && r.id && !r.demo){ markDirty(r.id); nr++; } });
+    if(only){ const sp = spaceObj(TS()[only]); if(sp) sp.since = 0; }
+    else { if(M.sync) M.sync.since = 0; (M.spaces||[]).forEach(sp=>{ sp.since = 0; }); }
+    Object.values(R).forEach(r=>{ if(inScope(r)){ markDirty(r.id); nr++; } });
     // 2) toutes les photos présentes sur ce téléphone (grande + vignette) repartent aussi
     const ids = new Set();
-    Object.values(R).forEach(r=>{ if(!r || r.demo) return; (r.photos||[]).forEach(x=>ids.add(x)); [r.recu, r.preuve].forEach(x=>x && ids.add(x)); });
+    Object.values(R).forEach(r=>{ if(!inScope(r)) return; (r.photos||[]).forEach(x=>ids.add(x)); (r.pj||[]).forEach(p=>p && p.id && ids.add(p.id)); [r.recu, r.preuve].forEach(x=>x && ids.add(x)); });
     M.pq = M.pq || []; let n = 0;
     for(const id of ids) for(const k of [id, id + '.t']){
       let o = null; try { o = await IDB.get(k); } catch(e){}
@@ -3758,7 +3759,9 @@ const CV = (function(){
         const code = photoCode(id); if(!code) continue;          // pas encore de carnet en ligne pour cette photo : on la garde
         let o = null; try { o = await IDB.get(id); } catch(e){}
         if(o && o.blob){
-          const body = E2E ? new Blob([await seal(new Uint8Array(await o.blob.arrayBuffer()), code)], {type:'image/jpeg'}) : o.blob;
+          let ub = o.blob;   // anciennes photos plus lourdes que la limite du serveur : réduites pour l’envoi
+          if(ub.size > 1700000){ for(const [mx, q] of [[2048,0.8],[1800,0.7],[1500,0.62],[1200,0.55]]){ try { ub = await shrink(o.blob, mx, q); } catch(e){ break; } if(ub.size <= 1700000) break; } }
+          const body = E2E ? new Blob([await seal(new Uint8Array(await ub.arrayBuffer()), code)], {type:'image/jpeg'}) : ub;
           const r = await fetch(photoApi(), {method:'POST', headers:{'X-Carnet-Code':await authCode(code), 'X-Photo-Id':await sid(id, code), 'Content-Type':'image/jpeg'}, body});
           if(!r.ok && r.status !== 413) break;
           try { await IDB.put({id, blob:new Blob([await o.blob.arrayBuffer()], {type:o.blob.type || 'image/jpeg'}), up:1}); } catch(e){}   // copie : Safari perd le fichier si on réenregistre le même objet
@@ -6907,9 +6910,35 @@ ${pm.join('\n')}</Document></kml>`;
     r.note = 'Booking.com' + (pin ? ' · code confidentiel ' + pin[1] : '');
     return r;
   }
+  function bookingParse2(T){
+    const L = T.split('\n').map(l=>l.trim()).filter(Boolean), r = {kind:'hotel'};
+    const n = x => x.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\./g,'');
+    const g = (re, i) => { const m = T.match(re); return m ? m[i||1] : ''; };
+    r.ref = g(/Confirmation\s*:\s*(\d{6,12})/i);
+    const pin = g(/Code confidentiel\s*:\s*(\d{3,8})/i);
+    r.nom = g(/L['’]\s*[ée]tablissement\s+(.+?)\s+vous attend/i).trim();
+    if(!r.nom){ const dup = L.find((l,i)=>l.length < 70 && /^[A-ZÀ-Ý]/.test(l) && L.indexOf(l) !== i && !/:/.test(l)); if(dup) r.nom = dup; }
+    r.ville = g(/r[ée]servation [àa]\s+(.+?)\s+est\s+confirm/i).trim();
+    const dt = lab => { const m = T.match(new RegExp(lab + '\\s+\\p{L}+\\.?\\s+(\\d{1,2})\\s+(\\p{L}+)\\.?\\s+(\\d{4})(?:\\s*\\((\\d{1,2})\\s*[h:]\\s*(\\d{2})?)?', 'iu'));
+      if(!m) return null; const mo = MOIS_FR[n(m[2])]; if(!mo) return null;
+      return {d: `${m[3]}-${String(mo).padStart(2,'0')}-${String(+m[1]).padStart(2,'0')}`, t: m[4] ? m[4].padStart(2,'0') + ':' + (m[5] || '00') : ''}; };
+    const a = dt('Arriv[ée]e'), d = dt('D[ée]part');
+    if(a){ r.date = a.d; r.heure = a.t; } if(d) r.dateFin = d.d;
+    const ia = L.findIndex(l=>/^Situation g[ée]ographique/i.test(l));
+    if(ia >= 0){ const parts = [L[ia].replace(/^Situation g[ée]ographique\s*/i,'')];
+      for(let k=ia+1; k<Math.min(L.length, ia+3); k++){ if(/^(?:T[ée]l[ée]phone|Autre|Arriv|D[ée]part|Votre|Vous|Frais|Conditions)/i.test(L[k])) break; parts.push(L[k]); }
+      r.adresse = parts.join(' ').replace(/\s+/g,' ').replace(/\s*º\s*/g,'º ').replace(/\s+,/g,',').trim(); }
+    r.tel = g(/T[ée]l[ée]phone\s*(\+?\d[\d\s().-]{6,20}\d)/i).trim();
+    const pr = g(/Montant total\s*€\s*(\d[\d .]*(?:,\d{1,2})?)/i); if(pr) r.prix = pr.replace(/\s|\.(?=\d{3})/g,'').replace(',', '.');
+    const room = g(/Votre r[ée]servation\s+(\d+ nuits?,?[^\n]{0,60})/i).trim();
+    const free = g(/annuler GRATUITEMENT jusqu['’]au\s+(\d{1,2} \p{L}+ \d{4})/iu);
+    r.note = ['Booking.com', pin ? 'code confidentiel ' + pin : '', room, free ? 'annulation gratuite jusqu’au ' + free : ''].filter(Boolean).join(' · ');
+    return r;
+  }
   function cfDraft(raw, force){
     const T = cfPre(raw);
-    const r = ((!force || force === 'hotel') && /NUM[ÉE]RO DE CONFIRMATION/i.test(T) && /ARRIV[ÉE]E/i.test(T)) ? bookingParse(T) : cfParse(T, force);
+    const r = ((!force || force === 'hotel') && /NUM[ÉE]RO DE CONFIRMATION/i.test(T) && /ARRIV[ÉE]E/i.test(T)) ? bookingParse(T)
+      : ((!force || force === 'hotel') && /Confirmation\s*:\s*\d{6,}/i.test(T) && /Arriv[ée]e\s+\p{L}+\.?\s+\d{1,2}\s+\p{L}+\.?\s+\d{4}/iu.test(T) && /D[ée]part\s+\p{L}+\.?\s+\d{1,2}\s+\p{L}+/iu.test(T)) ? bookingParse2(T) : cfParse(T, force);
     if(r.kind === 'hotel') return {cat:'hotel', type:'item', trip:M.trip, titre: r.ville || cityOf(r.adresse ? r.adresse.split(',').slice(-2,-1)[0] || '' : '').replace(/\b\d{3,}\b/g,'').trim() || 'Hébergement',
       nom:r.nom||'', adresse:r.adresse||'', tel:r.tel||'', date:r.date||'', dateFin:r.dateFin||'', heure:r.heure||'', ref:r.ref||'', prix:r.prix||'', partage:'grp', statut:'booked', lat:r.lat, lng:r.lng, note:r.note || 'Créée depuis un document importé'};
     if(r.kind === 'autre') return {cat:'activite', type:'item', trip:M.trip, titre: r.titre || (r.compagnie ? 'Activité ' + r.compagnie : 'Visite / activité'), date:r.date||'', heure:r.heure||'', adresse:r.adresse||'', ref:r.ref||'', prix:r.prix||'', statut: r.prix ? 'paid' : 'booked', note:(r.compagnie ? r.compagnie + ' · ' : '') + 'Créée depuis un document importé'};
@@ -6947,10 +6976,57 @@ ${pm.join('\n')}</Document></kml>`;
   /* ---------- 🌍 Carte du monde 3D (globe interactif : zoom, rotation, voyages, pays, steps) ---------- */
 
   /* ---------- ✈️ Plusieurs vols dans une même confirmation (aller-retour, escales) ---------- */
-  const AIRLINES = {EZY:'easyJet',U2:'easyJet',EJU:'easyJet',AFR:'Air France',AF:'Air France',TVF:'Transavia',TO:'Transavia',HV:'Transavia',RYR:'Ryanair',FR:'Ryanair',VLG:'Vueling',VY:'Vueling',V7:'Volotea',VOE:'Volotea',
+  const AIRLINES = {EZY:'easyJet',EZS:'easyJet Switzerland',EZE:'easyJet Europe',U2:'easyJet',EJU:'easyJet',AFR:'Air France',AF:'Air France',TVF:'Transavia',TO:'Transavia',HV:'Transavia',RYR:'Ryanair',FR:'Ryanair',VLG:'Vueling',VY:'Vueling',V7:'Volotea',VOE:'Volotea',
     LH:'Lufthansa',DLH:'Lufthansa',KL:'KLM',KLM:'KLM',BA:'British Airways',BAW:'British Airways',IB:'Iberia',TP:'TAP Air Portugal',AZ:'ITA Airways',ITY:'ITA Airways',EK:'Emirates',QR:'Qatar Airways',TK:'Turkish Airlines',
     A3:'Aegean',KM:'KM Malta Airlines',W6:'Wizz Air',W4:'Wizz Air',MS:'EgyptAir',AT:'Royal Air Maroc',SN:'Brussels Airlines',LX:'Swiss',OS:'Austrian',SK:'SAS',AY:'Finnair',DY:'Norwegian',BT:'airBaltic',LS:'Jet2',EW:'Eurowings',DE:'Condor',SS:'Corsair',TX:'Air Caraïbes',UX:'Air Europa',PC:'Pegasus',XQ:'SunExpress'};
+  function cfSegA(raw){ /* mail d'enregistrement : « EZS1348 / Nantes   Genève / Fri 06 Nov   Fri 06 Nov / 21:00   22:20 » */
+    const L = String(raw||'').replace(/\r/g,'').replace(/ | /g,' ').split('\n').map(l=>l.replace(/\t+/g,'   ').trim()).filter(Boolean), out = [];
+    const two = l => l.split(/\s{2,}/).map(x=>x.trim()).filter(Boolean);
+    L.forEach((l,i)=>{
+      const m = l.match(/^([A-Z]{3}|[A-Z]{2}|[A-Z]\d|\d[A-Z])\s?(\d{2,4})(?:\s+[A-Z0-9]{2,3}\s?\d{2,4})*$/); if(!m || /^\d{4}$/.test(l)) return;
+      const blk = L.slice(i+1, i+9); let route = null, dts = null, tms = null;
+      blk.forEach(x=>{ const p = two(x);
+        if(!route && p.length === 2 && p.every(y=>/^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'’. -]{1,40}$/.test(y)) && !/^(?:D[ée]part|Arriv|T\d|Terminal)/i.test(p[0])) route = p;
+        else if(!dts && p.length === 2 && p.every(y=>/\d{1,2}\s+[A-Za-zéû]{3,9}\.?/.test(y))) dts = p;
+        else if(!tms && p.length === 2 && p.every(y=>/^\d{1,2}:\d{2}$/.test(y))) tms = p; });
+      if(!route || !dts || !tms) return;
+      const ds = cfDates(dts[0] + ' ' + new Date().getFullYear()); let d = ds[0] || '';
+      const mm = dts[0].match(/(\d{1,2})\s+([A-Za-zéû]+)/); if(mm){ const mo = MOIS_FR[mm[2].normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\./g,'')]; if(mo) d = yearFor(raw, mo, +mm[1]); }
+      const code = (m[1] + m[2]).toUpperCase();
+      out.push({kind:'vol', code, from:route[0], to:route[1], date:d, heure:tms[0].padStart(5,'0'), heureArr:tms[1].padStart(5,'0'), compagnie:(AIRLINES[m[1]] ? AIRLINES[m[1]] + ' ' : '') + code, note:''});
+    });
+    return out;
+  }
+  function cfSegB(raw){ /* réservation : « Nantes à Londres (Terminal / Nord) » puis « Départ : ven. 02 juil. 2027 22:10 » */
+    const L = cfPre(raw).split('\n').map(l=>l.replace(/\t+/g,' ').trim()).filter(Boolean), out = [];
+    const clean = s => s.replace(/\(.*?\)/g,'').replace(/\(.*$/,'').replace(/\b(?:Terminal|Aéroport|Airport)\b.*$/i,'').replace(/\s+/g,' ').trim();
+    const dl = L.map((l,i)=>/^D[ée]part\s*:/i.test(l) && cfDates(l).length ? i : -1).filter(i=>i>=0);
+    dl.forEach(i=>{
+      /* route : jusqu'à 3 lignes avant, recollées (« …(Terminal » + « Nord) ») */
+      let route = null;
+      for(let k=1; k<=3 && !route; k++){
+        const txt = L.slice(Math.max(0, i-k), i).join(' ').replace(/\s+/g,' ');
+        const m = txt.match(/(?:^|\s)([A-ZÀ-Ý][^:]{1,45}?)\s+(?:à|to)\s+([A-ZÀ-Ý][^:]{1,50})$/);
+        if(m && !/paiement|carte|\d{2}\/\d{2}/i.test(txt)) route = [m[1], m[2]];
+      }
+      const ar = L.slice(i+1, i+3).find(l=>/^Arriv[ée]e\s*:/i.test(l)) || '';
+      const tm = l => (l.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/g) || []).pop() || '';
+      /* code vol : « EZY844 » + « 6 » placés avant l'intitulé */
+      let code = '';
+      const prevD = dl[dl.indexOf(i)-1] || -1;
+      for(let k=i-1; k>=Math.max(0, prevD+1, i-16) && !code; k--){ const m = L[k].match(/^([A-Z]{3}|[A-Z]{2}|[A-Z]\d|\d[A-Z])\s?(\d{2,4})$/); if(m){ code = m[1] + m[2]; if(/^\d$/.test(L[k+1]||'') && m[2].length === 3) code += L[k+1]; } }
+      const pre = code.match(/^([A-Z]{3}|[A-Z]{2}|[A-Z]\d|\d[A-Z])/);
+      out.push({kind:'vol', code, from: route ? clean(route[0]) : '', to: route ? clean(route[1]) : '', date: cfDates(L[i])[0], heure: tm(L[i]), heureArr: tm(ar),
+        compagnie:(pre && AIRLINES[pre[1]] ? AIRLINES[pre[1]] + ' ' : '') + code, note:''});
+    });
+    return out;
+  }
   function cfSegments(raw){
+    const A = cfSegA(raw); if(A.length) return A;
+    const B = cfSegB(raw); if(B.length && B.some(s=>s.from && s.to)) return B;
+    return cfSegments0(raw);
+  }
+  function cfSegments0(raw){
     const T = cfPre(raw), L = T.split('\n').map(l=>l.replace(/\t+/g,' ').trim()).filter(Boolean), segs = [];
     const isCode = l => l.length < 45 && /^(?:vol\s*:?\s*)?([A-Z]{3}|[A-Z]{2}|[A-Z]\d|\d[A-Z])\s?(\d{2,4})\b/.test(l) && !/^\d{4}$/.test(l);
     const idx = L.map((l,i)=>isCode(l) ? i : -1).filter(i=>i>=0);
@@ -6969,9 +7045,15 @@ ${pm.join('\n')}</Document></kml>`;
     });
     return segs.filter(s=>s.date || s.from);
   }
+  function cfRef(raw, pj){
+    const T = cfPre(raw), ok = c => /\d/.test(c) && /[A-Z]/.test(c);
+    for(const m of T.matchAll(/(?:r[ée]f[ée]rence|reference|booking|r[ée]servation|PNR|code)\W{0,25}([A-Z0-9]{6,8})\b/gi)){ if(ok(m[1]) && m[1] === m[1].toUpperCase()) return m[1]; }
+    for(const m of ((pj && pj[0] && pj[0].n) || '').matchAll(/(?:^|[-_ ])([A-Z0-9]{6,8})(?=$|[-_ ])/g)) if(ok(m[1])) return m[1];
+    return '';
+  }
   function cfImport(raw, pj, force){
     impCtx = {raw, pj};
-    const segs = (!force || force === 'transport') ? cfSegments(raw) : [], ref = (cfPre(raw).match(/(?:r[ée]f[ée]rence|reference|booking|r[ée]servation|PNR|code)\W{0,25}([A-Z0-9]{6,8})\b/i) || [])[1] || '';
+    const segs = (!force || force === 'transport') ? cfSegments(raw) : [], ref = cfRef(raw, pj);
     if(segs.length >= 2){
       cfPending = segs.map(s=>({type:'item', trip:M.trip, cat:'transport', mode:'Avion', from:s.from, to:s.to, titre:(s.from && s.to) ? s.from + ' → ' + s.to : 'Vol ' + s.code,
         date:s.date, heureDep:s.heure, heureArr:s.heureArr, compagnie:s.compagnie, ref, statut:'booked', note:s.note, pj: pj ? clone(pj) : undefined}));
@@ -6982,7 +7064,7 @@ ${pm.join('\n')}</Document></kml>`;
     }
     const d = cfDraft(raw, force);
     if(segs.length === 1 && d.cat === 'transport'){ const s = segs[0]; Object.assign(d, {from:d.from||s.from, to:d.to||s.to, date:d.date||s.date, heureDep:d.heureDep||s.heure, heureArr:d.heureArr||s.heureArr, compagnie:s.compagnie, note:s.note||d.note});
-      if(d.from && d.to) d.titre = d.from + ' → ' + d.to; }
+      if(d.from && d.to) d.titre = d.from + ' → ' + d.to; if(!d.ref) d.ref = ref; if(!d.prix){ const pr = cfPre(raw).match(/(\d[\d ]*[,.]\d{2})\s*€|€\s*(\d[\d ]*[,.]\d{2})/); if(pr && /paiement|payment|total/i.test(cfPre(raw))) d.prix = (pr[1]||pr[2]).replace(/\s/g,'').replace(',', '.'); } }
     if(pj) d.pj = pj;
     edit(d); toast('📄 Fiche créée — vérifie puis Enregistrer');
   }
