@@ -1246,6 +1246,38 @@ a.v-btn.cv-escale{display:block;text-align:center;text-decoration:none}
 html,body{overscroll-behavior-y:none}
 @supports(-webkit-touch-callout:none){input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),select,textarea{font-size:max(16px,1em)!important}}
 
+/* ── 2026-10-09 : jours ±, partage, import mail, doublons, réglages ── */
+.cv-daysbar{display:flex;gap:8px;align-items:stretch;margin:2px 0 12px}
+.cv-db-dates{flex:1;min-width:0;display:flex;align-items:center;gap:10px;text-align:left;background:#fff;border:1.5px solid #e4d9f2;border-radius:18px;padding:9px 12px;font:inherit;color:var(--ink);box-shadow:var(--shadow)}
+.cv-db-dates i{font-style:normal;font-size:1.3rem}
+.cv-db-dates span{min-width:0}
+.cv-db-dates b{display:block;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cv-db-dates small{display:block;font-size:.72rem;color:var(--gray)}
+.cv-db-share{flex:0 0 auto;border:0;border-radius:18px;padding:0 16px;font:inherit;font-weight:800;font-size:.86rem;color:#fff;background:var(--sunset);box-shadow:var(--shadow)}
+.cv-addday{display:block;width:100%;background:none;border:1.5px dashed #e0cfe0;color:var(--gray);border-radius:16px;padding:9px;font:inherit;font-weight:700;font-size:.8rem;margin:0 0 10px}
+.v-day-b .cv-row .v-day-edit.cv-dmore{flex:0 0 auto;padding:8px 12px;font-weight:800}
+.cv-flash{animation:cvFlash 1.6s ease-out}
+@keyframes cvFlash{0%{box-shadow:0 0 0 3px var(--sun2)}100%{box-shadow:0 0 0 0 transparent}}
+.cv-impbtn{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px 8px;width:100%;margin:0 0 12px;background:#fff;border:1.5px dashed #c9b3e6;color:#4C1D95;border-radius:18px;padding:11px;font:inherit;font-weight:800;font-size:.86rem}
+.cv-impbtn small{font-weight:600;color:var(--gray);font-size:.72rem}
+.cv-disc-card .dc button.cy{background:#fff;border:1.5px solid #E9D5FF}
+.cv-disc-card .dc button.add{background:#4C1D95;color:#fff}
+.cv-disc-card .de{font-size:.78rem;color:var(--gray);margin-top:6px}
+.cv-imptype{background:#F3EAFF;border-radius:16px;padding:9px 10px;margin:0 0 12px}
+.cv-imptype>span{font-weight:800;font-size:.8rem;color:#4C1D95}
+.cv-imptype .v-seg{margin-top:6px}
+.cv-imptype small{display:block;font-size:.7rem;color:var(--gray);margin-top:5px}
+.cv-dup{background:#fff;border-radius:16px;padding:8px 12px;margin:0 0 10px;box-shadow:var(--shadow)}
+.cv-dup .nw,.cv-dup .od{font-size:.85rem;padding:5px 0}
+.cv-dup .nw+.od,.cv-dup .od+.od{border-top:1px solid #f1e6ea}
+.cv-dup small{display:block;color:var(--gray);font-size:.74rem}
+.cv-dup em.v-status{font-style:normal;font-size:.66rem;padding:2px 8px;margin-left:4px;pointer-events:none;display:inline-block}
+.cv-triph{font-size:.72rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--gray);margin:14px 4px 6px}
+.cv-triph:first-child{margin-top:4px}
+.cv-prefg{margin:4px 0 10px}
+.cv-prefg>b{display:block;font-size:.82rem;margin:8px 0 2px;color:var(--ink)}
+.cv-pref{padding:5px 0}
+.cv-pref.lock{opacity:.55}
 </style>
 </head>
 <body class="is-public">
@@ -1638,7 +1670,7 @@ const CV = (function(){
     {id:'resas',  icon:'🎫', lbl:'Résas',     tabs:[['transport','✈️ Trajets'], ['hotel','🏨 Hôtels'], ['activite','🎟️ Visites'], ['divers','🧾 Divers']]},
     {id:'sous',   icon:'💸', lbl:'Budget',    tabs:[['budget','Qui paie quoi'], ['ech','📆 Échéancier']]},
     {id:'envies', icon:'✨', lbl:'Envies',    tabs:[['envies','Envies']]},
-    {id:'plus',   icon:'🧳', lbl:'Plus',      tabs:[['check','✅ Checklist'], ['reglages','👥 Partage & profils']]},
+    {id:'plus',   icon:'🧳', lbl:'Plus',      tabs:[['check','✅ Checklist'], ['reglages','👥 Partage & profils'], ['prefs','⚙️ Réglages']]},
   ];
   const groupOf = id => GROUPS.find(g=>g.tabs.some(t=>t[0]===id)) || GROUPS[0];
   const MOIS = ['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
@@ -1750,10 +1782,7 @@ const CV = (function(){
   function tripSheet(){
     const cur = M.trip;
     openSheet(`<h2>Mes voyages</h2>
-      <div class="cv-triplist">${trips().map(t=>`<button class="cv-tripcard${t.id===cur?' on':''}" onclick="CV.close();CV.go('${t.id}')">
-          <span class="tt">${TS()[t.id] ? '🔗 ' : ''}${esc(t.titre)}${t.archived?' <small>✓ clôturé</small>':''}</span>
-          <span class="td">${tripDatesLong(t) || 'dates à fixer'}</span>
-          <span class="ins">${(t.voyageurs||[]).filter(prof).map(ini).join('')}</span></button>`).join('')}
+      <div class="cv-triplist">${tripListHTML(cur)}
         ${!PUBLIC && !(R.t2026 && !R.t2026.deleted) ? `<button class="cv-tripcard legacy" onclick="CV.convert2026()"><span class="tt">Road trip Europe</span><span class="td">juillet 2026 · touche pour le passer au nouveau format</span></button>` : ''}
       </div>
       <button class="v-btn" onclick="CV.newTrip()">＋ Préparer un nouveau voyage</button>
@@ -1766,13 +1795,15 @@ const CV = (function(){
       <button class="v-btn sec" onclick="CV.tripJoin()">🔗 Rejoindre un voyage partagé (code)</button>
       ${trip() ? `<button class="v-btn sec" onclick="CV.editTrip('${M.trip}')">✏️ Modifier « ${esc(trip().titre)} »</button>` : ''}
       <div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.close()">✕ Fermer</button></div>`);
+    requestAnimationFrame(tripSheetScroll);
   }
   function buildTabs(){
     const g = groupOf(M.tab);
     const sub = document.getElementById('tabsC');
-    sub.innerHTML = g.tabs.length > 1 ? g.tabs.map(([id,l]) => `<button class="t27${id===M.tab?' active':''}" onclick="CV.tab('${id}')">${l}</button>`).join('') : '';
-    sub.style.display = g.tabs.length > 1 ? 'flex' : 'none';
-    document.getElementById('cv-nav').innerHTML = GROUPS.map(x=>`<button class="${x.id===g.id?'on':''}" onclick="CV.navGo('${x.id}')"><i>${x.icon}</i><span>${x.lbl}</span></button>`).join('');
+    const vt = g.tabs.filter(t=>t[0]===M.tab || ALWAYS[t[0]] || !hidden('tab:' + t[0]));
+    sub.innerHTML = vt.length > 1 ? vt.map(([id,l]) => `<button class="t27${id===M.tab?' active':''}" onclick="CV.tab('${id}')">${l}</button>`).join('') : '';
+    sub.style.display = vt.length > 1 ? 'flex' : 'none';
+    document.getElementById('cv-nav').innerHTML = visGroups(g).map(x=>`<button class="${x.id===g.id?'on':''}" onclick="CV.navGo('${x.id}')"><i>${x.icon}</i><span>${x.lbl}</span></button>`).join('');
   }
   function navGo(gid){
     const g = GROUPS.find(x=>x.id===gid); if(!g) return;
@@ -1780,7 +1811,8 @@ const CV = (function(){
     const cur = groupOf(M.tab);
     if(cur.id===gid){ window.scrollTo({top:0, behavior:'smooth'}); return; }
     M.lastTab[cur.id] = M.tab;
-    tab(M.lastTab[gid] && g.tabs.some(t=>t[0]===M.lastTab[gid]) ? M.lastTab[gid] : g.tabs[0][0]);
+    const vt = visTabs(g).length ? visTabs(g) : g.tabs;
+    tab(M.lastTab[gid] && vt.some(t=>t[0]===M.lastTab[gid]) ? M.lastTab[gid] : vt[0][0]);
   }
   function applyMode(){
     if(M.trip===LEGACY && R.t2026 && !R.t2026.deleted) M.trip = 't2026';
@@ -1922,7 +1954,7 @@ const CV = (function(){
     const t = trip();
     fab.style.display = 'none';
     if(modeRender()) return;
-    if(!t && !['envies','reglages'].includes(M.tab)){
+    if(!t && !['envies','reglages','prefs'].includes(M.tab)){
       body.innerHTML = `<div class="v-box"><h3>Aucun voyage</h3><p>Crée un voyage, ou transforme une envie en voyage depuis l’onglet ✨ Envies.</p>
         <button class="v-btn" onclick="CV.newTrip()">＋ Nouveau voyage</button>${tutoBtn()}${demoBtn()}</div>`;
       return;
@@ -1936,6 +1968,7 @@ const CV = (function(){
     else if(M.tab==='check') renderCheck();
     else if(M.tab==='envies') renderEnvies();
     else if(M.tab==='outils') renderOutils();
+    else if(M.tab==='prefs') renderPrefs();
     else renderReglages();
     const fabs = {transport:1, hotel:1, activite:1, divers:1, notes:1, envies:1, prog:1, souv:1};
     if(fabs[M.tab] && (t || M.tab==='envies')){
@@ -1952,7 +1985,7 @@ const CV = (function(){
 
   /* ── Filtre « pour qui » (départs / retours séparés) ── */
   function whoBar(){
-    const v = tv(); if(v.length < 2) return '';
+    const v = tv(); if(v.length < 2 || hidden('blk:who')) return '';
     return `<div class="v-filters cv-whobar"><span class="cv-lbl">Voir pour</span>
       <button class="v-chip${M.who==='all'?' on':''}" onclick="CV.who('all')">Tout le monde</button>
       ${v.map(id=>`<button class="v-chip cv-pc${M.who===id?' on':''}" style="--pc:${pcol(id)}" onclick="CV.who('${id}')">${esc(pname(id))}</button>`).join('')}</div>`;
@@ -1994,7 +2027,7 @@ const CV = (function(){
   function card(it){
     const ns = notesFor('item:'+it.id);
     const pinned = ns.filter(n=>n.pin);
-    const showHint = it.hint && it.statut==='todo';
+    const showHint = it.hint && it.statut==='todo' && !hidden('blk:hints');
     return `<div class="v-card ${it.statut}" onclick="CV.edit('${it.id}')">
       <div class="v-card-ico">${icon(it)}</div>
       <div class="v-card-main">
@@ -2015,13 +2048,16 @@ const CV = (function(){
   }
   /* Carte « Que voir ? » : un bouton par étape, ouvre la recherche des lieux à visiter */
   function discoverCard(compact){
-    const seen = new Set();
+    const t = trip(); if(!t || hidden('blk:disc')) return '';
+    const seen = new Set(), key = x => normQ(cityOf(x||''));
     const st = items(i=>i.cat==='hotel').sort((a,b)=>(a.date||'').localeCompare(b.date||''))
-      .filter(h=>{ const c = cityOf(h.titre||''); if(!c || seen.has(c)) return false; seen.add(c); return true; });
-    if(!st.length) return '';
+      .filter(h=>{ const c = key(h.titre); if(!c || seen.has(c)) return false; seen.add(c); return true; });
+    const cs = voirCities().filter(c=>{ const k = key(c.titre); if(!k || seen.has(k)) return false; seen.add(k); return true; });
+    if(!st.length && !cs.length && t.archived) return '';
     return `<div class="cv-disc-card${compact?' compact':''}"><div class="dt">🔎 Que voir pendant le voyage ?</div>
       ${compact ? '' : '<div class="dd">Musées, monuments, points de vue… autour de chaque étape. Touche une ville pour voir les lieux et les ajouter au programme.</div>'}
-      <div class="dc">${st.map(h=>`<button type="button" onclick="CV.discover('${h.id}')">📍 ${esc(cityOf(h.titre))}</button>`).join('')}</div></div>`;
+      <div class="dc">${st.map(h=>`<button type="button" onclick="CV.discover('${h.id}')">📍 ${esc(cityOf(h.titre))}</button>`).join('')}${cs.map(c=>`<button type="button" class="cy" onclick="CV.discover('${c.id}')">📍 ${esc(c.titre)}</button>`).join('')}<button type="button" class="add" onclick="CV.voirAdd()">＋ Lieu</button></div>
+      ${!st.length && !cs.length ? '<div class="de">Ajoute une ville, une excursion ou un quartier (les étapes de tes hôtels apparaissent aussi ici).</div>' : ''}</div>`;
   }
   function renderList(cat){
     const all = items(i => i.cat===cat).sort(sortItems);
@@ -2036,9 +2072,10 @@ const CV = (function(){
       <div class="v-sum-row"><div class="v-sum-big">${eur(proj)}</div><div class="v-sum-small">${paid+booked}/${n} réservés · ${paid} payés</div></div>
       <div class="v-sum-small">${M.who!=='all' ? 'Part de '+esc(pname(M.who)) : nv>1 ? 'Total pour '+nv+' · soit ≈ '+eur(proj/nv)+' par personne' : 'Projection'} · réel saisi : ${eur(reel)}</div>
       <div class="v-bar"><span class="b-paid" style="width:${n?paid/n*100:0}%"></span><span class="b-booked" style="width:${n?booked/n*100:0}%"></span></div>
-      ${cat==='transport' && ESCALE ? `<button type="button" class="cv-escale-tuto" style="margin:10px 0 0" onclick="CV.escaleTuto()">🎓 Tuto Escale premium</button>` : ''}
-      ${cat==='transport' && ESCALE ? `<a class="cv-escale-mini" href="${ESCALE}">🛫 Chercher les meilleurs prix de vols avec <b>Escale</b> ↗${PUBLIC ? '<small>Mode soft : prix indicatifs en cache (Travelpayouts). Tarifs en direct, Booking, voitures et attractions : mode premium sur code d’accès.</small>' : ''}</a>` : ''}
+      ${cat==='transport' && ESCALE && !hidden('blk:escale') ? `<button type="button" class="cv-escale-tuto" style="margin:10px 0 0" onclick="CV.escaleTuto()">🎓 Tuto Escale premium</button>` : ''}
+      ${cat==='transport' && ESCALE && !hidden('blk:escale') ? `<a class="cv-escale-mini" href="${ESCALE}">🛫 Chercher les meilleurs prix de vols avec <b>Escale</b> ↗${PUBLIC ? '<small>Mode soft : prix indicatifs en cache (Travelpayouts). Tarifs en direct, Booking, voitures et attractions : mode premium sur code d’accès.</small>' : ''}</a>` : ''}
     </div>
+    ${['transport','hotel','activite'].includes(cat) && !hidden('blk:imp') && trip() && !trip().archived ? `<button type="button" class="cv-impbtn" onclick="CV.impSheet('${cat}')">📄 Importer une résa <small>PDF ou mail de confirmation</small></button>` : ''}
     <div class="v-filters">${[['all','Tous'],['todo','À réserver'],['booked','Réservé'],['paid','Payé']].map(([k,l])=>
       `<button class="v-chip${f===k?' on':''}" onclick="CV.filter('${cat}','${k}')">${l}</button>`).join('')}</div>`;
     if(!shown.length) h += `<div class="v-empty">Encore rien par ici.<br>Le bouton ＋ est fait pour ça.</div>`;
@@ -2077,7 +2114,7 @@ const CV = (function(){
     if(bg) bg.remove();
     try { localStorage.removeItem('cv-resume'); } catch(e){}
     document.body.style.overflow = '';
-    editing = null;
+    editing = null; impCtx = null;
   }
   const actions = (del) => `<div class="v-actions">
       <button type="submit" class="v-btn">Enregistrer</button>
@@ -2102,6 +2139,7 @@ const CV = (function(){
     const it = clone(src); editing = it;
     const c = it.cat;
     let h = `<h2>${icon(it)} ${id ? esc(it.titre) : 'Nouveau ' + CATS[c].one}</h2>`;
+    if(draft && impCtx) h += impTypeBar(c);
     if(id) h += byline(it);
     if(it.hint) h += `<div class="v-hint">💡 ${esc(it.hint)}</div>`;
     h += `<form id="v-form" onsubmit="event.preventDefault();CV.saveForm()" oninput="CV.live()">`;
@@ -2165,6 +2203,7 @@ const CV = (function(){
   function saveForm(keepOpen){
     const it = readForm(); if(!it) return false;
     if(!it.titre){ alert('Donne un intitulé.'); return false; }
+    if(!it.id && !keepOpen && dupOf(it).length){ dupAsk([it]); return false; }
     const isNew = !it.id; if(isNew) it.id = 'i' + uid();
     if(isNew || !sameItem(R[it.id], it)) put(it);
     if(keepOpen) return it.id;
@@ -2206,21 +2245,23 @@ const CV = (function(){
   }
   function pinBoard(){
     const pins = list('note', n=>n.trip===M.trip && n.pin).sort((a,b)=>b.updatedAt-a.updatedAt);
-    if(!pins.length) return '';
+    if(!pins.length || hidden('blk:pins')) return '';
     const open = M.pinOpen !== false;
     return `<div class="cv-pinboard${open?'':' closed'}"><button type="button" class="cv-pinboard-h cv-pin-tog" onclick="CV.pinToggle()" aria-expanded="${open}">📌 Épinglé <span class="n">${pins.length}</span><span class="ch">${open?'▴ replier':'▾ déplier'}</span></button>${open ? pins.map(n=>noteCard(n,true)).join('') : ''}</div>`;
   }
   function pinToggle(){ M.pinOpen = M.pinOpen === false; persist(); const y = window.scrollY; render(); window.scrollTo(0, y); }
   function renderProg(){
     const ds = dayList();
-    let h = liveCard() + quickBar() + whoBar() + pinBoard();
+    let h = liveCard() + daysBar() + quickBar() + whoBar() + pinBoard();
     const tt = trip();
     if(tt && tt.demo) h = `<div class="cv-demo-bar">👀 <b>Voyage de démo</b> : touche à tout, modifie, supprime. Il reste sur ce téléphone et n’est jamais partagé.
         <span class="cv-demo-btns"><button type="button" onclick="CV.demoReset()">↺ Recommencer</button><button type="button" onclick="CV.demoDel()">Supprimer la démo</button></span></div>` + h;
-    { const di0 = tt && !tt.archived ? docIssues() : []; if(di0.length) h += `<button type="button" class="cv-docalert" onclick="CV.tlDocs()">⚠️ ${di0.length} document${di0.length>1?'s':''} de voyage à vérifier — ${esc(di0[0])}${di0.length>1?'…':''}</button>`; }
+    { const di0 = tt && !tt.archived && !hidden('blk:docs') ? docIssues() : []; if(di0.length) h += `<button type="button" class="cv-docalert" onclick="CV.tlDocs()">⚠️ ${di0.length} document${di0.length>1?'s':''} de voyage à vérifier — ${esc(di0[0])}${di0.length>1?'…':''}</button>`; }
     if(tt && !tt.archived) h += discoverCard(true);
     // (encart Escale retiré du programme : accès par le bouton 🛫 Escale de l'en-tête)
-    if(!ds.length) h += '<div class="v-empty">Aucun jour. Ajoute des dates au voyage (⚙️ Partage → Modifier le voyage) ou un trajet daté.</div>';
+    if(!ds.length) h += '<div class="v-empty">Aucun jour pour l’instant.<br><button type="button" class="v-btn" style="margin-top:10px" onclick="CV.datesSheet()">📅 Fixer les dates du voyage</button></div>';
+    const canDays = ds.length && tt && !tt.archived && !M.lock;
+    if(canDays) h += `<button type="button" class="cv-addday" onclick="CV.dayAdd('before')">＋ Ajouter un jour avant le J1</button>`;
     h += ds.map((d,idx)=>{
       const info = dayInfo(d);
       const {own, night} = itemsForDay(d);
@@ -2245,11 +2286,12 @@ const CV = (function(){
           ${dn.map(n=>noteCard(n,true)).join('')}
           ${routeHTML(d, true)}
           <div class="cv-row"><button class="v-day-edit" onclick="CV.planDay('${d}')">🗺️ Itinéraire</button><button class="v-day-edit" onclick="CV.editDay('${d}')">✏️ Programme</button>
-          <button class="v-day-edit" onclick="CV.editNote(null,'day:${d}')">📌 Note</button></div>
+          <button class="v-day-edit" onclick="CV.editNote(null,'day:${d}')">📌 Note</button>${canDays ? `<button class="v-day-edit cv-dmore" aria-label="Ajouter ou retirer un jour" onclick="CV.dayMenu('${d}')">⋯</button>` : ''}</div>
           ${info.updatedBy ? byline(info) : ''}
         </div>` : ''}
       </div>`;
     }).join('');
+    if(canDays) h += `<button type="button" class="cv-addday" onclick="CV.dayAdd('after')">＋ Ajouter un jour à la fin</button>`;
     document.getElementById('cv-body').innerHTML = h;
   }
   function toggleDay(d){ openD[d] = !(openD[d] !== undefined ? openD[d] : true); renderProg(); }
@@ -3896,9 +3938,10 @@ const CV = (function(){
     monu: {lbl:'Monuments', icon:'🏛️'}, relig: {lbl:'Églises & lieux saints', icon:'⛪'}, vue: {lbl:'Points de vue', icon:'🌅'},
     parc: {lbl:'Parcs & jardins', icon:'🌳'}, musee: {lbl:'Musées', icon:'🖼️'}, loisir: {lbl:'Loisirs', icon:'🎡'},
   };
-  const stayDays = h => h && h.date ? range(h.date, h.dateFin || h.date) : [];
+  const stayDays = h => h && h.date ? range(h.date, h.dateFin || h.date) : (h && h.type==='city' && trip() ? dayList() : []);
   const stays = () => items(i=>i.cat==='hotel' && i.date).sort(sortItems);
   function placesOfStay(hid){
+    if(R[hid] && R[hid].type==='city') return list('place', p=>p.trip===M.trip && p.stay===hid);
     const h = R[hid], ds = stayDays(h).slice(0, -1).concat(h && !h.dateFin ? [h.date] : []);
     return list('place', p=>p.trip===M.trip && (p.stay===hid || (!p.stay && ds.includes(p.date))));
   }
@@ -4006,7 +4049,7 @@ const CV = (function(){
     const p = disc.list[i]; if(!p) return;
     const ex = placesOfStay(disc.hid).find(x=>normQ(x.nom)===normQ(p.nom));
     if(ex){ drop(ex.id, '↩️ Retiré'); }
-    else put({id:'pl'+uid(), type:'place', trip:M.trip, stay:disc.hid, date:'', nom:p.nom, adresse:'', lat:p.lat, lng:p.lng, cat:p.cat, lock:false}, '📍 ' + p.nom);
+    else put({id:'pl'+uid(), type:'place', trip:M.trip, stay:disc.hid, date:(R[disc.hid] && R[disc.hid].type==='city' && R[disc.hid].date) || '', nom:p.nom, adresse:'', lat:p.lat, lng:p.lng, cat:p.cat, lock:false}, '📍 ' + p.nom);
     const sc = document.querySelector('#v-sheet-bg .v-sheet'), y = sc ? sc.scrollTop : 0;
     discRender();
     const sc2 = document.querySelector('#v-sheet-bg .v-sheet'); if(sc2) sc2.scrollTop = y;
@@ -4026,7 +4069,7 @@ const CV = (function(){
         <button class="cv-x cv-lk${p.lock?' on':''}" title="Verrouiller ce jour" onclick="CV.cityLock('${p.id}')">${p.lock?'🔒':'🔓'}</button>
         <button class="cv-x" onclick="CV.cityDel('${p.id}')">✕</button></div>`;
     openSheet(`<h2>🏙️ ${esc(cityOf(h.titre))}</h2>
-      <div class="v-sum-small" style="margin-bottom:10px">${fdate(h.date)} → ${fdate(h.dateFin||h.date)} · ${pl.length} lieu(x). Place les lieux toi-même ou laisse l’optimisation répartir. 🔒 = ce lieu reste sur ce jour.</div>
+      <div class="v-sum-small" style="margin-bottom:10px">${h.date ? fdate(h.date) + ' → ' + fdate(h.dateFin||h.date) + ' · ' : ''}${pl.length} lieu(x). Place les lieux toi-même ou laisse l’optimisation répartir. 🔒 = ce lieu reste sur ce jour.</div>
       <button class="v-btn sec" onclick="CV.discover('${hid}')">🔎 Découvrir les lieux à visiter</button>
       ${unplaced.length ? `<div class="cv-cday"><b>À placer</b>${unplaced.map(row).join('')}</div>` : ''}
       ${ds.map(d=>`<div class="cv-cday"><b>${fdate(d)}${dayInfo(d).titre ? ' · ' + esc(dayInfo(d).titre) : ''}</b>${byDay(d).map(row).join('') || '<div class="v-sum-small">—</div>'}</div>`).join('')}
@@ -6483,7 +6526,7 @@ const CV = (function(){
     while((m = re4.exec(txt))){ const mo = MOIS_FR[n(m[1])]; if(mo) out.push({i:m.index, d:`${m[3]}-${String(mo).padStart(2,'0')}-${String(+m[2]).padStart(2,'0')}`}); }
     return out.filter(x=>!isNaN(new Date(x.d))).sort((a,b)=>a.i-b.i).map(x=>x.d);
   }
-  function cfParse(txt){
+  function cfParse(txt, force){
     const T = txt.replace(/\r/g,''), low = T.toLowerCase();
     const r = {kind:'autre'};
     const ref = T.match(/(?:PNR|r[ée]f[ée]rence(?: de r[ée]servation| du dossier)?|num[ée]ro de (?:r[ée]servation|confirmation|dossier)|booking (?:reference|ref|number)|confirmation(?: number| code|)|code de r[ée]servation|dossier)\s*[:#nN°º.]*\s*([A-Z0-9]{5,12})\b/i);
@@ -6491,25 +6534,29 @@ const CV = (function(){
     const fl = T.match(/\b(?:vol|flight|flug)\s*[:#nN°º]*\s*([A-Z0-9]{2})\s?(\d{1,4})\b/i) || T.match(/\b((?:[A-Z]{2}|[A-Z]\d|\d[A-Z]))\s?(\d{2,4})\b(?=[^\n]{0,40}(?:\d{1,2}[:h]\d{2}|départ|depart|departure))/);
     const iata = [...T.matchAll(/\(([A-Z]{3})\)/g)].map(m=>m[1]);
     const times = [...T.matchAll(/\b([01]?\d|2[0-3])[:h]([0-5]\d)\b/g)].map(m=>m[1].padStart(2,'0') + ':' + m[2]);
-    const dates = cfDates(T);
-    if(fl || /embarquement|boarding|vol |flight|a[ée]roport|airport/.test(low)){
+    const dates0 = cfDates(T), fut = dates0.filter(d=>d >= isoToday()), dates = fut.length ? fut : dates0;
+    const K = cfKind(T, force || impCat);
+    let kind = force === 'hotel' ? 'hotel' : force === 'activite' ? 'act' : force === 'transport' ? K.tr : K.kind;
+    if(!force && fl && (kind === 'train' || kind === 'bus') && K.s.vol > 0) kind = 'vol';
+    if(kind === 'vol'){
       r.kind = 'vol'; if(fl) r.flight = (fl[1] + fl[2]).toUpperCase();
       const ap = [...T.matchAll(/([A-ZÀ-Ý][A-Za-zÀ-ÿ'’-]+(?:[ -][A-Za-zÀ-ÿ'’-]+){0,4})\s*\(([A-Z]{3})\)/g)].map(m=>m[1].trim().split(/\s+/)[0]);
       if(ap.length >= 2){ r.from = ap[0]; r.to = ap[1]; } else if(iata.length >= 2){ r.from = iata[0]; r.to = iata[1]; }
       const fr = T.match(/(?:de|from|départ de)\s+([A-ZÉ][\wéèêàç' -]{2,30}?)\s+(?:à|to|vers|->|→)\s+([A-ZÉ][\wéèêàç' -]{2,30})/);
       if(fr && !r.from){ r.from = fr[1].trim(); r.to = fr[2].trim(); }
-    } else if(/h[oô]tel|check-?in|arriv[ée]e|nuit|night|booking\.com|airbnb|chambre|room/.test(low)){
+    } else if(kind === 'hotel'){
       r.kind = 'hotel';
       const hn = T.match(/(?:h[oô]tel|hotel|établissement|propriété|property)\s*[:\-]?\s*([^\n]{3,60})/i); if(hn) r.nom = hn[1].trim().replace(/^[:\-\s]+/,'');
       const ad = T.match(/(?:adresse|address)\s*[:\-]?\s*([^\n]{6,90})/i); if(ad) r.adresse = ad[1].trim();
-    } else if(/train|sncf|tgv|ouigo|trenitalia|renfe|db bahn|eurostar|bus|flixbus|car /.test(low)){
-      r.kind = /bus|flixbus|car /.test(low) ? 'bus' : 'train';
+    } else if(kind === 'train' || kind === 'bus' || kind === 'ferry'){
+      r.kind = kind;
       const fr = T.match(/([A-ZÉ][\wéèêàç' -]{2,30}?)\s*(?:->|→|›|>|à|to)\s*([A-ZÉ][\wéèêàç' -]{2,30})/); if(fr){ r.from = fr[1].trim(); r.to = fr[2].trim(); }
-    }
+    } else actParse(T, r);
     r.date = dates[0] || ''; r.dateFin = dates.length > 1 && r.kind === 'hotel' ? dates[1] : '';
     r.heure = times[0] || ''; r.heureArr = r.kind !== 'hotel' ? (times[1] || '') : '';
     const co = T.match(/\b(Air France|KLM|Transavia|easyJet|Ryanair|Vueling|Volotea|Lufthansa|ITA Airways|Iberia|TAP|British Airways|Emirates|Qatar Airways|Turkish Airlines|Aegean|Air Malta|Wizz Air|EgyptAir|Royal Air Maroc|SNCF|OUIGO|TGV INOUI|Trenitalia|Italo|Renfe|Eurostar|FlixBus|BlaBlaCar)\b/i);
     if(co) r.compagnie = co[1] + (r.flight ? ' ' + r.flight : ''); else if(r.flight) r.compagnie = r.flight;
+    if(r.kind === 'ferry' && !co){ const fc = T.match(/\b(Brittany Ferries|Corsica Ferries|Corsica Linea|La Méridionale|Moby|Grimaldi|Minoan|Blue Star|Virtu Ferries|GNV|DFDS|P&O|Irish Ferries|Stena Line|Balearia|Trasmed|Tirrenia|Anek|Seajets)\b/i); if(fc) r.compagnie = fc[1]; }
     const px = T.match(/(?:total|montant|prix|price|amount|à payer)[^\n\d]{0,25}(\d[\d\s.,]*\d)\s*(?:€|eur)/i) || T.match(/(\d[\d\s.,]*[.,]\d{2})\s*(?:€|eur)\b/i);
     if(px) r.prix = px[1].replace(/\s/g,'').replace(/\.(?=\d{3}\b)/g,'').replace(',', '.');
     return r;
@@ -6643,6 +6690,7 @@ ${pm.join('\n')}</Document></kml>`;
      ══════════════════════════════════════════════════════════════════════════ */
   function quickBar(){
     const t = trip(); if(!t || t.archived) return '';
+    if(hidden('blk:quick')) return tripPhase(t)==='live' ? trkHTML() : '';
     return (tripPhase(t)==='live' ? trkHTML() : '') + `<div class="cv-quick"><button type="button" onclick="CV.hereNow()">📍 Je suis ici</button><button type="button" onclick="CV.impSheet()">📄 Importer une résa</button><button type="button" onclick="CV.worldMap()">🌍 Carte du monde</button></div>`;
   }
 
@@ -6664,11 +6712,15 @@ ${pm.join('\n')}</Document></kml>`;
   const geoSouvs = (tripId) => [...list('souv', s=>s.lat != null && (!tripId || s.trip===tripId)), ...list('step', s=>s.lat != null && (!tripId || s.trip===tripId))];
 
   /* ---------- 📄 Importer une réservation : PDF, capture d'écran, photo ou texte ---------- */
-  function impSheet(){
+  function impSheet(cat){
+    impCat = ['transport','hotel','activite'].includes(cat) ? cat : '';
+    const what = {transport:'du trajet', hotel:'de l’hébergement', activite:'de la visite ou de l’activité'}[impCat] || '';
     openSheet(`<h2>📄 Importer une réservation</h2>
-      <div class="v-sum-small" style="margin-bottom:10px">Le <b>PDF</b> de la réservation (Booking, compagnie aérienne, SNCF…) : l’appli le lit <b>sur ton téléphone</b>, crée la fiche (ou les vols d’un aller-retour) et y joint le PDF comme billet.</div>
+      <div class="v-sum-small" style="margin-bottom:10px">Le <b>PDF</b> ou le <b>mail</b> de confirmation ${what || '(hôtel, vol, train, bus, ferry, visite, activité…)'} : l’appli le lit <b>sur ton téléphone</b>, reconnaît le type de réservation, crée la fiche (ou les vols d’un aller-retour) et te laisse vérifier.</div>
       <button type="button" class="v-btn" onclick="CV.impPick()">📄 Choisir le PDF de la réservation</button>
-      <div class="v-sum-small" style="margin-top:10px"><b>Depuis Mail sur iPhone :</b> touche la pièce jointe PDF → Partager → <i>Enregistrer dans Fichiers</i>, puis choisis-la ici.<br><b>Sur Android :</b> depuis Gmail ou Booking, Partager → <i>Carnet de voyage</i> (appli installée) : l’import démarre tout seul.</div>
+      <button type="button" class="v-btn sec" onclick="CV.impMail()">✉️ Coller le texte du mail</button>
+      <button type="button" class="v-btn sec" onclick="CV.impPickAny()">📨 Choisir un mail enregistré (.eml)</button>
+      <div class="v-sum-small" style="margin-top:10px"><b>Depuis Mail sur iPhone :</b> touche la pièce jointe PDF → Partager → <i>Enregistrer dans Fichiers</i>, puis choisis-la ici. Pas de PDF ? Copie le texte du mail et touche « Coller le texte du mail ».<br><b>Sur Android :</b> depuis Gmail ou Booking, Partager → <i>Carnet de voyage</i> (appli installée) : l’import démarre tout seul.<br>Si une fiche existe déjà aux mêmes dates (hôtel ou trajet), l’appli te demande : <b>conserver</b> les deux ou <b>remplacer</b>.</div>
       <div id="imp-msg" class="v-sum-small" style="margin-top:8px"></div>
       <div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.close()">Fermer</button></div>`);
   }
@@ -6715,13 +6767,13 @@ ${pm.join('\n')}</Document></kml>`;
     const L = T.split('\n').map(l=>l.trim()).filter(Boolean), r = {kind:'hotel'};
     const ref = T.match(/NUM[ÉE]RO DE CONFIRMATION\s*:\s*([\d.\s]{6,24})/i); if(ref) r.ref = ref[1].replace(/\D/g,'');
     const pin = T.match(/CODE (?:CONFIDENTIEL|PIN)\s*:\s*(\d{3,8})/i);
-    const ia = L.findIndex(l=>/^Adresse\s*:/i.test(l)); if(ia > 0) r.nom = L[ia-1];
-    if(ia >= 0){ const it = L.findIndex((l,i)=>i>ia && /^T[ée]l[ée]phone/i.test(l)); r.adresse = L.slice(ia, it > ia ? it : ia+4).join(' ').replace(/^Adresse\s*:\s*/i,'').replace(/\s+/g,' ').replace(/(\p{L}) ([^\x00-\x7F]) (\p{L})/gu,'$1$2$3').replace(/(^|\s)([^\x00-\x7F]) (\p{Ll})/gu,'$1$2$3').replace(/\s*:\s*/g,':').replace(/NO:/g,'No ').trim(); }
+    const ia = L.findIndex(l=>/^Adresse\s*:/i.test(l)); if(ia > 0) r.nom = L[ia-1].replace(/^(?:h[oô]tel|[ée]tablissement|propri[ée]t[ée]|property)\s*:\s*/i,'');
+    if(ia >= 0){ const it = L.findIndex((l,i)=>i>ia && /^(?:T[ée]l[ée]phone|arriv|d[ée]part|check|\d+ nuit|num[ée]ro|total|prix|montant|chambre)/i.test(l)); r.adresse = L.slice(ia, it > ia ? it : ia+4).join(' ').replace(/^Adresse\s*:\s*/i,'').replace(/\s+/g,' ').replace(/(\p{L}) ([^\x00-\x7F]) (\p{L})/gu,'$1$2$3').replace(/(^|\s)([^\x00-\x7F]) (\p{Ll})/gu,'$1$2$3').replace(/\s*:\s*/g,':').replace(/NO:/g,'No ').trim(); }
     const tel = T.match(/T[ée]l[ée]phone\s*:\s*(\+?[\d][\d\s().-]{6,20}\d)/i); if(tel) r.tel = tel[1].trim();
     const gps = T.match(/N\s*0*(\d{1,2})°\s*([\d.]+)\s*,?\s*([EW])\s*0*(\d{1,3})°\s*([\d.]+)/);
     if(gps){ r.lat = +(+gps[1] + +gps[2]/60).toFixed(5); r.lng = +((+gps[4] + +gps[5]/60) * (gps[3]==='W' ? -1 : 1)).toFixed(5); }
     const n = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-    const blk = lab => { const i = L.findIndex(l=>n(l).startsWith(lab)); if(i < 0) return null; const sl = L.slice(i+1, i+7).join(' ');
+    const blk = lab => { const i = L.findIndex(l=>n(l).startsWith(lab)); if(i < 0) return null; const sl = L.slice(i, i+7).join(' ');
       const m = sl.match(/(\d{1,2})\s+([A-Za-zÀ-ÿ]+)/); const tm = [...sl.matchAll(/(\d{1,2}:\d{2})/g)].map(x=>x[1]);
       return m && MOIS_FR[n(m[2]).replace(/\./g,'')] ? {d: yearFor(T, MOIS_FR[n(m[2])], +m[1]), t: tm} : null; };
     const a = blk('arrivee'), d = blk('depart');
@@ -6732,13 +6784,14 @@ ${pm.join('\n')}</Document></kml>`;
     r.note = 'Booking.com' + (pin ? ' · code confidentiel ' + pin[1] : '');
     return r;
   }
-  function cfDraft(raw){
+  function cfDraft(raw, force){
     const T = cfPre(raw);
-    const r = (/NUM[ÉE]RO DE CONFIRMATION/i.test(T) && /ARRIV[ÉE]E/i.test(T)) ? bookingParse(T) : cfParse(T);
+    const r = ((!force || force === 'hotel') && /NUM[ÉE]RO DE CONFIRMATION/i.test(T) && /ARRIV[ÉE]E/i.test(T)) ? bookingParse(T) : cfParse(T, force);
     if(r.kind === 'hotel') return {cat:'hotel', type:'item', trip:M.trip, titre: r.ville || cityOf(r.adresse ? r.adresse.split(',').slice(-2,-1)[0] || '' : '').replace(/\b\d{3,}\b/g,'').trim() || 'Hébergement',
       nom:r.nom||'', adresse:r.adresse||'', tel:r.tel||'', date:r.date||'', dateFin:r.dateFin||'', heure:r.heure||'', ref:r.ref||'', prix:r.prix||'', partage:'grp', statut:'booked', lat:r.lat, lng:r.lng, note:r.note || 'Créée depuis un document importé'};
-    if(r.kind === 'autre') return {cat:'activite', type:'item', trip:M.trip, titre:'Réservation', date:r.date||'', heure:r.heure||'', ref:r.ref||'', prix:r.prix||'', statut:'booked', note:'Créée depuis un document importé'};
-    return {cat:'transport', type:'item', trip:M.trip, mode: r.kind==='vol' ? 'Avion' : r.kind==='bus' ? 'Bus' : 'Train', from:r.from||'', to:r.to||'', titre:(r.from && r.to) ? r.from + ' → ' + r.to : (r.kind==='vol' ? 'Vol' : 'Trajet'),
+    if(r.kind === 'autre') return {cat:'activite', type:'item', trip:M.trip, titre: r.titre || (r.compagnie ? 'Activité ' + r.compagnie : 'Visite / activité'), date:r.date||'', heure:r.heure||'', adresse:r.adresse||'', ref:r.ref||'', prix:r.prix||'', statut: r.prix ? 'paid' : 'booked', note:(r.compagnie ? r.compagnie + ' · ' : '') + 'Créée depuis un document importé'};
+    const mode = r.kind==='vol' ? 'Avion' : r.kind==='bus' ? 'Bus' : r.kind==='ferry' ? 'Bateau' : 'Train';
+    return {cat:'transport', type:'item', trip:M.trip, mode, from:r.from||'', to:r.to||'', titre:(r.from && r.to) ? r.from + ' → ' + r.to : (r.kind==='vol' ? 'Vol' : r.kind==='ferry' ? 'Traversée' : 'Trajet'),
       date:r.date||'', heureDep:r.heure||'', heureArr:r.heureArr||'', compagnie:r.compagnie||'', ref:r.ref||'', prix:r.prix||'', statut: r.prix ? 'paid' : 'booked', note:'Créée depuis un document importé'};
   }
   // Partage Android (« Partager → Carnet de voyage ») : le service worker a rangé le fichier ou le texte
@@ -6749,7 +6802,7 @@ ${pm.join('\n')}</Document></kml>`;
       const c = await caches.open('share-inbox'), keys = await c.keys(); let file = null, text = '';
       for(const k of keys){ const res = await c.match(k); if(/\/share\/file/.test(k.url)){ const b = await res.blob(); file = new File([b], decodeURIComponent((k.url.split('name=')[1]||'document')), {type:b.type}); } else if(/\/share\/text/.test(k.url)) text = await res.text(); await c.delete(k); }
       if(!trip()){ alert('Crée ou ouvre d’abord un voyage, puis partage à nouveau la réservation.'); return; }
-      if(file) impFile(file, text); else if(text) cfImport(text);
+      if(file) impAny(file, text); else if(text) cfImport(text);
     } catch(e){}
   }
 
@@ -6793,8 +6846,9 @@ ${pm.join('\n')}</Document></kml>`;
     });
     return segs.filter(s=>s.date || s.from);
   }
-  function cfImport(raw, pj){
-    const segs = cfSegments(raw), ref = (cfPre(raw).match(/(?:r[ée]f[ée]rence|reference|booking|r[ée]servation|PNR|code)\W{0,25}([A-Z0-9]{6,8})\b/i) || [])[1] || '';
+  function cfImport(raw, pj, force){
+    impCtx = {raw, pj};
+    const segs = (!force || force === 'transport') ? cfSegments(raw) : [], ref = (cfPre(raw).match(/(?:r[ée]f[ée]rence|reference|booking|r[ée]servation|PNR|code)\W{0,25}([A-Z0-9]{6,8})\b/i) || [])[1] || '';
     if(segs.length >= 2){
       cfPending = segs.map(s=>({type:'item', trip:M.trip, cat:'transport', mode:'Avion', from:s.from, to:s.to, titre:(s.from && s.to) ? s.from + ' → ' + s.to : 'Vol ' + s.code,
         date:s.date, heureDep:s.heure, heureArr:s.heureArr, compagnie:s.compagnie, ref, statut:'booked', note:s.note, pj: pj ? clone(pj) : undefined}));
@@ -6803,7 +6857,7 @@ ${pm.join('\n')}</Document></kml>`;
         <div class="v-actions"><button type="button" class="v-btn" onclick="CV.cfSegGo()">✅ Créer les vols</button><button type="button" class="v-btn sec cv-sq" onclick="CV.close()">✕</button></div>`);
       return;
     }
-    const d = cfDraft(raw);
+    const d = cfDraft(raw, force);
     if(segs.length === 1 && d.cat === 'transport'){ const s = segs[0]; Object.assign(d, {from:d.from||s.from, to:d.to||s.to, date:d.date||s.date, heureDep:d.heureDep||s.heure, heureArr:d.heureArr||s.heureArr, compagnie:s.compagnie, note:s.note||d.note});
       if(d.from && d.to) d.titre = d.from + ' → ' + d.to; }
     if(pj) d.pj = pj;
@@ -6812,7 +6866,11 @@ ${pm.join('\n')}</Document></kml>`;
   let cfPending = null;
   function cfSegGo(){
     const out = (cfPending||[]).filter((_,i)=>{ const c = document.getElementById('cfs-' + i); return c && c.checked; }).map((it,k)=>Object.assign({id:'i'+uid()+k}, it));
-    if(!out.length) return; putMany(out, '✈️ ' + out.length + ' vol(s) créé(s)'); cfPending = null; closeSheet(true); M.mode = 'prep'; tab('transport');
+    if(!out.length) return;
+    const after = () => { M.mode = 'prep'; tab('transport'); };
+    cfPending = null;
+    if(out.some(n=>dupOf(n).length)){ dupAsk(out, after); return; }
+    putMany(out, '✈️ ' + out.length + ' vol(s) créé(s)'); impCtx = null; closeSheet(true); after();
   }
 
   /* ---------- 🛰️ Traceur de voyage (comme Polarsteps, avec les limites d'une appli web) ---------- */
@@ -6873,7 +6931,8 @@ ${pm.join('\n')}</Document></kml>`;
     let el = document.getElementById('cv-modes');
     if(!el){ el = document.createElement('div'); el.id = 'cv-modes'; el.className = 'cv-modes'; const tc = document.getElementById('tabsC'); tc.parentNode.insertBefore(el, tc); }
     const live = trips().some(t=>tripPhase(t)==='live');
-    el.innerHTML = MODES.map(([k,ic,l])=>`<button type="button" class="${(M.mode||'prep')===k?'on':''}" onclick="CV.modeGo('${k}')"><i>${ic}</i><span>${l}</span>${k==='live' && live ? '<b class="dotlive"></b>' : ''}</button>`).join('');
+    el.style.display = MODES.some(([k])=>k!=='prep' && !hidden('mode:' + k)) ? '' : 'none';
+    el.innerHTML = MODES.filter(([k])=>k==='prep' || !hidden('mode:' + k)).map(([k,ic,l])=>`<button type="button" class="${(M.mode||'prep')===k?'on':''}" onclick="CV.modeGo('${k}')"><i>${ic}</i><span>${l}</span>${k==='live' && live ? '<b class="dotlive"></b>' : ''}</button>`).join('');
   }
   function modeGo(k){
     // les 4 onglets montrent tous LE MÊME voyage (celui choisi dans « Mes voyages ») ; seul l'angle de vue change
@@ -6884,6 +6943,7 @@ ${pm.join('\n')}</Document></kml>`;
   }
 
   function modeRender(){
+    if(M.mode && M.mode !== 'prep' && hidden('mode:' + M.mode)) M.mode = 'prep';
     const k = M.mode || 'prep', tc = document.getElementById('tabsC'), nav = document.getElementById('cv-nav');
     modeBar();
     const special = k !== 'prep';
@@ -8150,6 +8210,445 @@ ${pm.join('\n')}</Document></kml>`;
     toast(M.lock ? '🔒 Mode lecture : rien ne peut être modifié' : '✏️ Mode modification');
     if(M.trip !== LEGACY) render();
   }
+  /* ══════════════════════════════════════════════════════════════════════════
+     ⚙️ RÉGLAGES (onglets et encarts masquables) · 📅 JOURS ± ET DATES · 🔗 PARTAGE DU VOYAGE
+     🔎 LIEUX AJOUTÉS DANS « QUE VOIR » · ✉️ IMPORT DU MAIL · ⚖️ DOUBLONS (CONSERVER / REMPLACER)
+     ══════════════════════════════════════════════════════════════════════════ */
+  function addD(iso, n){ const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0,10); }
+  function dDiff(a, b){ return Math.round((new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00')) / 864e5); }
+
+  /* ---------- ⚙️ Réglages : chacun garde seulement ce qui lui sert (propre à ce téléphone) ---------- */
+  function UI(){ M.ui = M.ui || {}; M.ui.hide = M.ui.hide || {}; return M.ui; }
+  function hidden(k){ return !!UI().hide[k]; }
+  var ALWAYS = {reglages:1, prefs:1};
+  function visTabs(g){ return g.tabs.filter(t=>ALWAYS[t[0]] || !hidden('tab:' + t[0])); }
+  function visGroups(cur){ return GROUPS.filter(g=>visTabs(g).length || (cur && g.id===cur.id)); }
+  var PREF_BLOCKS = [
+    ['blk:days', '📅 Barre « dates du voyage · Partager » (Jour par jour)'],
+    ['blk:quick', '⚡ Raccourcis « Je suis ici · Importer · Carte »'],
+    ['blk:disc', '🔎 Encart « Que voir pendant le voyage ? »'],
+    ['blk:pins', '📌 Notes épinglées en haut du programme'],
+    ['blk:docs', '🛂 Alerte « documents de voyage à vérifier »'],
+    ['blk:who', '👥 Filtre « Voir pour » (une seule personne)'],
+    ['blk:imp', '📄 Bouton « Importer une résa » dans Trajets, Hôtels, Visites'],
+    ['blk:hints', '💡 Conseils sur les fiches à réserver'],
+    ['blk:escale', '🛫 Encarts Escale (recherche de vols)'],
+  ];
+  var PRESET_SIMPLE = ['tab:outils','tab:ech','tab:divers','tab:notes','tab:envies','mode:past','blk:docs','blk:who','blk:hints','blk:escale','blk:pins'];
+  function renderPrefs(){
+    const tg = (k, l, lock) => `<label class="cv-checkline cv-pref${lock?' lock':''}"><input type="checkbox" ${hidden(k)?'':'checked'} ${lock?'disabled':''} onchange="CV.prefTog('${k}', this.checked)"> <span>${l}</span></label>`;
+    const nh = Object.keys(UI().hide).length;
+    let h = `<div class="v-sum"><div class="v-sum-row"><div class="v-sum-big">⚙️ Réglages</div><div class="v-sum-small">${nh ? nh + ' élément' + (nh>1?'s':'') + ' masqué' + (nh>1?'s':'') : 'tout est affiché'}</div></div>
+        <div class="v-sum-small">Garde seulement ce qui te sert : décoche un onglet ou un encart pour le masquer. Rien n’est effacé, et ce réglage ne concerne que ce téléphone (tes compagnons choisissent les leurs).</div>
+        <div class="cv-row" style="gap:6px;margin-top:10px"><button type="button" class="v-day-edit" onclick="CV.prefPreset('simple')">🌱 Version simple</button><button type="button" class="v-day-edit" onclick="CV.prefPreset('all')">✨ Tout afficher</button></div></div>`;
+    h += `<div class="v-box"><h3>🧭 Espaces du haut</h3>${MODES.map(([k,ic,l])=>tg('mode:' + k, ic + ' ' + l, k==='prep')).join('')}</div>`;
+    h += `<div class="v-box"><h3>🗂️ Onglets</h3>${GROUPS.map(g=>`<div class="cv-prefg"><b>${g.icon} ${g.lbl}</b>${g.tabs.map(([id,l])=>tg('tab:' + id, id==='prog' ? '🗓️ Jour par jour' : id==='budget' ? '💸 Qui paie quoi' : id==='envies' ? '✨ Envies (week-ends, idées)' : l, ALWAYS[id])).join('')}</div>`).join('')}
+        <div class="v-sum-small">Un menu du bas dont tous les onglets sont décochés disparaît de la barre.</div></div>`;
+    h += `<div class="v-box"><h3>🧩 Encarts et boutons</h3>${PREF_BLOCKS.map(([k,l])=>tg(k, l)).join('')}</div>`;
+    document.getElementById('cv-body').innerHTML = h;
+  }
+  function prefFix(){
+    if(M.mode && M.mode !== 'prep' && hidden('mode:' + M.mode)) M.mode = 'prep';
+    if(hidden('blk:who')) M.who = 'all';
+  }
+  function prefTog(k, on){
+    const u = UI(); if(on) delete u.hide[k]; else u.hide[k] = 1;
+    prefFix(); persist(); modeBar(); buildTabs(); toast(on ? '👁️ Affiché' : '🙈 Masqué');
+    const s = document.querySelector('.cv-pref input[onchange*="' + k + '"]'); if(s) s.checked = on;
+    const n = document.querySelector('#cv-body .v-sum-row .v-sum-small'), nh = Object.keys(u.hide).length; if(n) n.textContent = nh ? nh + ' élément' + (nh>1?'s':'') + ' masqué' + (nh>1?'s':'') : 'tout est affiché';
+  }
+  function prefPreset(p){
+    UI().hide = {}; if(p === 'simple') PRESET_SIMPLE.forEach(k=>UI().hide[k] = 1);
+    prefFix(); persist(); applyMode(); toast(p === 'simple' ? '🌱 Version simple' : '✨ Tout est affiché');
+  }
+
+  /* ---------- 📅 Jour par jour : dates du voyage, ajouter / retirer des jours ---------- */
+  function daysBar(){
+    const t = trip(); if(!t || hidden('blk:days')) return '';
+    const n = dayList().length;
+    return `<div class="cv-daysbar"><button type="button" class="cv-db-dates" onclick="CV.datesSheet()"><i>📅</i><span><b>${t.debut ? esc(tripDatesLong(t)) : 'Dates à fixer'}</b><small>${n ? n + ' jour' + (n>1?'s':'') + ' · ' : ''}modifier les dates</small></span></button>
+      <button type="button" class="cv-db-share" onclick="CV.shareHub()">🔗 Partager</button></div>`;
+  }
+  function datesSheet(){
+    const t = trip(); if(!t) return;
+    openSheet(`<h2>📅 Dates du voyage</h2><div class="v-sum-small" style="margin-bottom:10px">Change le début ou la fin. Si tu décales le début, tout le programme peut suivre (fiches, journées, lieux) : le J1 reste le J1.</div>
+      <form id="v-form" onsubmit="event.preventDefault();CV.datesSave()">
+        <div class="v-f2">${field('Début','debut',t.debut,'date')}${field('Fin','fin',t.fin,'date')}</div>
+        ${t.debut ? `<label class="cv-checkline"><input type="checkbox" id="dt-shift" checked> Décaler tout le programme avec la date de début</label>` : ''}
+        <div class="v-sum-small" style="margin:6px 0 4px">Ajouter ou retirer un jour précis : bouton <b>⋯</b> de la journée dans « Jour par jour ».</div>
+        ${actions('')}
+      </form>`);
+  }
+  function datesSave(){
+    const t = clone(trip()); if(!t) return;
+    const f = document.getElementById('v-form'), deb = f.debut.value, sh = document.getElementById('dt-shift');
+    let fin = f.fin.value;
+    const delta = (sh && sh.checked && t.debut && deb && deb !== t.debut) ? dDiff(t.debut, deb) : 0;
+    if(delta && t.fin && fin === t.fin) fin = addD(t.fin, delta);   // fin inchangée : la durée est gardée
+    if(deb && fin && fin < deb){ alert('La fin doit être après le début.'); return; }
+    if(deb && fin && dDiff(deb, fin) > 89){ alert('90 jours maximum par voyage.'); return; }
+    const out = [];
+    if(delta) shiftAfter('0000-00-00', delta, out);
+    t.debut = deb; t.fin = fin || deb;
+    out.push(t);
+    putMany(out, delta ? '📅 Programme décalé de ' + (delta > 0 ? '+' : '') + delta + ' j' : '📅 Dates enregistrées');
+    closeSheet(true); refresh();
+    const outside = t.debut ? items(i=>i.date && (i.date < t.debut || (t.fin && i.date > t.fin))) : [];
+    if(outside.length) setTimeout(()=>alert(`📅 ${outside.length} fiche(s) restent en dehors des nouvelles dates (${outside.slice(0,3).map(i=>i.titre).join(', ')}${outside.length>3?'…':''}) : leurs journées restent affichées. Change leur date ou retire-les.`), 250);
+  }
+  // Décale de « delta » jours tout ce qui est daté APRÈS « pivot » dans le voyage (fiches, journées, lieux, notes du jour)
+  function shiftAfter(pivot, delta, out){
+    const sh = x => (x && x > pivot) ? addD(x, delta) : x;
+    const recs = Object.values(R).filter(r=>!r.deleted && r.trip===M.trip);
+    recs.forEach(r=>{
+      if(r.type==='item'){
+        if(r.cat==='divers' && r.recu) return;   // dépense réelle avec ticket : sa date est la vraie
+        const nd = sh(r.date), nf = sh(r.dateFin);
+        if(nd !== r.date || nf !== r.dateFin){ const c = clone(r); c.date = nd; if(r.dateFin) c.dateFin = nf; out.push(c); }
+      } else if(r.type==='place' || r.type==='city'){
+        const nd = sh(r.date), nf = sh(r.dateFin);
+        if(nd !== r.date || nf !== r.dateFin){ const c = clone(r); c.date = nd; if(r.dateFin) c.dateFin = nf; out.push(c); }
+      } else if(r.type==='note' && r.ref && r.ref.startsWith('day:')){
+        const d = r.ref.slice(4); if(d > pivot){ const c = clone(r); c.ref = 'day:' + addD(d, delta); out.push(c); }
+      }
+    });
+    // Les journées (titre, programme) ont la date dans leur identifiant : on les recrée à la bonne date
+    const days = recs.filter(r=>r.type==='day' && r.date > pivot);
+    const targets = days.map(r=>{ const c = clone(r); delete c.deleted; c.date = addD(r.date, delta); c.id = dayId(c.date); return c; });
+    const tIds = new Set(targets.map(x=>x.id));
+    days.forEach(r=>{ if(!tIds.has(r.id)){ const c = clone(r); c.deleted = true; out.push(c); } });
+    out.push(...targets);
+    return out;
+  }
+  function tripBounds(t){
+    if(t.debut) return t;
+    const ds = dayList(); if(ds.length){ t.debut = ds[0]; t.fin = ds[ds.length-1]; }
+    return t;
+  }
+  function dayMenu(d){
+    const ds = dayList(), k = ds.indexOf(d);
+    openSheet(`<h2>📅 J${k+1} · ${fdate(d)}</h2><div class="v-sum-small" style="margin-bottom:10px">Les journées suivantes se décalent avec leurs fiches, leur programme et leurs lieux.</div>
+      <button type="button" class="v-btn sec" onclick="CV.dayIns('${d}',0)">＋ Insérer un jour avant</button>
+      <button type="button" class="v-btn sec" onclick="CV.dayIns('${d}',1)">＋ Insérer un jour après</button>
+      <button type="button" class="v-btn sec" onclick="CV.editDay('${d}')">✏️ Titre et programme du jour</button>
+      <button type="button" class="v-btn sec" onclick="CV.datesSheet()">📅 Changer les dates du voyage</button>
+      <button type="button" class="v-btn danger" onclick="CV.dayDelAsk('${d}')">🗑 Retirer ce jour</button>
+      <div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.close()">Fermer</button></div>`);
+  }
+  function dayIns(d, after){
+    const t = tripBounds(clone(trip())); if(!t) return;
+    if(!t.debut){ alert('Fixe d’abord les dates du voyage.'); return; }
+    if(dDiff(t.debut, t.fin || t.debut) >= 89){ alert('90 jours maximum par voyage.'); return; }
+    const out = [];
+    if(!after && d <= t.debut){ t.debut = addD(t.debut, -1); }
+    else if(after && t.fin && d >= t.fin){ t.fin = addD(t.fin, 1); }
+    else { shiftAfter(after ? d : addD(d, -1), 1, out); t.fin = addD(t.fin || t.debut, 1); }
+    out.push(t); putMany(out, '＋ Jour ajouté'); closeSheet(true); refresh();
+    const nd = after ? addD(d, 1) : (d <= trip().debut ? trip().debut : d);
+    setTimeout(()=>{ const e = document.getElementById('d-' + nd); if(e){ e.scrollIntoView({block:'center', behavior:'smooth'}); e.classList.add('cv-flash'); } }, 80);
+  }
+  function dayAdd(where){
+    const t = trip(); if(!t) return;
+    if(!t.debut){ datesSheet(); return; }
+    dayIns(where === 'before' ? t.debut : (t.fin || t.debut), where === 'before' ? 0 : 1);
+  }
+  function dayContent(d){
+    const N = addD(d, 1);
+    const its = items(i=>i.date===d && (i.cat!=='hotel' || !i.dateFin || i.dateFin <= N));
+    const pl = list('place', p=>p.trip===M.trip && p.date===d);
+    const info = R[dayId(d)] && !R[dayId(d)].deleted && (R[dayId(d)].titre || R[dayId(d)].plan) ? R[dayId(d)] : null;
+    return {its, pl, info};
+  }
+  function dayDelAsk(d){
+    const t = tripBounds(clone(trip())); if(!t) return;
+    if(t.debut && t.fin && t.debut === t.fin){ alert('C’est le seul jour du voyage : change plutôt les dates.'); return; }
+    const c = dayContent(d), n = c.its.length + c.pl.length + (c.info ? 1 : 0);
+    if(!n){ if(confirm('Retirer le ' + fdate(d) + ' du voyage ?')) dayDel(d, 'drop'); return; }
+    const first = t.debut && d <= t.debut;
+    openSheet(`<h2>🗑 Retirer le ${fdate(d)}</h2><div class="v-sum-small" style="margin-bottom:8px">Ce jour contient :</div>
+      <div class="cv-dup">${c.its.map(i=>`<div class="od">${icon(i)} <b>${esc(i.titre)}</b> <small>${STATUTS[i.statut]||''}</small></div>`).join('')}${c.pl.length ? `<div class="od">📍 ${c.pl.length} lieu(x) à visiter</div>` : ''}${c.info ? `<div class="od">✏️ Programme : ${esc(c.info.titre || c.info.plan.slice(0,60))}</div>` : ''}</div>
+      <button type="button" class="v-btn" onclick="CV.dayDel('${d}','keep')">↪️ Retirer le jour, garder tout (déplacé au ${first ? 'lendemain' : 'jour d’avant'})</button>
+      <button type="button" class="v-btn danger" onclick="CV.dayDel('${d}','drop')">🗑 Retirer le jour et ce qu’il contient</button>
+      <div class="v-sum-small" style="margin-top:6px">Les notes du jour sont toujours gardées (déplacées). Les lieux ne sont jamais supprimés : ils repassent « à placer ».</div>
+      <div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.close()">Annuler</button></div>`);
+  }
+  function dayDel(d, mode){
+    const t = tripBounds(clone(trip())); if(!t) return;
+    const out = [], P = addD(d, -1), N = addD(d, 1);
+    const first = !!t.debut && d <= t.debut, last = !first && !!t.fin && d >= t.fin;
+    const nb = first ? N : P, c = dayContent(d);
+    // 1) ce que contenait le jour
+    c.its.forEach(i=>{ const x = clone(i);
+      if(mode === 'drop') x.deleted = true;
+      else { x.date = nb; if(x.cat==='hotel' && x.dateFin) x.dateFin = addD(nb, 1); }
+      out.push(x); });
+    c.pl.forEach(p=>{ const x = clone(p); x.date = mode === 'drop' ? '' : nb; if(mode === 'drop') x.lock = false; out.push(x); });
+    list('note', n=>n.trip===M.trip && n.ref==='day:' + d).forEach(n=>{ const x = clone(n); x.ref = 'day:' + nb; out.push(x); });
+    const dr = R[dayId(d)];
+    if(dr && !dr.deleted){
+      if(mode === 'keep' && (dr.titre || dr.plan)){ const nr = clone(R[dayId(nb)] && !R[dayId(nb)].deleted ? R[dayId(nb)] : {id:dayId(nb), type:'day', trip:M.trip, date:nb, titre:'', plan:''});
+        nr.titre = nr.titre || dr.titre; nr.plan = [nr.plan, dr.plan].filter(Boolean).join('\n'); delete nr.deleted; out.push(nr); }
+      const x = clone(dr); x.deleted = true; out.push(x);
+    }
+    // 2) les hôtels qui couvraient ce jour perdent une nuit
+    const skip = new Set(c.its.map(i=>i.id));
+    items(i=>i.cat==='hotel' && i.date && !skip.has(i.id)).forEach(h=>{
+      const f = h.dateFin || addD(h.date, 1);
+      if(first && h.date === d && f > N){ const x = clone(h); x.date = N; out.push(x); }
+      else if(last && f > d && h.date < d){ const x = clone(h); x.dateFin = d; out.push(x); }
+    });
+    // 3) on resserre
+    if(first) t.debut = N;
+    else if(last) t.fin = P;
+    else {
+      // les fiches / lieux / notes déjà modifiés ci-dessus ne doivent pas être décalés une 2e fois
+      const tmp = []; shiftAfter(d, -1, tmp);
+      const done = new Map(out.map(x=>[x.id, x]));
+      tmp.forEach(x=>{ if(x.type==='day'){ out.push(x); return; } if(!done.has(x.id)) out.push(x); });
+      t.fin = addD(t.fin || t.debut, -1);
+    }
+    out.push(t);
+    putMany(out, '🗑 Jour retiré'); closeSheet(true); refresh();
+  }
+
+  /* ---------- 🔗 Partager le voyage (compagnon, amis) ---------- */
+  function shareHub(){
+    const t = trip(); if(!t) return;
+    if(t.demo){ alert('C’est le voyage de démo : crée ton propre voyage (Mes voyages → ＋) pour le partager.'); return; }
+    const code = TS()[t.id], s = M.sync, v = (t.voyageurs||[]).filter(prof);
+    let h = `<h2>🔗 Partager « ${esc(t.titre)} »</h2>
+      <div class="v-sum-small" style="margin-bottom:10px">Ton compagnon ou tes amis voient le voyage et le complètent avec toi : chacun sa couleur, chaque ajout est signé.</div>
+      <div class="v-f"><label>Dans ce voyage</label><div class="cv-row" style="gap:6px">${v.map(pid=>pchip(pid)).join('') || '<span class="v-sum-small">personne pour l’instant</span>'}</div>
+        <button type="button" class="v-day-edit" style="margin-top:6px" onclick="CV.editTrip('${t.id}')">👥 Choisir les voyageurs</button></div>`;
+    if(code && spaceObj(code)){
+      h += `<div class="cv-inst ok">🔗 Ce voyage a <b>son propre code</b> : seuls ceux qui l’ont le voient.</div>
+        <button type="button" class="v-btn" onclick="CV.tripInvite('${t.id}')">📤 Envoyer l’invitation (lien + code)</button>
+        <button type="button" class="v-btn sec" onclick="CV.tripShareSheet('${t.id}')">Voir le code et l’état du partage</button>`;
+    } else {
+      if(s.on) h += `<div class="cv-inst ok">✅ Ce voyage est dans ton <b>carnet partagé</b> : ceux qui ont ton code principal le voient déjà.</div>
+        <button type="button" class="v-btn" onclick="CV.shareCode()">📤 Inviter dans tout le carnet (code principal)</button>`;
+      h += `<button type="button" class="v-btn${s.on ? ' sec' : ''}" onclick="CV.tripShare('${t.id}')">🔗 Partager ce voyage seul (son propre code)</button>
+        <div class="v-sum-small" style="margin:-2px 0 8px">Pour des amis qui ne doivent voir <b>que ce voyage</b>, pas tes autres.</div>`;
+      if(!s.on) h += `<button type="button" class="v-btn sec" onclick="CV.close();CV.tab('reglages')">☁️ Partager tout le carnet (code principal)</button>`;
+    }
+    h += `<button type="button" class="v-btn sec" onclick="CV.tripJoin()">🔗 J’ai reçu un code : rejoindre un voyage</button>
+      <div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.close()">Fermer</button></div>`;
+    openSheet(h);
+  }
+
+  /* ---------- 🔎 « Que voir » : lieux ajoutés à la main (ville sans hôtel, excursion…) ---------- */
+  var voirCities = () => list('city', c=>c.trip===M.trip).sort((a,b)=>(a.date||'9').localeCompare(b.date||'9') || (a.createdAt||0)-(b.createdAt||0));
+  function voirAdd(){
+    const ds = trip() ? dayList() : [], cs = voirCities();
+    openSheet(`<h2>📍 Ajouter un lieu à voir</h2><div class="v-sum-small" style="margin-bottom:10px">Une ville sans hôtel, une excursion, un quartier, un parc… L’appli cherche ce qu’il y a à voir autour, comme pour les étapes.</div>
+      <form id="v-form" onsubmit="event.preventDefault();CV.voirSave()">
+        ${field('Ville ou lieu','titre','','text','required placeholder="Ex. Annecy, Montmartre, Chamonix, Lac de Côme"')}
+        ${ds.length ? `<div class="v-f"><label>Pour quel jour ? (facultatif)</label><select class="v-in" name="date"><option value="">Pas de jour précis</option>${ds.map((d,k)=>`<option value="${d}">J${k+1} · ${fdate(d)}</option>`).join('')}</select></div>` : ''}
+        <div class="v-actions"><button type="submit" class="v-btn">🔎 Ajouter et voir les lieux</button><button type="button" class="v-btn sec cv-sq" onclick="CV.close()">✕</button></div>
+      </form>
+      ${cs.length ? `<div class="v-f" style="margin-top:12px"><label>Lieux déjà ajoutés</label>${cs.map(c=>`<div class="cv-place"><span class="x">📍 ${esc(c.titre)}${c.date ? ' <small>· ' + fdate(c.date) + '</small>' : ''}</span><button type="button" class="cv-x" onclick="CV.discover('${c.id}')">🔎</button><button type="button" class="cv-x" onclick="CV.voirDel('${c.id}')">✕</button></div>`).join('')}</div>` : ''}`);
+    setTimeout(()=>{ const i = document.querySelector('#v-form [name=titre]'); if(i) i.focus(); }, 60);
+  }
+  function voirSave(){
+    const f = document.getElementById('v-form'), titre = (f.titre.value || '').trim(); if(!titre) return;
+    const d = f.date ? f.date.value : '';
+    const r = put({id:'cy' + uid(), type:'city', trip:M.trip, titre, date:d, dateFin:''}, '📍 ' + titre + ' ajouté');
+    closeSheet(true); render(); discover(r.id);
+  }
+  function voirDel(id){
+    const c = R[id]; if(!c || !confirm('Retirer « ' + c.titre + ' » de « Que voir » ?\nLes lieux déjà placés dans tes journées restent.')) return;
+    drop(id, '↩️ Retiré'); render(); voirAdd();
+  }
+
+  /* ---------- ✉️ Importer le mail de réservation (coller le texte, ou fichier .eml) ---------- */
+  var impCat = '', impCtx = null;
+  function impMail(){
+    openSheet(`<h2>✉️ Coller le mail de réservation</h2>
+      <div class="v-sum-small" style="margin-bottom:8px">Ouvre le mail de confirmation (hôtel, vol, train, bus, visite…), touche longuement le texte → <b>Tout sélectionner</b> → <b>Copier</b>, puis colle-le ici. L’appli reconnaît le type et remplit la fiche ; tu vérifies avant d’enregistrer. Rien n’est envoyé sur Internet.</div>
+      <textarea class="v-in" id="cf-txt" rows="9" placeholder="Colle ici le texte du mail…"></textarea>
+      ${navigator.clipboard && navigator.clipboard.readText ? `<button type="button" class="v-day-edit" style="margin-top:6px" onclick="CV.impPaste()">📋 Coller depuis le presse-papiers</button>` : ''}
+      <div class="v-actions"><button type="button" class="v-btn" onclick="CV.impMailGo()">🔍 Lire le mail</button><button type="button" class="v-btn sec cv-sq" onclick="CV.impBack()">↩️</button></div>`);
+  }
+  async function impPaste(){ try { const t = await navigator.clipboard.readText(); const e = document.getElementById('cf-txt'); if(e && t) e.value = t; if(!t) toast('Presse-papiers vide'); } catch(e){ toast('Touche longuement la zone de texte → Coller'); } }
+  function impMailGo(){
+    const txt = (document.getElementById('cf-txt')||{}).value || '';
+    if(txt.replace(/\s/g,'').length < 30){ alert('Colle le texte complet du mail de réservation.'); return; }
+    closeSheet(true); cfImport(txt);
+  }
+  function impPickAny(){ tlPickFile('application/pdf,.pdf,.eml,message/rfc822,text/plain,.txt,text/html,.html,.htm', f => impAny(f)); }
+  async function impAny(file, extra){
+    const nm = file.name || '';
+    if(/pdf/i.test(file.type) || /\.pdf$/i.test(nm)) return impFile(file, extra);
+    if(/rfc822|text\/|octet-stream/i.test(file.type || 'text/') || /\.(eml|txt|html?|msg)$/i.test(nm)){
+      try {
+        const raw = await file.text(), m = mimeParse(raw);
+        const text = [extra, m.subject, m.text].filter(Boolean).join('\n');
+        if(m.pdfs.length) return impFile(m.pdfs[0], text);
+        if(text.replace(/\s/g,'').length < 30) throw new Error('mail vide ou illisible');
+        closeSheet(true); cfImport(text);
+      } catch(e){ impSay('⚠️ ' + (e.message || e)); }
+      return;
+    }
+    impSay('⚠️ Choisis le PDF ou le mail (.eml) de la réservation.');
+  }
+  function ewDec(s){ return String(s||'').replace(/=\?([^?]+)\?([BQbq])\?([^?]*)\?=/g, (_, cs, enc, txt) => {
+    try { const b = enc.toUpperCase()==='B' ? Uint8Array.from(atob(txt), c=>c.charCodeAt(0)) : qpBytes(txt.replace(/_/g,' ')); return new TextDecoder(cs).decode(b); } catch(e){ return txt; } }).replace(/\?=\s+=\?/g,''); }
+  function qpBytes(s){
+    s = s.replace(/=\r?\n/g,''); const out = [], enc = new TextEncoder();
+    for(let i=0; i<s.length; i++){
+      if(s[i]==='=' && /^[0-9A-Fa-f]{2}$/.test(s.substr(i+1,2))){ out.push(parseInt(s.substr(i+1,2),16)); i += 2; }
+      else { const c = s.charCodeAt(i); if(c < 128) out.push(c); else enc.encode(s[i]).forEach(b=>out.push(b)); }
+    }
+    return new Uint8Array(out);
+  }
+  function htmlText(h){
+    const d = new DOMParser().parseFromString(String(h).replace(/<(br|\/p|\/div|\/tr|\/td|\/th|\/h\d|\/li|\/table)\b[^>]*>/gi, '$&\n'), 'text/html');
+    d.querySelectorAll('style,script,head,title').forEach(e=>e.remove());
+    return (d.body ? d.body.textContent : '').replace(/[ \t ​]+/g,' ').replace(/ *\n */g,'\n').replace(/\n{2,}/g,'\n');
+  }
+  function mimeParse(raw){
+    const res = {subject:'', text:'', pdfs:[]};
+    raw = String(raw).replace(/\r\n/g,'\n');
+    if(!/^[\w-]+:\s/m.test(raw.slice(0, 2000)) || !/\n\n/.test(raw)){ res.text = /<html|<body|<div|<table/i.test(raw) ? htmlText(raw) : raw; return res; }
+    const walk = (part, depth) => {
+      const i = part.indexOf('\n\n'), head = (i < 0 ? part : part.slice(0, i)).replace(/\n[ \t]+/g,' '), body = i < 0 ? '' : part.slice(i+2);
+      const hv = n => ((head.match(new RegExp('^' + n + ':\\s*([^\\n]+)', 'im'))||[])[1] || '');
+      if(!depth && !res.subject) res.subject = ewDec(hv('subject'));
+      const ct = hv('content-type') || 'text/plain', te = (hv('content-transfer-encoding').match(/[\w-]+/)||[''])[0].toLowerCase();
+      const cs = ((ct.match(/charset="?([^";\s]+)/i)||[])[1] || 'utf-8').toLowerCase();
+      if(/multipart\//i.test(ct)){
+        const b = (ct.match(/boundary="?([^";]+)"?/i)||[])[1]; if(!b || depth > 5) return;
+        body.split('--' + b).slice(1).forEach(p=>{ if(/^--/.test(p)) return; walk(p.replace(/^\n/,''), depth + 1); });
+        return;
+      }
+      const bytes = () => te === 'base64' ? Uint8Array.from(atob(body.replace(/\s+/g,'')), c=>c.charCodeAt(0)) : te === 'quoted-printable' ? qpBytes(body) : null;
+      const name = ewDec((hv('content-disposition').match(/filename\*?="?([^";]+)/i)||[])[1] || (ct.match(/name="?([^";]+)/i)||[])[1] || '');
+      if(/application\/pdf/i.test(ct) || /\.pdf$/i.test(name)){ try { res.pdfs.push(new File([bytes() || new TextEncoder().encode(body)], name || 'reservation.pdf', {type:'application/pdf'})); } catch(e){} return; }
+      if(!/^text\//i.test(ct)) return;
+      let txt; try { const b = bytes(); txt = b ? new TextDecoder(cs).decode(b) : body; } catch(e){ txt = body; }
+      if(/text\/html/i.test(ct)){ if(!res.plain) res.html = (res.html || '') + '\n' + htmlText(txt); }
+      else { res.plain = (res.plain || '') + '\n' + txt; }
+    };
+    walk(raw, 0);
+    res.text = (res.plain && res.plain.replace(/\s/g,'').length > 80 ? res.plain : (res.html || res.plain || '')).trim();
+    return res;
+  }
+
+  /* ---------- 🧭 Quel type de réservation ? (hôtel, trajet, visite) ---------- */
+  function cfKind(T, hint){
+    const low = String(T).toLowerCase(), c = re => (low.match(re) || []).length;
+    const s = {
+      vol: c(/embarquement|boarding|\bvols?\b|\bflights?\b|a[ée]roport|airport|bagage en soute|terminal \d|\bgate\b|compagnie a[ée]rienne|airline|e-?ticket|\bpnr\b|cabin bag|bagage cabine/g) * 2
+        + (String(T).match(/\([A-Z]{3}\)/g) || []).length + (/carte d.embarquement|boarding pass|enregistrement en ligne|online check-?in/.test(low) ? 4 : 0),
+      hotel: c(/h[oô]tel|check-?in|check-?out|\bnuit[ée]?e?s?\b|\bnights?\b|chambre|\brooms?\b|h[ée]bergement|logement|appartement|g[îi]te|auberge|hostel|petit[- ]d[ée]jeuner|breakfast|\bs[ée]jour\b|propri[ée]t[ée]|voyageurs? adultes?/g) * 2
+        + (/booking\.com|airbnb|hotels\.com|expedia|abritel|vrbo|accor|marriott|hilton|ibis|novotel|logis/.test(low) ? 4 : 0),
+      train: c(/\btrains?\b|sncf|\btgv\b|ouigo|inoui|\bter\b|intercit|trenitalia|frecciarossa|\bitalo\b|renfe|\bave\b|deutsche bahn|\bdb\b|\bice\b|eurostar|thalys|lyria|\bgare\b|\bvoiture \d|\bwagon\b|\bcoach \d|railjet|\bsbb\b|\bcff\b|[öo]bb|trainline/g) * 2,
+      bus: c(/\bbus\b|flixbus|blablacar|autocar|ouibus|\balsa\b|\bktel\b|eurolines|navette|shuttle/g) * 2,
+      ferry: c(/ferry|ferries|travers[ée]e|\bbateau\b|\bport de\b|brittany ferries|corsica|moby|grimaldi|minoan|blue star|virtu|\bpont \d|cabine/g) * 2,
+      act: c(/\bbillets?\b|\btickets?\b|\bentr[ée]es?\b|\bvisites?\b|\btours?\b|excursion|activit[ée]|mus[ée]e|museum|concert|spectacle|\bmatch\b|point de rencontre|meeting point|cr[ée]neau|time slot|participants?|coupe-file|skip the line|d[ée]gustation|\batelier\b|parc d.attractions|guid[ée]e?\b|audioguide/g) * 2
+        + (/getyourguide|civitatis|viator|tiqets|klook|musement|fever|ticketmaster|fnac spectacles|headout|ticketone|disneyland|parc ast[ée]rix|puy du fou/.test(low) ? 6 : 0),
+    };
+    if(hint === 'hotel') s.hotel += 3; else if(hint === 'activite') s.act += 3; else if(hint === 'transport'){ s.vol += 2; s.train += 2; s.bus += 1; s.ferry += 1; }
+    const tr = ['vol','train','bus','ferry'].sort((a,b)=>s[b]-s[a])[0];
+    const best = Object.keys(s).sort((a,b)=>s[b]-s[a])[0];
+    return {kind: s[best] ? best : (hint === 'hotel' ? 'hotel' : hint === 'transport' ? 'train' : 'act'), tr: s[tr] ? tr : 'train', s};
+  }
+  function actParse(T, r){
+    const L = T.split('\n').map(l=>l.trim()).filter(Boolean);
+    const bad = /@|https?:|www\.|^(bonjour|hello|hi|cher|ch[èe]re|merci|votre|your|r[ée]f|date|heure|total|prix|montant|adresse|t[ée]l|commande|order|num[ée]ro)\b/i;
+    const lab = T.match(/(?:activit[ée]|excursion|visite|billet|produit|product|exp[ée]rience|[ée]v[ée]nement|event|tour)\s*[:\-–]\s*([^\n]{4,90})/i);
+    const kw = /(visite|billet|entr[ée]e|\btour\b|excursion|mus[ée]e|museum|croisi[èe]re|concert|spectacle|ticket|\bpass\b|journ[ée]e|guid[ée]e|d[ée]gustation|atelier|parc|ch[âa]teau|palais|cath[ée]drale|basilique|colis[ée]e|vatican|acropole|pyramide|cours de)/i;
+    r.titre = (lab ? lab[1] : (L.find(l=>l.length >= 8 && l.length <= 90 && !bad.test(l) && kw.test(l)) || '')).replace(/\s+/g,' ').trim();
+    const mp = T.match(/(?:point de rencontre|meeting point|lieu(?: de rendez-vous)?|adresse|address)\s*[:\-–]\s*([^\n]{5,110})/i); if(mp) r.adresse = mp[1].trim();
+    const pv = T.match(/\b(GetYourGuide|Civitatis|Viator|Tiqets|Klook|Musement|Fever|Ticketmaster|Fnac Spectacles|Headout|TicketOne|Disneyland|Puy du Fou)\b/i); if(pv) r.compagnie = pv[1];
+    return r;
+  }
+  function impTypeBar(cat){
+    if(!impCtx) return '';
+    const b = (k, l) => `<button type="button" class="${cat===k?'on':''}" onclick="CV.impRetype('${k}')">${l}</button>`;
+    return `<div class="cv-imptype"><span>📄 Lu comme</span><div class="v-seg v-seg2">${b('hotel','🏨 Hôtel')}${b('transport','🚆 Trajet')}${b('activite','🎟️ Visite')}</div><small>Pas le bon type ? Touche le bon : la fiche se refait.</small></div>`;
+  }
+  function impRetype(cat){ const c = impCtx; if(!c) return; cfImport(c.raw, c.pj, cat); }
+
+  /* ---------- ⚖️ Même dates qu’un autre hôtel ou trajet : conserver ou remplacer ? ---------- */
+  var endH = h => h.dateFin && h.dateFin > h.date ? h.dateFin : addD(h.date, 1);
+  var whoOverlap = (a, b) => { const pa = parts(a), pb = parts(b); return pa.some(x=>pb.includes(x)); };
+  var tmin = s => /^\d{1,2}:\d{2}/.test(s||'') ? (+s.split(':')[0]) * 60 + (+s.split(':')[1].slice(0,2)) : null;
+  function trOverlap(a, b){
+    if(a.date !== b.date) return false;
+    const n = s => (normQ(cityOf(s||'')).split(' ')[0] || '');
+    if((n(a.from) && n(a.from)===n(b.from)) || (n(a.to) && n(a.to)===n(b.to))) return true;
+    const a1 = tmin(a.heureDep), a2 = tmin(a.heureArr), b1 = tmin(b.heureDep), b2 = tmin(b.heureArr);
+    if(a1 != null && b1 != null) return a1 < (b2 != null && b2 > b1 ? b2 : b1 + 60) && b1 < (a2 != null && a2 > a1 ? a2 : a1 + 60);
+    return b.statut === 'todo' && !b.ref && (!b.from || !b.to);
+  }
+  function dupOf(it){
+    if(!it || !it.date || !['hotel','transport'].includes(it.cat)) return [];
+    return items(o=>o.id !== it.id && o.cat === it.cat && o.date && whoOverlap(o, it) && (it.cat === 'hotel' ? (o.date < endH(it) && it.date < endH(o)) : trOverlap(it, o)));
+  }
+  var dupP = null;
+  function dupAsk(arr, after){
+    const pairs = arr.map(n=>({n, old:dupOf(n)})).filter(x=>x.old.length);
+    dupP = {list:arr, after};
+    const one = pairs.length === 1 && pairs[0].old.length === 1;
+    openSheet(`<h2>⚖️ Déjà prévu à ces dates</h2><div class="v-sum-small" style="margin-bottom:10px">${arr.length > 1 ? 'Certaines fiches importées tombent' : 'Cette fiche tombe'} sur les mêmes dates ${one ? 'qu’une fiche existante' : 'que d’autres fiches'} :</div>
+      ${pairs.map(x=>`<div class="cv-dup"><div class="nw">🆕 ${icon(x.n)} <b>${esc(x.n.titre)}</b><small>${subline(x.n)}</small></div>${x.old.map(o=>`<div class="od">📌 ${icon(o)} <b>${esc(o.titre)}</b> <em class="v-status ${o.statut}">${STATUTS[o.statut]||''}</em><small>${subline(o)}</small></div>`).join('')}</div>`).join('')}
+      <button type="button" class="v-btn" onclick="CV.dupGo('replace')">🔁 Remplacer ${one ? 'l’ancienne fiche' : 'les anciennes fiches'}</button>
+      <div class="v-sum-small" style="margin:-2px 0 8px">L’ancienne est supprimée ; ses notes, ses lieux à visiter et son estimation passent sur la nouvelle.</div>
+      <button type="button" class="v-btn sec" onclick="CV.dupGo('keep')">➕ Conserver les deux</button>
+      ${arr.length === 1 ? `<button type="button" class="v-btn sec" onclick="CV.dupBack()">↩️ Revenir à la fiche</button>` : ''}
+      <div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.dupCancel()">Annuler</button></div>`, true);
+  }
+  function dupGo(mode){
+    const P = dupP; if(!P) return; dupP = null;
+    const out = [], done = new Set();
+    P.list.forEach((n,k)=>{ if(!n.id) n.id = 'i' + uid() + k; });
+    if(mode === 'replace') P.list.forEach(n=>dupOf(n).forEach(o=>{
+      if(done.has(o.id)) return; done.add(o.id);
+      if(!String(n.estime ?? '').trim() && num(o.estime)) n.estime = o.estime;
+      if(!(n.qui||[]).length && (o.qui||[]).length) n.qui = clone(o.qui);
+      if(!n.hint && o.hint) n.hint = o.hint;
+      list('place', p=>p.stay === o.id).forEach(p=>{ const c = clone(p); c.stay = n.id; out.push(c); });
+      list('note', x=>x.ref === 'item:' + o.id).forEach(x=>{ const c = clone(x); c.ref = 'item:' + n.id; out.push(c); });
+      const d = clone(o); d.deleted = true; out.push(d);
+    }));
+    out.push(...P.list);
+    putMany(out, mode === 'replace' ? '🔁 Remplacé' : '➕ Les deux sont gardés');
+    impCtx = null; closeSheet(true);
+    if(P.after) P.after(); else render();
+  }
+  function dupBack(){ const P = dupP, c = impCtx; dupP = null; closeSheet(true); impCtx = c; if(P && P.list[0]) edit(P.list[0]); }
+  function dupCancel(){ dupP = null; impCtx = null; closeSheet(true); }
+
+  /* ---------- 🗂️ « Mes voyages » : s’ouvre au niveau des voyages en cours / à venir ---------- */
+  function tripSheetScroll(){
+    const sh = document.querySelector('#v-sheet-bg .v-sheet'); if(!sh) return;
+    const cards = [...sh.querySelectorAll('.cv-tripcard[data-ph]')]; if(cards.length < 4) return;
+    const cur = sh.querySelector('.cv-tripcard.on[data-ph="live"], .cv-tripcard.on[data-ph="prep"]');
+    const tgt = cur || sh.querySelector('.cv-tripcard[data-ph="live"]') || sh.querySelector('.cv-tripcard[data-ph="prep"]') || cards[cards.length - 1];
+    const hd = tgt.previousElementSibling && tgt.previousElementSibling.classList.contains('cv-triph') ? tgt.previousElementSibling : tgt;
+    sh.scrollTop += hd.getBoundingClientRect().top - sh.getBoundingClientRect().top - 70;
+  }
+  function tripListHTML(cur){
+    const ts = trips(), ph = t => tripPhase(t), lbl = {past:'🗺️ Passés', live:'📍 En cours', prep:'🧳 À venir'};
+    let last = '', h = '';
+    const many = ts.length >= 4;
+    ts.forEach(t=>{
+      const p = !t.debut ? 'prep' : ph(t);
+      if(many && p !== last){ h += `<div class="cv-triph">${lbl[p]}</div>`; last = p; }
+      h += `<button class="cv-tripcard${t.id===cur?' on':''}" data-ph="${p}" onclick="CV.close();CV.go('${t.id}')">
+          <span class="tt">${TS()[t.id] ? '🔗 ' : ''}${esc(t.titre)}${t.archived?' <small>✓ clôturé</small>':''}</span>
+          <span class="td">${tripDatesLong(t) || 'dates à fixer'}</span>
+          <span class="ins">${(t.voyageurs||[]).filter(prof).map(ini).join('')}</span></button>`;
+    });
+    return h;
+  }
+
+  var NEWAPI = {renderPrefs, prefTog, prefPreset, datesSheet, datesSave, dayMenu, dayIns, dayAdd, dayDelAsk, dayDel, shareHub,
+    voirAdd, voirSave, voirDel, impMail, impPaste, impMailGo, impPickAny, impRetype, dupGo, dupBack, dupCancel};
+  var NEWMUT = ['datesSave','dayIns','dayAdd','dayDel','dayDelAsk','voirSave','voirDel','dupGo','impMailGo','impPickAny','impRetype'];
+
+
   const api = {init, installNow, installSheet, infoSheet, infoOk, codeSheet, copyCode, discover, discF, discQ, discAdd, planCity, cityMove, cityLock, cityDel, cityOpt, toggleLock, pdfSheet, pdfMake, pdfClose, mySheet, go, tab, navGo, tripSheet, seedUSA2025, convert2026, editSouv, saveSouv, delSouv, souvAddPhotos, souvDelPhoto, view, viewGo, viewClose, psPick, psChoose, psImport, rembAdd, rembDel, who:setWho, filter, cycle, edit, seg, saveForm, noteFromItem, del, close:closeSheet, add,
     toggleDay, editDay, saveDay, editNote, saveNote, delNote, pin, openRef,
     setObj, addCompanion, addToTrip, removeCompanion, check, delCheck, addCheck,
@@ -8159,14 +8658,14 @@ ${pm.join('\n')}</Document></kml>`;
     planDay, plCfg, plAdd, plDel, plOpt, wizard, radarTuto, rcOpen, rbSheet, rbPhoto, rbSave, zipSavePart, zipCancel, innerGo, inspDeal, inspOpen, compN, compDel, compAdd, compTog, compCreate, inspBack, inspMore, inspFav, inspSurprise, inspVote, gateInstall, partsSheet, partsSave, discInfo, discBack, newTrip, blankTrip, inspire, inspireDemo, inspireGo, inspireCreate, zipSheet, zipExport, zipImport, worldFly, worldStep, worldStory, cfSegGo, trkToggle, modeGo, bilanClose, albumSheet, albCover, albumGo, tripShare, tripShareSheet, tripInvite, tripUnshare, tripJoin, tripJoinGo, tripWho, tripWhoSet, impSheet, impPick, jrSheet, jrTog, jrAll, worldMap, worldMode, worldOpen, worldClose, pjAdd, pjDel, pjOpen, cfSheet, cfGo, tlCo2, hereNow, tlStats, tlKml, tlFill, tlFillGo, rcView, rcAttach, tlIcsGo, capSet, shopSheet, shopAdd, shopTick, shopClear, rembAsk, pollNew, pollSave, pollVote, pollClose, pollDel, pdfRoute, pdfJournal, pdfShare, pdfOpen, pkgPick, pkgApply, hydrateMaps, renderOutils, tlDay, tlIcs, fxTool, fxFill, tlMeteo, tlReceipt, tlRcPhoto, tlRcOcr, tlRcSave, tlReceipts, tlMap, tlBags, tlBagsGo, tlDocs, tlDocEdit, tlDocSave, tlDocDel, tlJournal, pkgSheet, pkgExport, pkgImport, pinToggle, shareSheet, shareLink, askErase, tutoSheet, escaleTuto, demoLoad, demoDel, demoReset, wzGo, wzDates, wzEt, wzSum, wzTpl, wzCreate,
     pickColor, newProfile, editProfile, saveProfile, delProfile, whoSheet, setMe,
     genCode, syncOn, syncOff, syncNow, shareCode, exportShare, exportDownload, importPick, wipe, obCreate, obJoin,
-    _R:()=>R, _M:()=>M};
+    _R:()=>R, _M:()=>M, ...NEWAPI, impBack:()=>impSheet(impCat)};
   // En mode lecture, toutes les actions qui modifient sont bloquées
   const MUT = ['seedUSA2025','convert2026','saveSouv','delSouv','souvAddPhotos','souvDelPhoto','psPick','psChoose','psImport','rembAdd','rembDel',
     'cycle','saveForm','noteFromItem','del','add','saveDay','saveNote','delNote','pin','setObj','addCompanion','addToTrip','removeCompanion',
     'check','delCheck','addCheck','like','saveWish','delWish','wishToTrip','saveTrip','delTrip','closeTrip','reopenTrip',
     'echAdd','echDel','echSpread','echToggle','lisser','echReset','echRange','echRangeReset','plCfg','plAdd','plDel','plOpt',
     'wizard','wzCreate','discAdd','cityMove','cityLock','cityDel','cityOpt','newProfile','saveProfile','delProfile','importPick','wipe','editSouv'];
-  MUT.forEach(n=>{ const f = api[n]; if(!f) return; api[n] = (...a) => {
+  [...MUT, ...NEWMUT].forEach(n=>{ const f = api[n]; if(!f) return; api[n] = (...a) => {
     if(M.lock && !(n==='editSouv' && a[0])){ toast('🔒 Mode lecture : touche le cadenas en haut pour modifier'); return; }
     return f(...a); }; });
   return api;

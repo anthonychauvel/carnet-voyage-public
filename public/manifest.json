@@ -34,7 +34,10 @@
             "application/pdf",
             ".pdf",
             "image/*",
-            "text/plain"
+            "text/plain",
+            "text/html",
+            "message/rfc822",
+            ".eml"
           ]
         }
       ]

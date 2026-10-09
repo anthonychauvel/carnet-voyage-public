@@ -1,7 +1,7 @@
 // Carnet de voyage — fonctionnement hors ligne
 // Pages et fichiers de l'appli : réseau d'abord (toujours la dernière version), copie locale si pas de réseau.
 // La synchro (/api/…) passe toujours par le réseau : les données restent dans le téléphone en attendant.
-const CACHE = 'carnet-2026-10-07d';
+const CACHE = 'carnet-2026-10-09a';
 const CORE = ['./', './index.html', './manifest.json', './apple-touch-icon.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -16,8 +16,9 @@ self.addEventListener('activate', e => {
 });
 const timeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
 self.addEventListener('fetch', e => {
-  const req = e.request; if (req.method !== 'GET') return;
-  const url = new URL(req.url);
+  const req = e.request, url = new URL(req.url);
+  // seul le partage Android (POST /partage-recu) passe ; le reste n'est intercepté qu'en GET
+  if (req.method !== 'GET' && !(req.method === 'POST' && url.origin === self.location.origin && url.pathname.endsWith('/partage-recu'))) return;
   if (url.origin === self.location.origin) {
     // Partage Android (« Partager → Carnet de voyage ») : on range le document, puis on ouvre l'appli
     if (e.request.method === 'POST' && url.pathname.endsWith('/partage-recu')) {
