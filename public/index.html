@@ -2834,6 +2834,7 @@ const CV = (function(){
         <button class="v-btn sec" onclick="CV.pdfSheet()">🖨️ Carnet de route à imprimer (PDF)</button>
         <button class="v-btn sec" onclick="CV.newTrip()">＋ Nouveau voyage</button></div>`;
     }
+    h += `<div class="v-box"><h3>📤 Voyage ou photos non arrivés ?</h3><p>Renvoie vers le serveur toutes les fiches et toutes les photos de ce téléphone, par exemple après un changement de serveur ou de code. Rien n’est dupliqué.</p><button class="v-btn" onclick="CV.photoResend()">📤 Tout renvoyer</button></div>`;
     h += pkgBox();
     h += `<div class="v-box"><h3>📤 Inviter un ami</h3><p>Montre-lui le QR code ou envoie-lui le lien de l’appli.</p><button class="v-btn" onclick="CV.shareSheet()">📤 Partager l’appli (QR code)</button></div>`;
     h += `<div class="v-box"><h3>🎬 Tutos</h3><p>Les 4 espaces du carnet (Préparation, En cours, Passés, Bilan), comment chercher tes vols avec Escale, et le Radar qui surveille les prix.</p>${tutoBtn()}${ESCALE ? `<button type="button" class="v-btn sec" onclick="CV.escaleTuto()">🎓 Tuto Escale premium</button><button type="button" class="v-btn sec" onclick="CV.radarTuto()">✦ Tuto Radar des prix (3 min)</button>` : ''}</div>`;
@@ -3728,6 +3729,25 @@ const CV = (function(){
     M.pq = M.pq || []; M.pq.push(id, id+'.t');
   }
   let uploading = false;
+  async function photoResend(){
+    // 1) toutes les fiches repartent vers leur carnet (principal ou code du voyage), depuis le début
+    let nr = 0;
+    if(M.sync) M.sync.since = 0;
+    (M.spaces||[]).forEach(sp=>{ sp.since = 0; });
+    Object.values(R).forEach(r=>{ if(r && r.id && !r.demo){ markDirty(r.id); nr++; } });
+    // 2) toutes les photos présentes sur ce téléphone (grande + vignette) repartent aussi
+    const ids = new Set();
+    Object.values(R).forEach(r=>{ if(!r || r.demo) return; (r.photos||[]).forEach(x=>ids.add(x)); [r.recu, r.preuve].forEach(x=>x && ids.add(x)); });
+    M.pq = M.pq || []; let n = 0;
+    for(const id of ids) for(const k of [id, id + '.t']){
+      let o = null; try { o = await IDB.get(k); } catch(e){}
+      if(o && o.blob && !M.pq.includes(k)){ M.pq.push(k); n++; }
+    }
+    persist();
+    alert(nr + ' fiche(s) et ' + Math.ceil(n/2) + ' photo(s) remises en file d’envoi.');
+    await syncNow(true);
+    uploadQueue();
+  }
   async function uploadQueue(){
     if(uploading || !(M.pq||[]).length || !photoApi()) return;
     if(!(M.sync.on && M.sync.code) && !(M.spaces||[]).length) return;
@@ -8758,7 +8778,7 @@ ${pm.join('\n')}</Document></kml>`;
     return h;
   }
 
-  var NEWAPI = {navTo, plusGo, destSet, pollPin, renderPrefs, prefTog, prefPreset, datesSheet, datesSave, dayMenu, dayIns, dayAdd, dayDelAsk, dayDel, shareHub,
+  var NEWAPI = {photoResend, navTo, plusGo, destSet, pollPin, renderPrefs, prefTog, prefPreset, datesSheet, datesSave, dayMenu, dayIns, dayAdd, dayDelAsk, dayDel, shareHub,
     voirAdd, voirSave, voirDel, impMail, impPaste, impMailGo, impPickAny, impRetype, dupGo, dupBack, dupCancel};
   var NEWMUT = ['datesSave','dayIns','dayAdd','dayDel','dayDelAsk','voirSave','voirDel','dupGo','impMailGo','impPickAny','impRetype'];
 
