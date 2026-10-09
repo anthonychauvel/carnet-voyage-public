@@ -943,7 +943,7 @@ a.v-btn.cv-escale{display:block;text-align:center;text-decoration:none}
 .cv-foot{text-align:center;font-size:.72rem;padding:18px 12px 8px;color:var(--gray)}
 .cv-foot a{color:inherit}
 .hero-top{position:relative}
-.cv-hero-qr{position:relative;flex:0 0 auto;margin:0 12px 0 auto;z-index:2;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 6px 4px;border:0;border-radius:12px;background:rgba(255,255,255,.92);box-shadow:0 6px 18px rgba(0,0,0,.25);cursor:pointer;color:#2A1238;font:700 .62rem/1 inherit}
+.cv-hero-qr{display:none!important;position:relative;flex:0 0 auto;margin:0 12px 0 auto;z-index:2;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 6px 4px;border:0;border-radius:12px;background:rgba(255,255,255,.92);box-shadow:0 6px 18px rgba(0,0,0,.25);cursor:pointer;color:#2A1238;font:700 .62rem/1 inherit}
 .cv-hero-qr svg{display:block;width:46px;height:46px}
 .cv-hero-qr span{font-size:.62rem;font-weight:800;letter-spacing:.02em}
 .cv-share-qr{display:block;margin:6px auto 10px;width:min(64vw,240px);height:auto;background:#fff;border-radius:14px;padding:10px}
@@ -1033,6 +1033,22 @@ a.v-btn.cv-escale{display:block;text-align:center;text-decoration:none}
 .cv-idea .hd small{color:#6b5670;font-size:.74rem}
 .cv-idea .why{margin:6px 0 2px;font-size:.8rem;color:#4c1d95;font-weight:600}
 .cv-idea p{margin:4px 0 8px;font-size:.82rem}
+.cv-acc{padding:0 18px 18px}
+.cv-acc>summary{list-style:none;cursor:pointer;margin:0 -18px;padding:16px 18px;font-family:'Playfair Display',Georgia,serif;font-weight:600;font-size:1.15rem;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.cv-acc>summary::-webkit-details-marker{display:none}
+.cv-acc>summary::after{content:'›';font-family:inherit;font-size:1.5rem;color:#9a8aa8;transition:transform .2s}
+.cv-acc[open]>summary::after{transform:rotate(90deg)}
+.cv-acc .v-btn{box-sizing:border-box;max-width:100%}
+.cv-pinbar{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 10px;margin:0 -2px 4px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.cv-pinbar::-webkit-scrollbar{display:none}
+.cv-pinbar button{flex:0 0 auto;border:0;border-radius:999px;background:#fff;box-shadow:var(--shadow);padding:9px 14px;font:inherit;font-weight:700;font-size:.85rem;color:#2a1238;white-space:nowrap}
+.cv-modes{display:none!important}
+.cv-nav .dotlive{position:absolute;top:4px;right:22%;width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.3)}
+.cv-nav button{position:relative}
+.cv-pinrow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid #f0e8f5}.cv-pinrow span{font-weight:600;font-size:.9rem}.cv-pinrow select{width:auto;max-width:55%;padding:8px}
+.cv-plus{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.cv-plus button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 6px;border:0;border-radius:16px;background:#f3ecf8;color:#2a1238;font:inherit;font-weight:700;font-size:.78rem;text-align:center}
+.cv-plus button i{font-style:normal;font-size:1.5rem}
 .cv-modes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin:10px 12px 4px;background:#efe7f6;border-radius:16px;padding:4px}
 .cv-modes button{position:relative;border:0;background:transparent;border-radius:12px;padding:7px 2px;font:inherit;color:#4b3a5a;display:flex;flex-direction:column;align-items:center;gap:1px}
 .cv-modes button i{font-style:normal;font-size:1.1rem}
@@ -1542,7 +1558,7 @@ const CV = (function(){
     if(!u && /^https?:/.test(location.protocol)) u = location.origin;
     return u ? u.replace(/\/+$/,'') + '/api/sync' : '';
   }
-  function queueSync(){ if(!M.sync.on && !(M.spaces||[]).length) return; syncDot(); clearTimeout(syncT); syncT = setTimeout(()=>syncNow(), 1200); }
+  function queueSync(){ if(!M.sync.on && !(M.spaces||[]).length) return; syncDot(); pollGap = 20000; clearTimeout(syncT); syncT = setTimeout(()=>syncNow(), 1200); }
   /* ── Chiffrement de bout en bout (version publique) ──
      Le code du carnet ne quitte jamais le téléphone : le serveur reçoit seulement une empreinte
      (pour ranger les données) et des fiches/photos chiffrées en AES-256-GCM avec une clé tirée du code. */
@@ -1622,6 +1638,7 @@ const CV = (function(){
     } catch(e){ sp.err = e.message || String(e); }
     return changed;
   }
+  var pollGap = 20000, lastSyncAt = 0;
   async function syncNow(manual){
     const mainOn = !!(M.sync.on && M.sync.code);
     if(!mainOn && !(M.spaces||[]).length) return;
@@ -1629,7 +1646,7 @@ const CV = (function(){
     syncing = true; syncDot();
     const showC = E2E && !!manual;
     if(showC) cryptShow('🔐 Chiffrement de tes données en cours…');
-    let changed = 0;
+    let changed = 0; const hadDirty = M.dirty.length;
     try {
       if(mainOn){
       const ids = [...M.dirty];
@@ -1655,9 +1672,21 @@ const CV = (function(){
       if(manual) alert('Synchro impossible : ' + M.sync.err);
     }
     persist(); syncing = false; syncDot();
-    if(changed) refresh();
-    else if(M.tab==='reglages' && M.trip!==LEGACY && !sheetOpen()) render();
+    lastSyncAt = Date.now();
+    pollGap = (changed || hadDirty || M.sync.err) ? 20000 : Math.min(pollGap * 2, 120000);   // rien de neuf : on espace les appels au serveur (40 s, 80 s, 2 min)
+    softRefresh(changed);
     if(again){ again = false; syncNow(); }
+  }
+  /* Ne jamais redessiner l'écran pendant que l'utilisateur touche, tape ou ouvre une liste :
+     sinon le bouton ou la liste « disparaît » sous le doigt et il faut retoucher plusieurs fois. */
+  var lastTouch = 0, softT = null, softWant = 0;
+  ['pointerdown','touchstart','keydown','input','focusin'].forEach(ev=>document.addEventListener(ev, ()=>{ lastTouch = Date.now(); }, {capture:true, passive:true}));
+  const uiBusy = () => { const a = document.activeElement; return (a && /^(SELECT|INPUT|TEXTAREA)$/.test(a.nodeName) && document.getElementById('cv-body') && document.getElementById('cv-body').contains(a)) || Date.now() - lastTouch < 1500; };
+  function softRefresh(changed){
+    softWant = Math.max(softWant, changed ? 2 : (M.tab==='reglages' ? 1 : 0)); if(!softWant) return;
+    if(uiBusy() || sheetOpen()){ clearTimeout(softT); softT = setTimeout(()=>softRefresh(0), 1600); return; }
+    const w = softWant; softWant = 0;
+    if(w === 2) refresh(); else if(M.trip!==LEGACY) render();
   }
   function syncDot(){
     const el = document.getElementById('cv-sd'); if(!el) return;
@@ -1801,10 +1830,61 @@ const CV = (function(){
     const g = groupOf(M.tab);
     const sub = document.getElementById('tabsC');
     const vt = g.tabs.filter(t=>t[0]===M.tab || ALWAYS[t[0]] || !hidden('tab:' + t[0]));
-    sub.innerHTML = vt.length > 1 ? vt.map(([id,l]) => `<button class="t27${id===M.tab?' active':''}" onclick="CV.tab('${id}')">${l}</button>`).join('') : '';
+    if(!NAV_G[g.id]) vt.length = 0;
+    const subH = vt.length > 1 ? vt.map(([id,l]) => `<button class="t27${id===M.tab?' active':''}" onclick="CV.tab('${id}')">${l}</button>`).join('') : '';
+    if(sub.__h !== subH){ sub.innerHTML = subH; sub.__h = subH; }
     sub.style.display = vt.length > 1 ? 'flex' : 'none';
-    document.getElementById('cv-nav').innerHTML = visGroups(g).map(x=>`<button class="${x.id===g.id?'on':''}" onclick="CV.navGo('${x.id}')"><i>${x.icon}</i><span>${x.lbl}</span></button>`).join('');
+    buildNav();
   }
+  /* ---------- 🧭 UNE SEULE barre de boutons, en bas ---------- */
+  const NAV_G = {resas:1, sous:1};   // seuls ces deux groupes gardent leurs petits filtres sous l'en-tête
+  /* Destinations qu'on peut épingler dans la barre du bas (4 maximum + « Plus ») */
+  const DEST = [
+    ['prog','🗓️','Programme'], ['resas','🎫','Résas'], ['sous','💸','Budget'], ['live','📍','En cours'],
+    ['souv','📸','Souvenirs'], ['notes','📌','Notes'], ['outils','🧰','Outils'], ['envies','✨','Envies'],
+    ['check','✅','Checklist'], ['ech','📆','Échéancier'], ['past','🗺️','Passés'], ['bilan','🏁','Bilan'], ['reglages','👥','Partage & profils']];
+  const DEST_DEF = ['prog','resas','sous','live'];
+  const DEST_HIDE = k => (k==='live'||k==='past'||k==='bilan') ? 'mode:' + k : ['souv','notes','outils','envies','check','ech'].includes(k) ? 'tab:' + k : '';
+  const destHidden = k => { const h = DEST_HIDE(k); return !!h && hidden(h); };
+  const bar = () => DEST_DEF.filter(k=>!destHidden(k));                       // barre du bas (fixe)
+  const pins = () => (Array.isArray(UI().pin) ? UI().pin : []).filter(k=>DEST.some(d=>d[0]===k) && !DEST_DEF.includes(k) && !destHidden(k));   // raccourcis en haut de l'écran principal
+  function pinBar(){
+    if(M.mode && M.mode !== 'prep') return ''; const L = pins(); if(!L.length) return '';
+    return `<div class="cv-pinbar">${L.map(k=>{ const d = DEST.find(x=>x[0]===k); return `<button type="button" onclick="CV.navTo('${k}')">${d[1]} ${d[2]}</button>`; }).join('')}</div>`;
+  }
+  function destOn(k){
+    const mode = M.mode || 'prep', grp = groupOf(M.tab).id;
+    if(k==='live'||k==='past'||k==='bilan') return mode === k;
+    if(mode !== 'prep') return false;
+    if(k==='resas'||k==='sous') return grp === k;
+    return M.tab === k;
+  }
+  function buildNav(){
+    const live = trips().some(t=>tripPhase(t)==='live');
+    const items = bar().map(k=>{ const d = DEST.find(x=>x[0]===k); return [k, d[1], d[2], destOn(k)]; });
+    items.push(['plus','☰','Plus', !items.some(x=>x[3])]);
+    const navH = items.map(([k,ic,l,on])=>`<button class="${on?'on':''}" onclick="CV.navTo('${k}')"><i>${ic}</i><span>${l}</span>${k==='live' && live ? '<b class="dotlive"></b>' : ''}</button>`).join(''), navEl = document.getElementById('cv-nav');
+    if(navEl.__h !== navH){ navEl.innerHTML = navH; navEl.__h = navH; }
+  }
+  function navTo(k){
+    if(k === 'plus'){ plusSheet(); return; }
+    if(k === 'live' || k === 'past' || k === 'bilan'){ if(M.mode === k) window.scrollTo({top:0, behavior:'smooth'}); else modeGo(k); return; }
+    const was = M.mode || 'prep'; M.mode = 'prep';
+    if(k === 'resas' || k === 'sous'){
+      if(was === 'prep' && groupOf(M.tab).id === k){ applyMode(); window.scrollTo({top:0, behavior:'smooth'}); return; }
+      persist(); navGo(k); return;
+    }
+    M.tab = k; persist(); applyMode(); window.scrollTo({top:0, behavior: was==='prep' ? 'smooth' : 'auto'});
+  }
+  function plusSheet(){
+    const p = bar(), ent = DEST.filter(d=>!p.includes(d[0]) && !destHidden(d[0]) && d[0] !== 'prog')
+      .map(d=>[`CV.plusGo('${d[0]}')`, d[1], d[2]]);
+    ent.push([`CV.plusGo('prefs')`, '⚙️', 'Réglages']);
+    openSheet(`<h2>Plus</h2><div class="cv-plus">${ent.map(([fn,ic,l])=>`<button type="button" onclick="${fn}"><i>${ic}</i><span>${l}</span></button>`).join('')}</div>
+      <div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.close()">✕ Fermer</button></div>`);
+  }
+  function plusGo(k){ closeSheet(true); navTo(k === 'prefs' ? 'prefs' : k); }
+
   function navGo(gid){
     const g = GROUPS.find(x=>x.id===gid); if(!g) return;
     M.lastTab = M.lastTab || {};
@@ -2252,7 +2332,7 @@ const CV = (function(){
   function pinToggle(){ M.pinOpen = M.pinOpen === false; persist(); const y = window.scrollY; render(); window.scrollTo(0, y); }
   function renderProg(){
     const ds = dayList();
-    let h = liveCard() + daysBar() + quickBar() + whoBar() + pinBoard();
+    let h = pinBar() + liveCard() + daysBar() + quickBar() + whoBar() + pinBoard() + pinnedPolls();
     const tt = trip();
     if(tt && tt.demo) h = `<div class="cv-demo-bar">👀 <b>Voyage de démo</b> : touche à tout, modifie, supprime. Il reste sur ce téléphone et n’est jamais partagé.
         <span class="cv-demo-btns"><button type="button" onclick="CV.demoReset()">↺ Recommencer</button><button type="button" onclick="CV.demoDel()">Supprimer la démo</button></span></div>` + h;
@@ -2760,7 +2840,6 @@ const CV = (function(){
     h += `<div class="v-box"><h3>🕘 Activité récente</h3>${activity()}</div>
       <div class="v-box"><h3>💾 Sauvegarde</h3>
         <p>Tout est enregistré sur ce téléphone (${Math.round(size/1024)} Ko)${s.on?' et sur le serveur':''}. L’export reste ta copie de secours, et il contient aussi l’archive 2026.</p>
-        ${trip() ? `<button class="v-btn" onclick="CV.pdfSheet()">🖨️ Carnet de route à imprimer (PDF)</button>` : ''}
         <button class="v-btn" onclick="CV.zipSheet()">💾 Sauvegarde complète ZIP (avec photos)</button>
         <button class="v-btn sec" onclick="CV.exportShare()">📤 Exporter / envoyer (.json, sans photos)</button>
         <button class="v-btn sec" onclick="CV.exportDownload()">⬇️ Télécharger le fichier</button>
@@ -2769,6 +2848,20 @@ const CV = (function(){
         ${s.on ? `<button class="v-btn sec" onclick="CV.askErase()">🗑 Demander l’effacement sur le serveur</button>` : ''}
         <a class="v-btn sec" href="mentions-legales.html" style="display:block;text-align:center;text-decoration:none">🔒 Mentions légales et confidentialité</a></div>`;
     document.getElementById('cv-body').innerHTML = h;
+    accordion();
+  }
+  /* Sections repliables : on ne voit que les titres, un toucher ouvre la section (état gardé pendant la session) */
+  var accOpen = {'👤 Profils':1};
+  function accordion(){
+    document.querySelectorAll('#cv-body > .v-box').forEach(b=>{
+      const h3 = b.firstElementChild; if(!h3 || h3.tagName !== 'H3') return;
+      const d = document.createElement('details'); d.className = 'v-box cv-acc';
+      const key = h3.textContent.trim(); if(accOpen[key]) d.open = true;
+      const sm = document.createElement('summary'); sm.innerHTML = h3.innerHTML; h3.remove();
+      d.appendChild(sm); while(b.firstChild) d.appendChild(b.firstChild);
+      d.addEventListener('toggle', ()=>{ if(d.open) accOpen[key] = 1; else delete accOpen[key]; });
+      b.replaceWith(d);
+    });
   }
   async function syncOn(){
     const urlEl = document.getElementById('cv-surl');
@@ -3920,9 +4013,9 @@ const CV = (function(){
     try { const hq = document.getElementById('cv-hero-qr'); if(hq) hq.innerHTML = qrSVG(APP_URL(), 'q') + '<span>📤 Partager</span>'; } catch(e){}
     loadStore();
     document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ if(vw) viewClose(); else closeSheet(); } if(vw && e.key==='ArrowRight') viewGo(1); if(vw && e.key==='ArrowLeft') viewGo(-1); });
-    document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') syncNow(); });
+    document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible' && (M.dirty.length || Date.now() - lastSyncAt > 60000)) syncNow(); });
     window.addEventListener('online', ()=>syncNow());
-    setInterval(()=>{ if(document.visibilityState==='visible' && !sheetOpen()) syncNow(); }, 20000);
+    (function poll(){ setTimeout(()=>{ if(document.visibilityState==='visible' && !sheetOpen()) syncNow(); poll(); }, pollGap); })();
     bootOffline();
     if(installGate()) return;
     applyMode(); applyLock(); countInstall();
@@ -6111,6 +6204,7 @@ const CV = (function(){
       if(!r || !r.id || r.demo) return;
       const cur = R[r.id], base = M.pkgBase[r.id] || 0;
       if(!cur) return add.push(r);
+      if(cur.deleted && !r.deleted){ add.push(Object.assign({}, r, {updatedAt: Date.now()})); return; }
       if(sameRec(cur, r)) return;
       const iChanged = (cur.updatedAt||0) > base, theyChanged = (r.updatedAt||0) > base;
       if(theyChanged && !iChanged) upd.push(r);
@@ -6452,17 +6546,26 @@ const CV = (function(){
 
   /* ---------- 🗳️ Sondages (dans les Envies) ---------- */
   const polls = () => list('poll').sort((a,b)=>(a.closed?1:0)-(b.closed?1:0) || (b.createdAt||0)-(a.createdAt||0));
+  function pollCard(p, onHome){
+    const votes = p.votes || {}, n = Object.keys(votes).length, mine = votes[M.me];
+    const cnt = p.options.map((_,i)=>Object.values(votes).filter(v=>v===i).length), best = Math.max(0, ...cnt);
+    return `<div class="cv-poll${p.closed?' closed':''}"><div class="pq"><b>${esc(p.question)}</b> <span class="v-sum-small">· ${n} vote${n>1?'s':''}${p.closed?' · clos':''}</span></div>
+      ${p.options.map((o,i)=>`<button type="button" class="po${mine===i?' me':''}${p.closed && cnt[i]===best && best ? ' win' : ''}" ${p.closed?'disabled':''} onclick="CV.pollVote('${p.id}',${i})"><span class="pb" style="width:${n ? cnt[i]/n*100 : 0}%"></span><span class="pl">${esc(o)}</span><span class="pc">${cnt[i]}${n ? ' · ' + Math.round(cnt[i]/n*100) + ' %' : ''}</span></button>`).join('')}
+      <div class="v-sum-small">${Object.entries(votes).map(([pid,v])=>esc(pname(pid)) + ' → ' + esc(p.options[v]||'?')).join(' · ')}</div>
+      <div class="cv-row"><button type="button" class="v-day-edit" onclick="CV.pollPin('${p.id}')">${p.pin ? '📌 Désépingler' : '📌 Épingler sur l’accueil'}</button>${!onHome && p.createdBy === M.me ? `<button type="button" class="v-day-edit" onclick="CV.pollClose('${p.id}')">${p.closed ? '↺ Rouvrir' : '🔒 Clore'}</button><button type="button" class="v-day-edit" onclick="CV.pollDel('${p.id}')">🗑</button>` : ''}</div></div>`;
+  }
   function pollsHTML(){
     const ps = polls();
     return `<div class="v-box cv-polls"><div class="cv-row" style="justify-content:space-between;align-items:center"><h3 style="margin:0">🗳️ Sondages</h3><button type="button" class="v-day-edit" onclick="CV.pollNew()">＋ Sondage</button></div>
-      ${ps.length ? ps.map(p=>{ const votes = p.votes || {}, n = Object.keys(votes).length, mine = votes[M.me];
-        const cnt = p.options.map((_,i)=>Object.values(votes).filter(v=>v===i).length), best = Math.max(0, ...cnt);
-        return `<div class="cv-poll${p.closed?' closed':''}"><div class="pq"><b>${esc(p.question)}</b> <span class="v-sum-small">· ${n} vote${n>1?'s':''}${p.closed?' · clos':''}</span></div>
-          ${p.options.map((o,i)=>`<button type="button" class="po${mine===i?' me':''}${p.closed && cnt[i]===best && best ? ' win' : ''}" ${p.closed?'disabled':''} onclick="CV.pollVote('${p.id}',${i})"><span class="pb" style="width:${n ? cnt[i]/n*100 : 0}%"></span><span class="pl">${esc(o)}</span><span class="pc">${cnt[i]}${n ? ' · ' + Math.round(cnt[i]/n*100) + ' %' : ''}</span></button>`).join('')}
-          <div class="v-sum-small">${Object.entries(votes).map(([pid,v])=>esc(pname(pid)) + ' → ' + esc(p.options[v]||'?')).join(' · ')}</div>
-          ${p.createdBy === M.me ? `<div class="cv-row"><button type="button" class="v-day-edit" onclick="CV.pollClose('${p.id}')">${p.closed ? '↺ Rouvrir' : '🔒 Clore'}</button><button type="button" class="v-day-edit" onclick="CV.pollDel('${p.id}')">🗑</button></div>` : ''}</div>`; }).join('')
+      ${ps.length ? ps.map(p=>pollCard(p, false)).join('')
         : '<div class="v-sum-small">Une question pour le groupe ? « Rome ou Lisbonne ? », « Resto japonais ou italien ce soir ? »… Chacun vote avec son profil.</div>'}</div>`;
   }
+  /* Sondages épinglés : visibles et votables directement sur l'accueil (Programme) */
+  function pinnedPolls(){
+    const ps = polls().filter(p=>p.pin); if(!ps.length) return '';
+    return `<div class="v-box cv-polls cv-polls-home"><h3 style="margin:0 0 6px">🗳️ Sondage du groupe</h3>${ps.map(p=>pollCard(p, true)).join('')}</div>`;
+  }
+  function pollPin(id){ const p = clone(R[id]); p.pin = !p.pin; put(p, p.pin ? '📌 Sondage épinglé sur l’accueil' : '📌 Sondage désépinglé'); toast(p.pin ? '📌 Épinglé sur l’accueil' : '📌 Désépinglé'); refresh(); }
   function pollNew(){
     openSheet(`<h2>🗳️ Nouveau sondage</h2><form id="v-form" onsubmit="event.preventDefault();CV.pollSave()">
       ${field('Question','q','','text','placeholder="Ex. Où partir en mai ?" required')}
@@ -6691,7 +6794,7 @@ ${pm.join('\n')}</Document></kml>`;
   function quickBar(){
     const t = trip(); if(!t || t.archived) return '';
     if(hidden('blk:quick')) return tripPhase(t)==='live' ? trkHTML() : '';
-    return (tripPhase(t)==='live' ? trkHTML() : '') + `<div class="cv-quick"><button type="button" onclick="CV.hereNow()">📍 Je suis ici</button><button type="button" onclick="CV.impSheet()">📄 Importer une résa</button><button type="button" onclick="CV.worldMap()">🌍 Carte du monde</button></div>`;
+    return (tripPhase(t)==='live' ? trkHTML() : '') + `<div class="cv-quick"><button type="button" onclick="CV.hereNow()">📍 Je suis ici</button><button type="button" onclick="CV.impSheet()">📄 Importer une résa</button></div>`;
   }
 
   /* ---------- 📍 Step géolocalisé = souvenir avec position (photos + récit) ---------- */
@@ -6947,7 +7050,7 @@ ${pm.join('\n')}</Document></kml>`;
     const k = M.mode || 'prep', tc = document.getElementById('tabsC'), nav = document.getElementById('cv-nav');
     modeBar();
     const special = k !== 'prep';
-    if(tc) tc.style.display = special ? 'none' : ''; if(nav) nav.style.display = special ? 'none' : 'flex';
+    if(tc) tc.style.display = special || !tc.innerHTML.trim() ? 'none' : ''; if(nav) nav.style.display = 'flex';
     if(!special) return false;
     document.getElementById('cv-fab').style.display = 'none';
     const body = document.getElementById('cv-body');
@@ -7204,7 +7307,7 @@ ${pm.join('\n')}</Document></kml>`;
       const data = JSON.parse(new TextDecoder().decode(main)); if(data.app !== 'carnet-voyage') throw new Error('ce ZIP n’est pas une sauvegarde du carnet');
       const replace = Object.values(R).some(r=>!r.demo && r.type!=='profile') && confirm(`Sauvegarde du ${new Date(data.exportedAt).toLocaleString('fr-FR')} : ${data.records.length} fiches.\n\nOK = REMPLACER tout le carnet de ce téléphone par la sauvegarde.\nAnnuler = FUSIONNER (garder les deux ; la version la plus récente de chaque fiche gagne).`);
       if(replace) Object.keys(R).forEach(id=>{ if(!R[id].demo) delete R[id]; });
-      let n = 0; data.records.forEach(r=>{ if(!r || !r.id) return; const cur = R[r.id]; if(!cur || (r.updatedAt||0) >= (cur.updatedAt||0)){ R[r.id] = r; markDirty(r.id); n++; } });
+      let n = 0; data.records.forEach(r=>{ if(!r || !r.id) return; const cur = R[r.id]; if(cur && cur.deleted && !r.deleted){ r = Object.assign({}, r, {updatedAt: Date.now()}); R[r.id] = r; markDirty(r.id); n++; return; } if(!cur || (r.updatedAt||0) >= (cur.updatedAt||0)){ R[r.id] = r; markDirty(r.id); n++; } });
       let nf = 0; const names = Object.keys(z).filter(k=>/^(photos|docs)\//.test(k));
       for(const k of names){ const id = k.replace(/^(photos|docs)\//,'').replace(/\.(jpg|pdf)$/,''); const ex = await IDB.get(id).catch(()=>null); if(ex && ex.blob) continue;
         const u8 = await get(k); if(!u8) continue; await IDB.put({id, blob:new Blob([u8], {type: k.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg'}), up:0}); nf++;
@@ -8241,9 +8344,12 @@ ${pm.join('\n')}</Document></kml>`;
     let h = `<div class="v-sum"><div class="v-sum-row"><div class="v-sum-big">⚙️ Réglages</div><div class="v-sum-small">${nh ? nh + ' élément' + (nh>1?'s':'') + ' masqué' + (nh>1?'s':'') : 'tout est affiché'}</div></div>
         <div class="v-sum-small">Garde seulement ce qui te sert : décoche un onglet ou un encart pour le masquer. Rien n’est effacé, et ce réglage ne concerne que ce téléphone (tes compagnons choisissent les leurs).</div>
         <div class="cv-row" style="gap:6px;margin-top:10px"><button type="button" class="v-day-edit" onclick="CV.prefPreset('simple')">🌱 Version simple</button><button type="button" class="v-day-edit" onclick="CV.prefPreset('all')">✨ Tout afficher</button></div></div>`;
-    h += `<div class="v-box"><h3>🧭 Espaces du haut</h3>${MODES.map(([k,ic,l])=>tg('mode:' + k, ic + ' ' + l, k==='prep')).join('')}</div>`;
-    h += `<div class="v-box"><h3>🗂️ Onglets</h3>${GROUPS.map(g=>`<div class="cv-prefg"><b>${g.icon} ${g.lbl}</b>${g.tabs.map(([id,l])=>tg('tab:' + id, id==='prog' ? '🗓️ Jour par jour' : id==='budget' ? '💸 Qui paie quoi' : id==='envies' ? '✨ Envies (week-ends, idées)' : l, ALWAYS[id])).join('')}</div>`).join('')}
-        <div class="v-sum-small">Un menu du bas dont tous les onglets sont décochés disparaît de la barre.</div></div>`;
+    { const pn = pins();
+      h += `<div class="v-box"><h3>📌 Mes raccourcis</h3><div class="v-sum-small" style="margin-bottom:8px">Épingle un écran pour qu’il apparaisse en haut de l’écran principal. Sans rien d’épinglé, cette barre n’apparaît pas. La barre du bas reste la même.</div>
+        ${DEST.filter(d=>!['prog','resas','sous'].includes(d[0])).map(([k,ic,l])=>{ const bark = k === 'live', st = destHidden(k) ? 'hide' : bark ? 'bar' : pn.includes(k) ? 'pin' : 'plus', canHide = !!DEST_HIDE(k);
+          return `<div class="cv-pinrow"><span>${ic} ${l}</span><select class="v-in" aria-label="${l}" onchange="CV.destSet('${k}', this.value)">${bark ? `<option value="bar"${st==='bar'?' selected':''}>📍 Dans la barre du bas</option>` : `<option value="pin"${st==='pin'?' selected':''}>📌 Épinglé en haut</option><option value="plus"${st==='plus'?' selected':''}>☰ Dans « Plus »</option>`}${canHide ? `<option value="hide"${st==='hide'?' selected':''}>🙈 Masqué</option>` : ''}</select></div>`; }).join('')}</div>`; }
+    h += `<div class="v-box"><h3>🗂️ Onglets</h3>${GROUPS.map(g=>{ const tl = g.tabs.filter(([id])=>!DEST.some(d=>d[0]===id) && id!=='prog' && id!=='prefs' && id!=='reglages'); return tl.length ? `<div class="cv-prefg"><b>${g.icon} ${g.lbl}</b>${tl.map(([id,l])=>tg('tab:' + id, l, ALWAYS[id])).join('')}</div>` : ''; }).join('')}
+        <div class="v-sum-small">Ce sont les petits filtres sous l’en-tête de Résas et de Budget.</div></div>`;
     h += `<div class="v-box"><h3>🧩 Encarts et boutons</h3>${PREF_BLOCKS.map(([k,l])=>tg(k, l)).join('')}</div>`;
     document.getElementById('cv-body').innerHTML = h;
   }
@@ -8257,8 +8363,15 @@ ${pm.join('\n')}</Document></kml>`;
     const s = document.querySelector('.cv-pref input[onchange*="' + k + '"]'); if(s) s.checked = on;
     const n = document.querySelector('#cv-body .v-sum-row .v-sum-small'), nh = Object.keys(u.hide).length; if(n) n.textContent = nh ? nh + ' élément' + (nh>1?'s':'') + ' masqué' + (nh>1?'s':'') : 'tout est affiché';
   }
+  function destSet(k, v){
+    const u = UI(); let pn = pins().filter(x=>x!==k); const h = DEST_HIDE(k);
+    if(v === 'hide' && h) u.hide[h] = 1; else if(h) delete u.hide[h];
+    if(v === 'pin') pn.push(k);
+    u.pin = pn; prefFix(); persist(); buildNav(); renderPrefs();
+    toast(v === 'pin' ? '📌 Épinglé en haut de l’écran principal' : v === 'hide' ? '🙈 Masqué' : v === 'bar' ? '📍 Dans la barre du bas' : '☰ Rangé dans « Plus »');
+  }
   function prefPreset(p){
-    UI().hide = {}; if(p === 'simple') PRESET_SIMPLE.forEach(k=>UI().hide[k] = 1);
+    UI().hide = {}; UI().pin = []; if(p === 'simple') PRESET_SIMPLE.forEach(k=>UI().hide[k] = 1);
     prefFix(); persist(); applyMode(); toast(p === 'simple' ? '🌱 Version simple' : '✨ Tout est affiché');
   }
 
@@ -8432,6 +8545,7 @@ ${pm.join('\n')}</Document></kml>`;
       if(!s.on) h += `<button type="button" class="v-btn sec" onclick="CV.close();CV.tab('reglages')">☁️ Partager tout le carnet (code principal)</button>`;
     }
     h += `<button type="button" class="v-btn sec" onclick="CV.tripJoin()">🔗 J’ai reçu un code : rejoindre un voyage</button>
+      <button type="button" class="v-btn sec" onclick="CV.shareSheet()">📤 Faire découvrir l’appli à un ami (QR code)</button>
       <div class="v-actions"><button type="button" class="v-btn sec" onclick="CV.close()">Fermer</button></div>`;
     openSheet(h);
   }
@@ -8644,7 +8758,7 @@ ${pm.join('\n')}</Document></kml>`;
     return h;
   }
 
-  var NEWAPI = {renderPrefs, prefTog, prefPreset, datesSheet, datesSave, dayMenu, dayIns, dayAdd, dayDelAsk, dayDel, shareHub,
+  var NEWAPI = {navTo, plusGo, destSet, pollPin, renderPrefs, prefTog, prefPreset, datesSheet, datesSave, dayMenu, dayIns, dayAdd, dayDelAsk, dayDel, shareHub,
     voirAdd, voirSave, voirDel, impMail, impPaste, impMailGo, impPickAny, impRetype, dupGo, dupBack, dupCancel};
   var NEWMUT = ['datesSave','dayIns','dayAdd','dayDel','dayDelAsk','voirSave','voirDel','dupGo','impMailGo','impPickAny','impRetype'];
 
