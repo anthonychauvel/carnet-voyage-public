@@ -1,7 +1,7 @@
 // Carnet de voyage — fonctionnement hors ligne
 // Pages et fichiers de l'appli : réseau d'abord (toujours la dernière version), copie locale si pas de réseau.
 // La synchro (/api/…) passe toujours par le réseau : les données restent dans le téléphone en attendant.
-const CACHE = 'carnet-2026-10-09e';
+const CACHE = 'carnet-2026-10-10v';
 const CORE = ['./', './index.html', './manifest.json', './apple-touch-icon.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -48,6 +48,11 @@ self.addEventListener('fetch', e => {
     e.respondWith(timeout(fetch(req), 6000)
       .then(r => { if (r && r.ok) { const cp = r.clone(); caches.open(CACHE).then(c => c.put(req, cp)); } return r; })
       .catch(() => caches.match(req, {ignoreSearch: true}).then(m => m || caches.match('./index.html'))));
+    return;
+  }
+  // Vezoria (version test) : images et scripts servis par vezoria.pages.dev, copie locale d'abord (pas la vidéo ni la musique)
+  if (url.hostname === 'vezoria.pages.dev' && !/\.(mp4|mp3)$/.test(url.pathname)) {
+    e.respondWith(caches.match(req).then(m => m || fetch(req).then(r => { if (r && (r.ok || r.type === 'opaque')) { const cp = r.clone(); caches.open(CACHE).then(c => c.put(req, cp)); } return r; })));
     return;
   }
   // Bibliothèques externes (lecteur de ZIP) : copie locale d'abord
