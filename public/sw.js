@@ -1,7 +1,7 @@
 // Carnet de voyage — fonctionnement hors ligne
 // Pages et fichiers de l'appli : réseau d'abord (toujours la dernière version), copie locale si pas de réseau.
 // La synchro (/api/…) passe toujours par le réseau : les données restent dans le téléphone en attendant.
-const CACHE = 'carnet-2026-10-10v';
+const CACHE = 'carnet-2026-10-16a';
 const CORE = ['./', './index.html', './manifest.json', './apple-touch-icon.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -52,7 +52,13 @@ self.addEventListener('fetch', e => {
   }
   // Vezoria (version test) : images et scripts servis par vezoria.pages.dev, copie locale d'abord (pas la vidéo ni la musique)
   if (url.hostname === 'vezoria.pages.dev' && !/\.(mp4|mp3)$/.test(url.pathname)) {
-    e.respondWith(caches.match(req).then(m => m || fetch(req).then(r => { if (r && (r.ok || r.type === 'opaque')) { const cp = r.clone(); caches.open(CACHE).then(c => c.put(req, cp)); } return r; })));
+    // copie locale tout de suite, puis mise à jour en arrière-plan : les icônes et dessins redessinés arrivent à l’ouverture suivante
+    e.respondWith(caches.open(CACHE).then(async c => {
+      const m = await c.match(req);
+      const net = fetch(req).then(r => { if (r && (r.ok || r.type === 'opaque')) c.put(req, r.clone()).catch(() => null); return r; });
+      if (m) { e.waitUntil(net.catch(() => null)); return m; }
+      return net;
+    }));
     return;
   }
   // Bibliothèques externes (lecteur de ZIP) : copie locale d'abord
