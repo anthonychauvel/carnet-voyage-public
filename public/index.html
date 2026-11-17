@@ -1297,7 +1297,7 @@ html,body{overscroll-behavior-y:none}
 .cv-pref{padding:5px 0}
 .cv-pref.lock{opacity:.55}
 .vz-band{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin:10px 12px 0;padding:10px 12px;border-radius:16px;background:linear-gradient(135deg,#FFF7E6,#FDE9F1);border:1px solid rgba(0,0,0,.06);box-shadow:0 4px 14px rgba(0,0,0,.06);color:#2A1238}
-.vz-band .vz-i{font-size:1.5rem;line-height:1}.vz-band .vz-t{flex:1 1 200px;min-width:0}.vz-band .vz-t b{display:block;font-size:.95rem}.vz-band .vz-t small{display:block;font-size:.78rem;opacity:.8;line-height:1.35}
+.vz-band.vz-close{background:linear-gradient(135deg,#FFF1E6,#FFE3E3);border-color:rgba(200,60,40,.25)} .vz-band .vz-i{font-size:1.5rem;line-height:1}.vz-band .vz-t{flex:1 1 200px;min-width:0}.vz-band .vz-t b{display:block;font-size:.95rem}.vz-band .vz-t small{display:block;font-size:.78rem;opacity:.8;line-height:1.35}
 .vz-band .vz-a{display:flex;flex-wrap:wrap;gap:6px;width:100%}.vz-band .vz-a button{border:1px solid rgba(42,18,56,.18);background:#fff;color:#2A1238;border-radius:999px;padding:7px 12px;font:700 .8rem system-ui,sans-serif;cursor:pointer;min-height:36px}
 .vz-band .vz-a .vz-go{background:#2A1238;color:#fff;border-color:#2A1238}.vz-band .vz-a .vz-x{margin-left:auto;padding:7px 11px;opacity:.6}
 .vz-ul{margin:4px 0 12px;padding-left:18px;font-size:.88rem;line-height:1.45}.vz-ul li{margin:4px 0}
@@ -8907,14 +8907,14 @@ ${pm.join('\n')}</Document></kml>`;
   const vzHideK = VZ_SIDE === 'carnet' ? 'vzHideC' : 'vzHideV';
   function vzBandHTML(){
     return VZ_SIDE === 'carnet'
-      ? `<div class="vz-band"><span class="vz-i">🧭</span><span class="vz-t"><b>Vezoria arrive !</b><small>La nouvelle version de ce carnet, bientôt sur Google Play. Essaie-la avec tes voyages déjà remplis, puis donne ton avis.</small></span>
-          <span class="vz-a"><button type="button" class="vz-go" onclick="CV.vzGo()">🧭 Essayer Vezoria</button><button type="button" onclick="CV.vzNews()">📋 Ce qui change</button><button type="button" onclick="CV.vzAvis()">⭐ Mon avis</button><button type="button" class="vz-x" onclick="CV.vzHide()" aria-label="Masquer">✕</button></span></div>`
+      ? `<div class="vz-band vz-close"><span class="vz-i">⚠️</span><span class="vz-t"><b>Ce carnet ferme le 31 décembre 2026</b><small>Il continue dans <b>Vezoria</b>. Fais ta sauvegarde (avec tes photos), puis ouvre-la dans Vezoria : 3 minutes, rien n’est perdu.</small></span>
+          <span class="vz-a"><button type="button" class="vz-go" onclick="CV.vzMove()">🧭 Passer à Vezoria</button><button type="button" onclick="CV.zipSheet()">💾 Faire ma sauvegarde</button></span></div>`
       : `<div class="vz-band"><span class="vz-i">🧪</span><span class="vz-t"><b>Vezoria · version test</b><small>Tes voyages du carnet sont déjà là. Ce que tu changes ici apparaît aussi dans le carnet.</small></span>
           <span class="vz-a"><button type="button" class="vz-go" onclick="CV.vzGo()">↩︎ Retour au carnet</button><button type="button" onclick="CV.vzNews()">📋 Ce qui change</button><button type="button" onclick="CV.vzAvis()">⭐ Mon avis</button><button type="button" class="vz-x" onclick="CV.vzHide()" aria-label="Masquer">✕</button></span></div>`;
   }
   function vzPaint(){
     const el = document.getElementById('vz-band'); if(!el) return;
-    const h = VZ_ON && !M[vzHideK] ? vzBandHTML() : ''; if(el.dataset.h !== h){ el.dataset.h = h; el.innerHTML = h; }
+    const h = VZ_ON && (VZ_SIDE === 'carnet' || !M[vzHideK]) ? vzBandHTML() : '';   /* 31/12/2026 : l’avis de fermeture ne se masque pas */ if(el.dataset.h !== h){ el.dataset.h = h; el.innerHTML = h; }
     if(VZ_SIDE === 'vezoria' && VZ_ON && !document.getElementById('vz-back')){
       const b = document.querySelector('.hero-btns'); if(b){ const a = document.createElement('a'); a.id = 'vz-back'; a.className = 'cv-switch'; a.href = '/?app=carnet'; a.textContent = '↩︎ Carnet'; a.setAttribute('aria-label', 'Retour au carnet'); b.prepend(a); }
     }
@@ -8968,9 +8968,49 @@ ${pm.join('\n')}</Document></kml>`;
     try { localStorage.setItem(KEY, o.raw); } catch(e){ alert('Restauration impossible : ' + e.message); return; }
     location.reload();
   }
+
+  /* ⚠️ 17/11/2026 : FERMETURE DU CARNET PUBLIC le 31/12/2026 → marche à suivre pour passer à Vezoria avec ses photos.
+     Vezoria relit la sauvegarde ZIP du carnet telle quelle (même format « carnet-voyage ») : voyages, fiches, souvenirs, photos, billets PDF. */
+  const VZ_CLOSE = '2026-12-31', VZ_WEB = 'https://vezoria.pages.dev/', VZ_PLAY = 'https://play.google.com/store/apps/details?id=fr.vezoria.app', VZ_CONTACT = 'contact.vezoria@icloud.com';
+  function vzMove(){
+    const and = /Android/i.test(navigator.userAgent || ''), ios = /iPhone|iPad|iPod/.test(navigator.userAgent || '') || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const left = Math.max(0, Math.ceil((new Date(VZ_CLOSE + 'T23:59:59') - Date.now()) / 864e5));
+    openSheet(`<h2>🧭 Passer à Vezoria</h2>
+      <p class="v-sum-small">Ce carnet public <b>ferme le 31 décembre 2026</b>${left ? ` (dans ${left} jour${left > 1 ? 's' : ''})` : ''}. Après cette date, le carnet et son serveur s’arrêtent : ce qui n’a pas été sauvegardé sera perdu. Il continue dans <b>Vezoria</b>, la nouvelle version, avec tes voyages et tes photos.</p>
+      <h3>1️⃣ Fais ta sauvegarde ici</h3>
+      <ul class="vz-ul"><li>Touche <b>💾 Faire ma sauvegarde</b> (aussi dans 🧳 Plus → 👥 Partage &amp; profils).</li>
+        <li>Laisse cochés <b>« Inclure les photos »</b> et <b>« Inclure les billets PDF »</b>. Ne coche <b>pas</b> « Vignettes seulement » ni « codes de partage ».</li>
+        <li>Touche <b>📦 Créer la sauvegarde ZIP</b>, puis <b>enregistre le fichier</b> (Fichiers, iCloud, Drive ou Téléchargements). S’il y a <b>plusieurs parties</b>, enregistre-les <b>toutes</b>.</li>
+        <li>Les photos envoyées par tes compagnons sont récupérées sur le serveur : garde du réseau pendant la sauvegarde.</li></ul>
+      <h3>2️⃣ Installe Vezoria</h3>
+      <ul class="vz-ul"><li>📱 <b>iPhone</b> : ouvre <b>vezoria.pages.dev</b> dans Safari → bouton <b>Partager</b> → <b>« Sur l’écran d’accueil »</b>.</li>
+        <li>🤖 <b>Android</b> : <b>Vezoria</b> sur Google Play.</li>
+        <li>💻 <b>Ordinateur</b> : <b>vezoria.pages.dev</b>.</li></ul>
+      <h3>3️⃣ Ouvre ta sauvegarde dans Vezoria</h3>
+      <ul class="vz-ul"><li>Touche <b>« Je crée mon carnet »</b> et entre ton prénom.</li>
+        <li>Puis <b>🧳 Plus → ⚙️ Réglages → 💾 Sauvegarde complète ZIP → 📥 Restaurer une sauvegarde ZIP</b>, et choisis ton fichier (toutes les parties d’un coup s’il y en a plusieurs).</li>
+        <li>Tes voyages, fiches, souvenirs, <b>photos</b> et billets reviennent.</li></ul>
+      <h3>👥 Voyages partagés</h3>
+      <ul class="vz-ul"><li>Il suffit qu’<b>une seule personne</b> du groupe fasse la sauvegarde et l’ouvre dans Vezoria.</li>
+        <li>Elle invite ensuite ses compagnons depuis Vezoria (<b>👥 Partager</b>) : les codes du carnet ne marchent pas dans Vezoria.</li></ul>
+      <p class="v-sum-small">Un souci ? Écris à <a href="mailto:${VZ_CONTACT}">${VZ_CONTACT}</a>.</p>
+      <div class="v-actions"><button type="button" class="v-btn" onclick="CV.zipSheet()">💾 Faire ma sauvegarde</button>
+        ${and ? `<a class="v-btn sec" href="${VZ_PLAY}" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">🤖 Vezoria sur Google Play</a>` : `<a class="v-btn sec" href="${VZ_WEB}" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">🧭 Ouvrir Vezoria${ios ? ' dans Safari' : ''}</a>`}
+        <button type="button" class="v-btn sec" onclick="CV.close()">Fermer</button></div>`);
+  }
+  // rappel à l’ouverture, une fois par jour (pas pendant une saisie, pas par-dessus une autre fenêtre)
+  function vzCloseNag(){
+    if(VZ_SIDE !== 'carnet' || !VZ_ON) return;
+    let k = ''; try { k = localStorage.getItem('cv-close-nag') || ''; } catch(e){}
+    if(k === isoToday()) return;
+    let n = 0; const go = () => { if(document.getElementById('v-sheet-bg') || document.visibilityState !== 'visible' || /^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement || {}).tagName || '')){ if(++n < 20) setTimeout(go, 15000); return; }   // occupé : on réessaie un peu plus tard
+      try { localStorage.setItem('cv-close-nag', isoToday()); } catch(e){} vzMove(); };
+    setTimeout(go, 2500);
+  }
   if(VZ_SIDE === 'vezoria' && VZ_ON) setTimeout(vzBackup, 50);
   setTimeout(vzPaint, 0);
-  var VZAPI = {vzGo, vzHide, vzNews, vzAvis, vzStar, vzSend, vzRestore, vzPaint};
+  setTimeout(vzCloseNag, 0);
+  var VZAPI = {vzGo, vzHide, vzNews, vzAvis, vzStar, vzSend, vzRestore, vzPaint, vzMove};
 
   const api = {init, installNow, installSheet, infoSheet, infoOk, codeSheet, copyCode, discover, discF, discQ, discAdd, planCity, cityMove, cityLock, cityDel, cityOpt, toggleLock, pdfSheet, pdfMake, pdfClose, mySheet, go, tab, navGo, tripSheet, seedUSA2025, convert2026, editSouv, saveSouv, delSouv, souvAddPhotos, souvDelPhoto, view, viewGo, viewClose, psPick, psChoose, psImport, rembAdd, rembDel, who:setWho, filter, cycle, edit, seg, saveForm, noteFromItem, del, close:closeSheet, add,
     toggleDay, editDay, saveDay, editNote, saveNote, delNote, pin, openRef,
